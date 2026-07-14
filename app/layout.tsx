@@ -1,19 +1,29 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Story Sprout — P1 English Adventure",
+  title: "Story Garden — Read, Listen, Speak & Write",
   description:
-    "A playful English learning journey built from ten Primary 1 storybooks, with phonics, vocabulary, sentence, comprehension and speaking practice.",
+    "A playful Primary 1 storybook reader with guided listening, speaking, reading and writing missions.",
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
   },
+  openGraph: {
+    title: "Story Garden",
+    description: "Open a story. Grow your English.",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Story Garden reading adventure" }],
+  },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f7f2df",
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body>{children}</body>
