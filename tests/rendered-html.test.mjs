@@ -218,7 +218,7 @@ test("all 94 readable story pages are transcribed, referenced once, and web-size
   assert.deepEqual([...referencedAssets].sort(), diskAssets.sort());
 });
 
-test("all 94 pages and 40 tasks have unique, valid, web-sized M4A narration tracks", async () => {
+test("all 94 pages and 40 tasks have unique, valid, web-sized MP3 narration tracks", async () => {
   const books = await loadBookData();
   const referencedAudio = new Set();
   let audioTotal = 0;
@@ -239,15 +239,46 @@ test("all 94 pages and 40 tasks have unique, valid, web-sized M4A narration trac
       asset.byteLength <= MAX_STORY_AUDIO_BYTES,
       `${audioSrc} is ${asset.byteLength} bytes; narration tracks must be at most ${MAX_STORY_AUDIO_BYTES} bytes`,
     );
-    assert.equal(
-      asset.subarray(4, 8).toString("ascii"),
-      "ftyp",
-      `${audioSrc} must start with an ISO Base Media File Format ftyp box`,
+    const hasId3Header = asset.subarray(0, 3).toString("ascii") === "ID3";
+    let frameSearchStart = 0;
+    if (hasId3Header) {
+      assert.ok(asset.byteLength >= 10, `${audioSrc} has a truncated ID3 header`);
+      const tagSize = ((asset[6] & 0x7f) << 21)
+        | ((asset[7] & 0x7f) << 14)
+        | ((asset[8] & 0x7f) << 7)
+        | (asset[9] & 0x7f);
+      frameSearchStart = 10 + tagSize + ((asset[5] & 0x10) ? 10 : 0);
+    }
+    const frameSearchEnd = Math.min(asset.byteLength - 3, frameSearchStart + 8192);
+    let firstFrame = -1;
+    for (let offset = frameSearchStart; offset < frameSearchEnd; offset += 1) {
+      const byte1 = asset[offset];
+      const byte2 = asset[offset + 1];
+      const byte3 = asset[offset + 2];
+      const hasFrameSync = byte1 === 0xff && (byte2 & 0xe0) === 0xe0;
+      const versionIsValid = ((byte2 >> 3) & 0x03) !== 0x01;
+      const layerIsValid = ((byte2 >> 1) & 0x03) !== 0x00;
+      const bitrateIndex = (byte3 >> 4) & 0x0f;
+      const sampleRateIsValid = ((byte3 >> 2) & 0x03) !== 0x03;
+      if (
+        hasFrameSync
+        && versionIsValid
+        && layerIsValid
+        && bitrateIndex !== 0x00
+        && bitrateIndex !== 0x0f
+        && sampleRateIsValid
+      ) {
+        firstFrame = offset;
+        break;
+      }
+    }
+    assert.ok(
+      firstFrame >= 0,
+      `${audioSrc} must contain a valid MPEG audio frame after its optional ID3 tag`,
     );
-    assert.match(
-      asset.subarray(8, 12).toString("ascii"),
-      /^(?:M4A |M4B |mp4[12]|isom)$/,
-      `${audioSrc} must declare a recognised M4A/MP4 major brand`,
+    assert.ok(
+      hasId3Header || firstFrame === 0,
+      `${audioSrc} must begin with either an ID3 header or an MPEG audio frame`,
     );
     audioTotal += 1;
   };
@@ -255,7 +286,7 @@ test("all 94 pages and 40 tasks have unique, valid, web-sized M4A narration trac
   for (const book of books) {
     for (const [index, page] of book.pages.entries()) {
       const number = String(index + 1).padStart(2, "0");
-      const expectedSrc = `/audio/${book.slug}/${number}.m4a`;
+      const expectedSrc = `/audio/${book.slug}/${number}.mp3`;
       const label = `${book.slug} page ${index + 1}`;
 
       assert.equal(
@@ -267,7 +298,7 @@ test("all 94 pages and 40 tasks have unique, valid, web-sized M4A narration trac
     }
 
     for (const step of LSRW_STEPS) {
-      await checkAudio(`/audio/${book.slug}/${step}.m4a`, `${book.slug} ${step} task`);
+      await checkAudio(`/audio/${book.slug}/${step}.mp3`, `${book.slug} ${step} task`);
     }
   }
 
@@ -292,13 +323,13 @@ test("all 94 pages and 40 tasks have unique, valid, web-sized M4A narration trac
       .sort();
     const expectedPageFiles = Array.from(
       { length: expectedCount },
-      (_, index) => `${String(index + 1).padStart(2, "0")}.m4a`,
+      (_, index) => `${String(index + 1).padStart(2, "0")}.mp3`,
     );
-    const expectedFiles = [...expectedPageFiles, ...LSRW_STEPS.map((step) => `${step}.m4a`)].sort();
+    const expectedFiles = [...expectedPageFiles, ...LSRW_STEPS.map((step) => `${step}.mp3`)].sort();
     assert.deepEqual(
       files,
       expectedFiles,
-      `${slug} must contain every page/task M4A and no orphan assets`,
+      `${slug} must contain every page/task MP3 and no orphan assets`,
     );
     diskAudio.push(...files.map((file) => `/audio/${slug}/${file}`));
   }

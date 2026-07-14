@@ -26,7 +26,7 @@ async function generateClip({ book, text, filename, purpose }) {
   const folder = new URL(`${book.slug}/`, outputRoot);
   await mkdir(folder, { recursive: true });
   const aiff = join(tmpdir(), `story-garden-${book.slug}-${filename}-${process.pid}.aiff`);
-  const output = new URL(`${filename}.m4a`, folder);
+  const output = new URL(`${filename}.mp3`, folder);
 
   try {
     await run("say", [
@@ -47,13 +47,11 @@ async function generateClip({ book, text, filename, purpose }) {
       "-af",
       "loudnorm=I=-18:TP=-1.5:LRA=7",
       "-c:a",
-      "aac",
+      "libmp3lame",
       "-b:a",
-      "48k",
+      "64k",
       "-ac",
       "1",
-      "-movflags",
-      "+faststart",
       fileURLToPath(output),
     ]);
   } finally {
@@ -73,6 +71,8 @@ const jobs = BOOKS.flatMap((book) => [
   { book, text: book.tasks.read.passage, filename: "read", purpose: "practice" },
   { book, text: book.tasks.write.modelSentence, filename: "write", purpose: "practice" },
 ]);
+await rm(outputRoot, { recursive: true, force: true });
+await mkdir(outputRoot, { recursive: true });
 let cursor = 0;
 let finished = 0;
 

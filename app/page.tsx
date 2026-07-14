@@ -654,7 +654,7 @@ function NarrationSettings({ narrator, compact = false }: { narrator: Narrator; 
             : narrator.speak(previewText, {
                 purpose: "story",
                 activeKey: previewKey,
-                audioSrc: "/audio/dan-the-flying-man/02.m4a",
+                audioSrc: "/audio/dan-the-flying-man/02.mp3",
               })}
         >
           {previewActive ? "■ Stop preview" : "▶ Preview this voice"}
@@ -1112,7 +1112,7 @@ function ListenMission({ book, narrator, onDone }: { book: Book; narrator: Narra
 
   return (
     <div className="mission-body">
-      <button className={`sound-orb ${isSpeaking ? "is-speaking" : ""}`} type="button" onClick={() => isSpeaking ? narrator.stop() : narrator.speak(task.audioText, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/listen.m4a` })}>
+      <button className={`sound-orb ${isSpeaking ? "is-speaking" : ""}`} type="button" onClick={() => isSpeaking ? narrator.stop() : narrator.speak(task.audioText, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/listen.mp3` })}>
         <span aria-hidden="true">{isSpeaking ? "■" : "🔊"}</span>
         <strong>{isSpeaking ? "Stop" : tries ? "Listen again" : "Tap to listen"}</strong>
         <small>You can play it more than once</small>
@@ -1231,7 +1231,7 @@ function SpeakMission({ book, narrator, onDone }: { book: Book; narrator: Narrat
       <div className="model-line">
         <span>Say this</span>
         <blockquote>{task.modelLine}</blockquote>
-        <button className="button button--sound" type="button" disabled={recording || requestingRecording} onClick={() => modelIsSpeaking ? narrator.stop() : narrator.speak(task.modelLine, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/speak.m4a` })}>
+        <button className="button button--sound" type="button" disabled={recording || requestingRecording} onClick={() => modelIsSpeaking ? narrator.stop() : narrator.speak(task.modelLine, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/speak.mp3` })}>
           <span aria-hidden="true">{modelIsSpeaking ? "■" : "🔊"}</span> {modelIsSpeaking ? "Stop" : "Hear the line"}
         </button>
       </div>
@@ -1275,7 +1275,7 @@ function ReadMission({ book, narrator, onDone }: { book: Book; narrator: Narrato
   return (
     <div className="read-practice">
       <div className="reading-card">
-        <div className="reading-card__top"><span>Story clue</span><button type="button" onClick={() => isSpeaking ? narrator.stop() : narrator.speak(task.passage, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/read.m4a` })}>{isSpeaking ? "■ Stop" : "🔊 Help me hear it"}</button></div>
+        <div className="reading-card__top"><span>Story clue</span><button type="button" onClick={() => isSpeaking ? narrator.stop() : narrator.speak(task.passage, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/read.mp3` })}>{isSpeaking ? "■ Stop" : "🔊 Help me hear it"}</button></div>
         <p>{task.passage}</p>
       </div>
       <div className="question-block">
@@ -1395,7 +1395,7 @@ function WriteMission({
       <div className="copy-line">
         <span>My sentence</span>
         <p>{task.modelSentence}</p>
-        <button type="button" onClick={() => isSpeaking ? narrator.stop() : narrator.speak(task.modelSentence, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/write.m4a` })}>{isSpeaking ? "■ Stop" : "🔊 Hear it"}</button>
+        <button type="button" onClick={() => isSpeaking ? narrator.stop() : narrator.speak(task.modelSentence, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/write.mp3` })}>{isSpeaking ? "■ Stop" : "🔊 Hear it"}</button>
       </div>
       <div className="write-tabs" role="tablist" aria-label="Choose how to write">
         <button type="button" role="tab" aria-selected={mode === "type"} onClick={() => setMode("type")}>⌨️ Type it</button>
