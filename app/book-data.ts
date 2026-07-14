@@ -1,5 +1,6 @@
 export type StoryPage = {
   src: string;
+  audioSrc: string;
   transcript: string;
 };
 
@@ -49,6 +50,7 @@ export type Book = {
 const makePages = (slug: string, transcripts: string[]): StoryPage[] =>
   transcripts.map((transcript, index) => ({
     src: `/pages/${slug}/${String(index + 1).padStart(2, "0")}.webp`,
+    audioSrc: `/audio/${slug}/${String(index + 1).padStart(2, "0")}.m4a`,
     transcript,
   }));
 

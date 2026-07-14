@@ -18,6 +18,8 @@ const EXPECTED_PAGE_COUNTS = new Map([
 
 const LSRW_STEPS = ["listen", "speak", "read", "write"];
 const MAX_STORY_PAGE_BYTES = 500 * 1024;
+const MIN_STORY_AUDIO_BYTES = 4 * 1024;
+const MAX_STORY_AUDIO_BYTES = 500 * 1024;
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -74,6 +76,22 @@ async function loadBookData() {
     "app/book-data.ts must export the story array as BOOKS, books, or default",
   );
   return books;
+}
+
+async function loadNarrationSource() {
+  const candidates = ["../app/narration.ts", "../app/page.tsx"];
+  const sources = [];
+
+  for (const candidate of candidates) {
+    try {
+      sources.push(await readFile(new URL(candidate, import.meta.url), "utf8"));
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
+
+  assert.ok(sources.length > 0, "Narration logic must live in app/narration.ts or app/page.tsx");
+  return sources.join("\n");
 }
 
 function stringLeaves(value) {
@@ -200,6 +218,95 @@ test("all 94 readable story pages are transcribed, referenced once, and web-size
   assert.deepEqual([...referencedAssets].sort(), diskAssets.sort());
 });
 
+test("all 94 pages and 40 tasks have unique, valid, web-sized M4A narration tracks", async () => {
+  const books = await loadBookData();
+  const referencedAudio = new Set();
+  let audioTotal = 0;
+
+  const checkAudio = async (audioSrc, label) => {
+    assert.ok(
+      !referencedAudio.has(audioSrc),
+      `${audioSrc} is referenced by more than one page or task`,
+    );
+    referencedAudio.add(audioSrc);
+
+    const asset = await readFile(new URL(`../public${audioSrc}`, import.meta.url));
+    assert.ok(
+      asset.byteLength >= MIN_STORY_AUDIO_BYTES,
+      `${audioSrc} is only ${asset.byteLength} bytes and is unlikely to contain usable ${label} narration`,
+    );
+    assert.ok(
+      asset.byteLength <= MAX_STORY_AUDIO_BYTES,
+      `${audioSrc} is ${asset.byteLength} bytes; narration tracks must be at most ${MAX_STORY_AUDIO_BYTES} bytes`,
+    );
+    assert.equal(
+      asset.subarray(4, 8).toString("ascii"),
+      "ftyp",
+      `${audioSrc} must start with an ISO Base Media File Format ftyp box`,
+    );
+    assert.match(
+      asset.subarray(8, 12).toString("ascii"),
+      /^(?:M4A |M4B |mp4[12]|isom)$/,
+      `${audioSrc} must declare a recognised M4A/MP4 major brand`,
+    );
+    audioTotal += 1;
+  };
+
+  for (const book of books) {
+    for (const [index, page] of book.pages.entries()) {
+      const number = String(index + 1).padStart(2, "0");
+      const expectedSrc = `/audio/${book.slug}/${number}.m4a`;
+      const label = `${book.slug} page ${index + 1}`;
+
+      assert.equal(
+        page.audioSrc,
+        expectedSrc,
+        `${label} must reference the narration track with the same book slug and page number`,
+      );
+      await checkAudio(page.audioSrc, label);
+    }
+
+    for (const step of LSRW_STEPS) {
+      await checkAudio(`/audio/${book.slug}/${step}.m4a`, `${book.slug} ${step} task`);
+    }
+  }
+
+  assert.equal(audioTotal, 134);
+  assert.equal(referencedAudio.size, 134);
+
+  const audioFolders = (await readdir(new URL("../public/audio/", import.meta.url), {
+    withFileTypes: true,
+  }))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  assert.deepEqual(
+    audioFolders,
+    [...EXPECTED_PAGE_COUNTS.keys()].sort(),
+    "public/audio must contain exactly one folder per available story",
+  );
+
+  const diskAudio = [];
+  for (const [slug, expectedCount] of EXPECTED_PAGE_COUNTS) {
+    const files = (await readdir(new URL(`../public/audio/${slug}/`, import.meta.url)))
+      .sort();
+    const expectedPageFiles = Array.from(
+      { length: expectedCount },
+      (_, index) => `${String(index + 1).padStart(2, "0")}.m4a`,
+    );
+    const expectedFiles = [...expectedPageFiles, ...LSRW_STEPS.map((step) => `${step}.m4a`)].sort();
+    assert.deepEqual(
+      files,
+      expectedFiles,
+      `${slug} must contain every page/task M4A and no orphan assets`,
+    );
+    diskAudio.push(...files.map((file) => `/audio/${slug}/${file}`));
+  }
+
+  assert.equal(diskAudio.length, 134);
+  assert.deepEqual([...referencedAudio].sort(), diskAudio.sort());
+});
+
 test("keeps the ten cover shelf and removes disposable starter output", async () => {
   const [packageJson, covers] = await Promise.all([
     readFile(new URL("../package.json", import.meta.url), "utf8"),
@@ -210,4 +317,245 @@ test("keeps the ten cover shelf and removes disposable starter output", async ()
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   await assert.rejects(access(new URL("../app/_sites-preview/", import.meta.url)));
   await access(new URL("../public/favicon.png", import.meta.url));
+});
+
+test("uses a gentle default storytelling pace and ranks natural English voices", async () => {
+  const source = await loadNarrationSource();
+  const defaultRate = source.match(
+    /(?:DEFAULT_NARRATION_RATE|DEFAULT_STORY_RATE|DEFAULT_PACE)\s*(?::[^=;]+)?=\s*(0?\.\d+)/,
+  );
+
+  assert.ok(
+    defaultRate,
+    "Expose DEFAULT_NARRATION_RATE (or DEFAULT_STORY_RATE / DEFAULT_PACE) so the child-safe default is intentional and testable",
+  );
+  const rate = Number(defaultRate[1]);
+  assert.ok(
+    rate >= 0.55 && rate <= 0.75,
+    `Default narration rate must be a gentle 0.55–0.75; received ${rate}`,
+  );
+  assert.doesNotMatch(
+    source,
+    /(?:\.rate\s*=|DEFAULT_(?:NARRATION|STORY)_RATE\s*=|DEFAULT_PACE\s*=)\s*0\.82\b/,
+    "The previous 0.82 rate is too fast for P1 story reading",
+  );
+
+  assert.match(
+    source,
+    /(?:\.lang|lang\b)[\s\S]{0,180}(?:startsWith\(\s*["']en|\^en|===\s*["']en-)/i,
+    "Voice selection must first restrict candidates to English voices",
+  );
+  assert.match(
+    source,
+    /localService/,
+    "Voice ranking must consider whether a voice is installed locally",
+  );
+  assert.match(
+    source,
+    /Enhanced|Premium|Neural|Natural|Siri|Google|Microsoft|Samantha|Daniel|Karen/i,
+    "Voice ranking needs explicit quality/name signals instead of choosing the first English voice",
+  );
+  assert.match(
+    source,
+    /(?:voice\w*)?(?:score|rank|quality|priority)|(?:score|rank|quality|priority)(?:\w*voice)?/i,
+    "Natural English voice candidates must be scored or ranked",
+  );
+});
+
+test("reads story text as a paced narration and dialogue queue", async () => {
+  const source = await loadNarrationSource();
+
+  assert.match(
+    source,
+    /["']narration["']\s*\|\s*["']dialogue["']|["']dialogue["']\s*\|\s*["']narration["']|kind\s*:\s*["'](?:narration|dialogue)["']/i,
+    "Story text must be represented as narration and dialogue segments",
+  );
+  assert.match(
+    source,
+    /(?:split|segment|parse|build)\w*(?:Story|Narration|Speech|Text)|(?:Story|Narration|Speech|Text)\w*(?:split|segment|parse|build)/i,
+    "A dedicated story-text segmenter must split quoted dialogue from narration",
+  );
+  assert.match(
+    source,
+    /pause(?:After)?Ms|segmentPause|pauseDuration/i,
+    "Each segment boundary needs an explicit, readable pause duration",
+  );
+  assert.ok(
+    /(?:setTimeout|sleep|delay|wait)[\s\S]{0,220}(?:pause(?:After)?Ms|segmentPause|pauseDuration)/i.test(source) ||
+      /(?:pause(?:After)?Ms|segmentPause|pauseDuration)[\s\S]{0,220}(?:setTimeout|sleep|delay|wait)/i.test(source),
+    "Narration must actually wait for the configured pause before speaking the next segment",
+  );
+});
+
+test("cancelling narration invalidates every queued callback", async () => {
+  const source = await loadNarrationSource();
+  const runRefMatch = source.match(
+    /((?:narration|speech|story)?(?:Run|Token|Generation)Ref)\s*=\s*useRef(?:<[^>]+>)?\(\s*0\s*\)/i,
+  );
+
+  assert.ok(
+    runRefMatch,
+    "Narration needs a monotonically increasing run/token ref so cancelled queues cannot resume",
+  );
+  const escapedName = runRefMatch[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const increments = source.match(
+    new RegExp(
+      `(?:\\+\\+\\s*${escapedName}\\.current|${escapedName}\\.current\\s*\\+\\+|${escapedName}\\.current\\s*\\+=\\s*1)`,
+      "g",
+    ),
+  ) ?? [];
+
+  assert.ok(
+    increments.length >= 2,
+    `Both speak() and stop() must invalidate the previous narration run; found ${increments.length} token increments`,
+  );
+  assert.match(
+    source,
+    new RegExp(
+      `(?:${escapedName}\\.current\\s*!={1,2}\\s*\\w+|\\w+\\s*!={1,2}\\s*${escapedName}\\.current)`,
+    ),
+    "Queued onend/timer callbacks must compare their captured run token before continuing",
+  );
+});
+
+test("the active TTS run always finishes cleanly when an utterance errors", async () => {
+  const source = await loadNarrationSource();
+  const errorIndex = source.indexOf("utterance.onerror");
+  assert.ok(errorIndex >= 0, "SpeechSynthesis utterances need an onerror handler");
+
+  const speakIndex = source.indexOf("speechSynthesis.speak", errorIndex);
+  assert.ok(speakIndex > errorIndex, "The utterance error handler must be defined before speak()");
+  const errorHandler = source.slice(errorIndex, speakIndex);
+  const currentRunGuard = errorHandler.search(
+    /capturedRun\s*!={1,2}\s*narrationRunRef\.current|narrationRunRef\.current\s*!={1,2}\s*capturedRun/,
+  );
+  const finishIndex = errorHandler.indexOf("finish()", Math.max(0, currentRunGuard));
+
+  assert.ok(
+    currentRunGuard >= 0,
+    "utterance.onerror must ignore callbacks belonging to an obsolete narration run",
+  );
+  assert.ok(
+    finishIndex > currentRunGuard,
+    "utterance.onerror must call finish() after confirming that it belongs to the current run",
+  );
+});
+
+test("parents can choose reading pace and storyteller voice from labelled controls", async () => {
+  const response = await render();
+  assert.equal(response.status, 200);
+  const html = await response.text();
+
+  assert.match(
+    html,
+    /<label\b[^>]*>[\s\S]{0,240}(?:Reading speed|Story speed|Narration pace|Pace)[\s\S]{0,240}<select\b/i,
+    "The parent corner needs a labelled reading-speed select",
+  );
+  assert.match(
+    html,
+    /<label\b[^>]*>[\s\S]{0,240}(?:Storyteller|Narrator|Reading voice|Voice)[\s\S]{0,240}<select\b/i,
+    "The parent corner needs a labelled storyteller-voice select",
+  );
+  assert.ok(
+    (html.match(/<select\b/gi) ?? []).length >= 2,
+    "Reading pace and storyteller voice must be independently selectable",
+  );
+});
+
+test("recording a child stops narration before requesting microphone access", async () => {
+  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const speakMissionIndex = source.indexOf("function SpeakMission");
+  assert.ok(speakMissionIndex >= 0, "app/page.tsx must contain SpeakMission");
+
+  const recordingIndex = source.indexOf("const startRecording", speakMissionIndex);
+  assert.ok(recordingIndex >= 0, "SpeakMission must contain startRecording");
+
+  const microphoneIndex = source.indexOf("getUserMedia", recordingIndex);
+  assert.ok(microphoneIndex >= 0, "startRecording must request microphone access");
+
+  const stopIndex = source.indexOf("narrator.stop()", recordingIndex);
+  assert.ok(
+    stopIndex >= recordingIndex && stopIndex < microphoneIndex,
+    "startRecording must call narrator.stop() before getUserMedia so narration is never captured in the child's recording",
+  );
+
+  const stopRecordingIndex = source.indexOf("const stopRecording", microphoneIndex);
+  assert.ok(stopRecordingIndex > microphoneIndex, "SpeakMission must contain stopRecording");
+  const recordingSetup = source.slice(speakMissionIndex, recordingIndex);
+  const recordingRequest = source.slice(recordingIndex, stopRecordingIndex);
+  assert.match(
+    recordingSetup,
+    /mounted\s*=\s*useRef(?:<boolean>)?\(\s*false\s*\)/,
+    "SpeakMission must track whether it is still mounted while microphone permission is pending",
+  );
+  assert.match(
+    recordingSetup,
+    /microphoneRequest\s*=\s*useRef(?:<number>)?\(\s*0\s*\)/,
+    "SpeakMission must keep a monotonically increasing microphone request token",
+  );
+  assert.match(
+    recordingSetup,
+    /microphoneRequest\.current\s*\+=\s*1/,
+    "Unmounting SpeakMission must invalidate an outstanding microphone request",
+  );
+  assert.match(
+    recordingRequest,
+    /(?:const|let)\s+request\s*=\s*\+\+microphoneRequest\.current/,
+    "Every getUserMedia request must capture a unique request token",
+  );
+  assert.match(
+    recordingRequest.slice(recordingRequest.indexOf("getUserMedia")),
+    /!mounted\.current[\s\S]{0,120}request\s*!={1,2}\s*microphoneRequest\.current|request\s*!={1,2}\s*microphoneRequest\.current[\s\S]{0,120}!mounted\.current/,
+    "Code resumed after getUserMedia must verify both mounted state and the request token",
+  );
+
+  const speakMissionMarkup = source.slice(stopRecordingIndex, source.indexOf("function ReadMission", stopRecordingIndex));
+  assert.match(
+    speakMissionMarkup,
+    /<button\b[\s\S]{0,260}disabled=\{recording\s*\|\|\s*requestingRecording\}[\s\S]{0,500}narrator\.speak\(task\.modelLine/,
+    "The model-line playback button must be disabled while recording or opening the microphone",
+  );
+});
+
+test("narration preferences hydrate from safe defaults and validate saved pace", async () => {
+  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(
+    source,
+    /Object\.hasOwn\(\s*NARRATION_PACES\s*,\s*stored\?*\.pace\s*\)/,
+    "A saved pace must be accepted only when it is a key in NARRATION_PACES",
+  );
+  assert.match(
+    source,
+    /\[\s*pace\s*,\s*setPace\s*\]\s*=\s*useState<NarrationPace>\(\s*["']gentle["']\s*\)/,
+    "Server and first client render must start from the gentle pace",
+  );
+  assert.match(
+    source,
+    /\[\s*selectedVoice\s*,\s*setSelectedVoice\s*\]\s*=\s*useState\(\s*["']studio["']\s*\)/,
+    "Server and first client render must start from the recorded studio voice",
+  );
+  assert.doesNotMatch(
+    source,
+    /useState(?:<[^>]+>)?\(\s*readNarrationSettings/,
+    "localStorage settings must not be read during the hydration-sensitive state initializer",
+  );
+
+  const narratorIndex = source.indexOf("function useNarrator");
+  const mountedSettingsIndex = source.indexOf("const settingsTimer", narratorIndex);
+  const readSettingsIndex = source.indexOf("readNarrationSettings()", mountedSettingsIndex);
+  const applyPaceIndex = source.indexOf("setPace(saved.pace)", readSettingsIndex);
+  const readyIndex = source.indexOf("setSettingsReady(true)", applyPaceIndex);
+  assert.ok(
+    narratorIndex >= 0
+      && mountedSettingsIndex > narratorIndex
+      && readSettingsIndex > mountedSettingsIndex
+      && applyPaceIndex > readSettingsIndex
+      && readyIndex > applyPaceIndex,
+    "After mount, useNarrator must read validated preferences, apply pace, then mark settings ready",
+  );
+  assert.match(
+    source,
+    /if\s*\(\s*!settingsReady\s*\)\s*return/,
+    "Preference persistence must wait until mounted settings have been restored",
+  );
 });

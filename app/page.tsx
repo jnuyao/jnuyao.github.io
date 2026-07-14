@@ -12,6 +12,15 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { BOOKS, type Book } from "./book-data";
+import {
+  DEFAULT_NARRATION_RATE,
+  NARRATION_PACES,
+  buildStoryNarrationSegments,
+  rankEnglishVoices,
+  voiceQualityScore,
+  type NarrationPace,
+  type NarrationPurpose,
+} from "./narration";
 
 type QuestStep = "listen" | "speak" | "read" | "write";
 type View =
@@ -35,6 +44,7 @@ type ProgressStore = {
 };
 
 const PROGRESS_KEY = "story-garden-progress-v2";
+const NARRATION_SETTINGS_KEY = "story-garden-narration-v1";
 const STEP_ORDER: QuestStep[] = ["listen", "speak", "read", "write"];
 const STEP_META: Record<
   QuestStep,
@@ -163,58 +173,250 @@ function urlForView(view: View): string {
   return `${window.location.pathname}${query ? `?${query}` : ""}`;
 }
 
+type SpeakOptions = {
+  purpose?: NarrationPurpose;
+  activeKey?: string;
+  audioSrc?: string;
+};
+
+function isSavedVoicePreference(value: unknown): value is string {
+  if (value === "studio" || value === "auto") return true;
+  if (typeof value !== "string") return false;
+  try {
+    const saved = JSON.parse(value) as { voiceURI?: unknown; lang?: unknown; name?: unknown };
+    return typeof saved.voiceURI === "string"
+      && typeof saved.lang === "string"
+      && typeof saved.name === "string";
+  } catch {
+    return false;
+  }
+}
+
+function readNarrationSettings(): { pace: NarrationPace; voice: string } {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(NARRATION_SETTINGS_KEY) ?? "null");
+    const pace = typeof stored?.pace === "string" && Object.hasOwn(NARRATION_PACES, stored.pace)
+      ? stored.pace as NarrationPace
+      : "gentle";
+    const voice = isSavedVoicePreference(stored?.voice) ? stored.voice : "studio";
+    return { pace, voice };
+  } catch {
+    return { pace: "gentle", voice: "studio" };
+  }
+}
+
+function voicePreference(voice: SpeechSynthesisVoice) {
+  return JSON.stringify({ voiceURI: voice.voiceURI, lang: voice.lang, name: voice.name });
+}
+
+function resolvePreferredVoice(voices: SpeechSynthesisVoice[], preference: string) {
+  if (preference === "studio" || preference === "auto") return voices[0] ?? null;
+  try {
+    const saved = JSON.parse(preference) as { voiceURI?: string; lang?: string; name?: string };
+    return voices.find((voice) => voice.voiceURI === saved.voiceURI && voice.lang === saved.lang)
+      ?? voices.find((voice) => voice.name === saved.name && voice.lang === saved.lang)
+      ?? voices[0]
+      ?? null;
+  } catch {
+    return voices[0] ?? null;
+  }
+}
+
 function useNarrator() {
   const [speaking, setSpeaking] = useState(false);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
   const [supported, setSupported] = useState(
-    () => typeof window === "undefined" || "speechSynthesis" in window,
+    () => typeof window === "undefined" || "Audio" in window || "speechSynthesis" in window,
   );
-  const voices = useRef<SpeechSynthesisVoice[]>([]);
+  const [pace, setPace] = useState<NarrationPace>("gentle");
+  const [selectedVoice, setSelectedVoice] = useState("studio");
+  const [settingsReady, setSettingsReady] = useState(false);
+  const [englishVoices, setEnglishVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const narrationRunRef = useRef(0);
+  const segmentTimerRef = useRef<number | null>(null);
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const settingsTimer = window.setTimeout(() => {
+      const saved = readNarrationSettings();
+      setPace(saved.pace);
+      setSelectedVoice(saved.voice);
+      setSettingsReady(true);
+    }, 0);
+    return () => window.clearTimeout(settingsTimer);
+  }, []);
 
   useEffect(() => {
     if (!("speechSynthesis" in window)) {
       return;
     }
     const refreshVoices = () => {
-      voices.current = window.speechSynthesis.getVoices();
+      const ranked = rankEnglishVoices(Array.from(window.speechSynthesis.getVoices()))
+        .filter((voice) => voiceQualityScore(voice) > 0);
+      voicesRef.current = ranked;
+      setEnglishVoices(ranked);
+      if (ranked.length) {
+        setSelectedVoice((preference) => {
+          if (preference === "studio" || preference === "auto") return preference;
+          try {
+            const saved = JSON.parse(preference) as { voiceURI?: string; lang?: string; name?: string };
+            const exists = ranked.some((voice) =>
+              (voice.voiceURI === saved.voiceURI || voice.name === saved.name)
+                && voice.lang === saved.lang,
+            );
+            return exists ? preference : "auto";
+          } catch {
+            return "auto";
+          }
+        });
+      }
     };
-    refreshVoices();
+    const initialVoiceTimer = window.setTimeout(refreshVoices, 0);
     window.speechSynthesis.addEventListener("voiceschanged", refreshVoices);
     return () => {
+      window.clearTimeout(initialVoiceTimer);
       window.speechSynthesis.cancel();
       window.speechSynthesis.removeEventListener("voiceschanged", refreshVoices);
     };
   }, []);
 
+  useEffect(() => {
+    if (!settingsReady) return;
+    try {
+      window.localStorage.setItem(NARRATION_SETTINGS_KEY, JSON.stringify({ pace, voice: selectedVoice }));
+    } catch {
+      // Narration still works when private browsing blocks local preferences.
+    }
+  }, [pace, selectedVoice, settingsReady]);
+
   const stop = useCallback(() => {
+    narrationRunRef.current += 1;
+    if (segmentTimerRef.current !== null) {
+      window.clearTimeout(segmentTimerRef.current);
+      segmentTimerRef.current = null;
+    }
+    currentAudioRef.current?.pause();
+    currentAudioRef.current = null;
+    currentUtteranceRef.current = null;
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
     }
     setSpeaking(false);
+    setActiveKey(null);
   }, []);
 
-  const speak = useCallback((text: string) => {
-    if (!("speechSynthesis" in window)) {
-      setSupported(false);
+  const speak = useCallback((text: string, options: SpeakOptions = {}) => {
+    const capturedRun = ++narrationRunRef.current;
+    const purpose = options.purpose ?? "story";
+    const key = options.activeKey ?? `speech-${capturedRun}`;
+    if (segmentTimerRef.current !== null) window.clearTimeout(segmentTimerRef.current);
+    currentAudioRef.current?.pause();
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
+    }
+    setSpeaking(true);
+    setActiveKey(key);
+
+    const finish = () => {
+      if (capturedRun !== narrationRunRef.current) return;
+      currentAudioRef.current = null;
+      currentUtteranceRef.current = null;
+      setSpeaking(false);
+      setActiveKey(null);
+    };
+
+    let fallbackStarted = false;
+    const playSpeechFallback = () => {
+      if (fallbackStarted) return;
+      fallbackStarted = true;
+      if (capturedRun !== narrationRunRef.current) return;
+      currentAudioRef.current?.pause();
+      currentAudioRef.current = null;
+      if (!("speechSynthesis" in window)) {
+        setSupported(false);
+        finish();
+        return;
+      }
+      const refreshed = rankEnglishVoices(Array.from(window.speechSynthesis.getVoices()))
+        .filter((voice) => voiceQualityScore(voice) > 0);
+      if (refreshed.length) voicesRef.current = refreshed;
+      const voice = resolvePreferredVoice(voicesRef.current, selectedVoice);
+      const segments = buildStoryNarrationSegments(text, purpose);
+
+      const playSegment = (index: number) => {
+        if (capturedRun !== narrationRunRef.current) return;
+        const segment = segments[index];
+        if (!segment) {
+          finish();
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(segment.text);
+        currentUtteranceRef.current = utterance;
+        utterance.voice = voice;
+        utterance.lang = voice?.lang ?? "en-GB";
+        utterance.rate = (NARRATION_PACES[pace]?.rate ?? DEFAULT_NARRATION_RATE)
+          * segment.rateMultiplier
+          * (purpose === "practice" ? 0.94 : 1);
+        utterance.pitch = segment.pitch;
+        utterance.volume = 1;
+        utterance.onend = () => {
+          if (capturedRun !== narrationRunRef.current) return;
+          segmentTimerRef.current = window.setTimeout(
+            () => playSegment(index + 1),
+            segment.pauseAfterMs,
+          );
+        };
+        utterance.onerror = () => {
+          if (capturedRun !== narrationRunRef.current) return;
+          finish();
+        };
+        window.speechSynthesis.speak(utterance);
+      };
+
+      if (segments.length) playSegment(0);
+      else finish();
+    };
+
+    if (options.audioSrc
+      && (selectedVoice === "studio" || !("speechSynthesis" in window))
+      && "Audio" in window) {
+      const audio = new Audio(options.audioSrc);
+      currentAudioRef.current = audio;
+      audio.preload = "auto";
+      audio.playbackRate = pace === "gentle" ? 1 : pace === "practice" ? 0.88 : 1.08;
+      audio.preservesPitch = true;
+      audio.onended = finish;
+      audio.onerror = playSpeechFallback;
+      audio.play().catch(playSpeechFallback);
       return;
     }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const available = voices.current.length ? voices.current : window.speechSynthesis.getVoices();
-    utterance.voice =
-      available.find((voice) => voice.lang.toLowerCase() === "en-sg") ??
-      available.find((voice) => voice.lang.toLowerCase().startsWith("en-gb")) ??
-      available.find((voice) => voice.lang.toLowerCase().startsWith("en")) ??
-      null;
-    utterance.lang = utterance.voice?.lang ?? "en-SG";
-    utterance.rate = 0.82;
-    utterance.pitch = 1.04;
-    utterance.onstart = () => setSpeaking(true);
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-  }, []);
 
-  return { speak, stop, speaking, supported };
+    playSpeechFallback();
+  }, [pace, selectedVoice]);
+
+  const currentVoiceLabel = selectedVoice === "studio"
+    ? "Gentle story voice"
+    : selectedVoice === "auto"
+      ? (englishVoices[0]?.name ?? "Best available voice")
+      : (resolvePreferredVoice(englishVoices, selectedVoice)?.name ?? "Best available voice");
+
+  return {
+    speak,
+    stop,
+    speaking,
+    supported,
+    activeKey,
+    pace,
+    setPace,
+    selectedVoice,
+    setSelectedVoice,
+    englishVoices,
+    currentVoiceLabel,
+  };
 }
 
 export default function StoryGarden() {
@@ -297,7 +499,7 @@ export default function StoryGarden() {
     : BOOKS.find((item) => item.slug === view.bookSlug);
 
   if (view.kind !== "shelf" && !book) {
-    return <Shelf progress={progress} onOpenBook={openBook} onReset={() => setProgress({ version: 2, books: {} })} saveWarning={saveWarning} />;
+    return <Shelf progress={progress} narrator={narrator} onOpenBook={openBook} onReset={() => setProgress({ version: 2, books: {} })} saveWarning={saveWarning} />;
   }
 
   if (view.kind === "reader" && book) {
@@ -376,6 +578,7 @@ export default function StoryGarden() {
   return (
     <Shelf
       progress={progress}
+      narrator={narrator}
       onOpenBook={openBook}
       onReset={() => setProgress({ version: 2, books: {} })}
       saveWarning={saveWarning}
@@ -395,13 +598,82 @@ function Brand({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function NarrationSettings({ narrator, compact = false }: { narrator: Narrator; compact?: boolean }) {
+  const previewKey = `voice-preview-${compact ? "parent" : "reader"}`;
+  const previewText = "I am Dan, the flying man. Catch me, catch me if you can.";
+  const previewActive = narrator.activeKey === previewKey;
+  const paceDetails = NARRATION_PACES[narrator.pace] ?? NARRATION_PACES.gentle;
+
+  return (
+    <details className={`narration-settings ${compact ? "narration-settings--compact" : ""}`}>
+      <summary>
+        <span aria-hidden="true">🎧</span>
+        <span><strong>Story voice</strong><small>{paceDetails.shortLabel} · {narrator.currentVoiceLabel}</small></span>
+        <span aria-hidden="true">⌄</span>
+      </summary>
+      <div className="narration-settings__panel">
+        <label>
+          <span>Reading speed</span>
+          <select
+            aria-label="Reading speed"
+            value={narrator.pace}
+            onChange={(event) => {
+              narrator.stop();
+              narrator.setPace(event.target.value as NarrationPace);
+            }}
+          >
+            {Object.entries(NARRATION_PACES).map(([value, option]) => (
+              <option key={value} value={value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Storyteller voice</span>
+          <select
+            aria-label="Storyteller voice"
+            value={narrator.selectedVoice}
+            onChange={(event) => {
+              narrator.stop();
+              narrator.setSelectedVoice(event.target.value);
+            }}
+          >
+            <option value="studio">Gentle story voice — recommended</option>
+            <option value="auto">Best voice on this device</option>
+            {narrator.englishVoices.slice(0, 14).map((voice) => (
+              <option key={`${voice.voiceURI}-${voice.lang}`} value={voicePreference(voice)}>
+                {voice.name} · {voice.lang}{voice.localService ? " · on this device" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          className="narration-settings__preview"
+          type="button"
+          onClick={() => previewActive
+            ? narrator.stop()
+            : narrator.speak(previewText, {
+                purpose: "story",
+                activeKey: previewKey,
+                audioSrc: "/audio/dan-the-flying-man/02.m4a",
+              })}
+        >
+          {previewActive ? "■ Stop preview" : "▶ Preview this voice"}
+        </button>
+        <p>The recommended voice is prepared page by page, with child-friendly pacing and consistent pauses.</p>
+      </div>
+    </details>
+  );
+}
+
 function Shelf({
   progress,
+  narrator,
   onOpenBook,
   onReset,
   saveWarning,
 }: {
   progress: ProgressStore;
+  narrator: Narrator;
   onOpenBook: (book: Book) => void;
   onReset: () => void;
   saveWarning: boolean;
@@ -508,6 +780,7 @@ function Shelf({
             <h3>本网站怎样使用</h3>
             <p>建议每次 8–12 分钟：先陪孩子逐页读完一本绘本，再完成同一本书的听、说、读、写四步。语音评分不作为过关条件，避免设备或口音误判。</p>
             <p>所有阅读进度与孩子的录音都只留在当前设备；录音不会上传，刷新后录音即消失。</p>
+            <NarrationSettings narrator={narrator} compact />
           </div>
           <div>
             <h3>2026 P1 课程资料核对</h3>
@@ -596,6 +869,8 @@ function StoryReader({
     if (next) {
       const image = new Image();
       image.src = next.src;
+      const audio = new Audio(next.audioSrc);
+      audio.preload = "metadata";
     }
   }, [book.pages, page]);
 
@@ -620,6 +895,8 @@ function StoryReader({
     stopNarration();
     onPageChange(Math.max(0, Math.min(next, book.pages.length - 1)));
   };
+  const pageVoiceKey = `story-${book.slug}-${page}`;
+  const pageIsSpeaking = narrator.activeKey === pageVoiceKey;
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.isPrimary) startX.current = event.clientX;
@@ -677,18 +954,25 @@ function StoryReader({
 
           <div className="reader__tools">
             <button
-              className={`listen-button ${narrator.speaking ? "is-speaking" : ""}`}
+              className={`listen-button ${pageIsSpeaking ? "is-speaking" : ""}`}
               type="button"
-              onClick={() => narrator.speaking ? narrator.stop() : narrator.speak(current.transcript)}
+              onClick={() => pageIsSpeaking
+                ? narrator.stop()
+                : narrator.speak(current.transcript, {
+                    purpose: "story",
+                    activeKey: pageVoiceKey,
+                    audioSrc: current.audioSrc,
+                  })}
               disabled={!narrator.supported}
             >
-              <span className="listen-button__icon" aria-hidden="true">{narrator.speaking ? "■" : "🔊"}</span>
-              <span><strong>{narrator.speaking ? "Stop" : "Hear this page"}</strong><small>Listen, then point to the words</small></span>
+              <span className="listen-button__icon" aria-hidden="true">{pageIsSpeaking ? "■" : "🔊"}</span>
+              <span><strong>{pageIsSpeaking ? "Stop" : "Hear this page"}</strong><small>{narrator.currentVoiceLabel} · listen, then point to the words</small></span>
             </button>
             <button className="words-toggle" type="button" onClick={() => setShowWords((shown) => !shown)} aria-expanded={showWords}>
               <span aria-hidden="true">Aa</span> {showWords ? "Hide words" : "Show words"}
             </button>
           </div>
+          <NarrationSettings narrator={narrator} />
 
           {showWords && (
             <div className="page-transcript">
@@ -817,21 +1101,20 @@ function ListenMission({ book, narrator, onDone }: { book: Book; narrator: Narra
   const [picked, setPicked] = useState<string>();
   const [tries, setTries] = useState(0);
   const correct = picked === task.correctAnswer;
+  const voiceKey = `listen-${book.slug}`;
+  const isSpeaking = narrator.activeKey === voiceKey;
 
   const choose = (choice: string) => {
     setPicked(choice);
     if (choice === task.correctAnswer) onDone();
-    else {
-      setTries((value) => value + 1);
-      narrator.speak(task.audioText);
-    }
+    else setTries((value) => value + 1);
   };
 
   return (
     <div className="mission-body">
-      <button className={`sound-orb ${narrator.speaking ? "is-speaking" : ""}`} type="button" onClick={() => narrator.speaking ? narrator.stop() : narrator.speak(task.audioText)}>
-        <span aria-hidden="true">{narrator.speaking ? "■" : "🔊"}</span>
-        <strong>{narrator.speaking ? "Stop" : tries ? "Listen again" : "Tap to listen"}</strong>
+      <button className={`sound-orb ${isSpeaking ? "is-speaking" : ""}`} type="button" onClick={() => isSpeaking ? narrator.stop() : narrator.speak(task.audioText, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/listen.m4a` })}>
+        <span aria-hidden="true">{isSpeaking ? "■" : "🔊"}</span>
+        <strong>{isSpeaking ? "Stop" : tries ? "Listen again" : "Tap to listen"}</strong>
         <small>You can play it more than once</small>
       </button>
       <div className="question-block">
@@ -858,16 +1141,33 @@ function SpeakMission({ book, narrator, onDone }: { book: Book; narrator: Narrat
   const task = book.tasks.speak;
   const [recordingSupported, setRecordingSupported] = useState(true);
   const [recording, setRecording] = useState(false);
+  const [requestingRecording, setRequestingRecording] = useState(false);
   const [permissionMessage, setPermissionMessage] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const chunks = useRef<Blob[]>([]);
+  const childPlayback = useRef<HTMLAudioElement | null>(null);
+  const mounted = useRef(false);
+  const microphoneRequest = useRef(0);
+  const voiceKey = `model-${book.slug}`;
+  const modelIsSpeaking = narrator.activeKey === voiceKey;
 
   useEffect(() => {
+    mounted.current = true;
     return () => {
-      if (recorder.current?.state === "recording") recorder.current.stop();
+      mounted.current = false;
+      microphoneRequest.current += 1;
+      if (recorder.current?.state === "recording") {
+        recorder.current.ondataavailable = null;
+        recorder.current.onstop = null;
+        recorder.current.stop();
+      }
       stream.current?.getTracks().forEach((track) => track.stop());
+      childPlayback.current?.pause();
+      recorder.current = null;
+      stream.current = null;
+      childPlayback.current = null;
     };
   }, []);
 
@@ -876,9 +1176,18 @@ function SpeakMission({ book, narrator, onDone }: { book: Book; narrator: Narrat
   }, [audioUrl]);
 
   const startRecording = async () => {
+    if (requestingRecording || recording) return;
+    narrator.stop();
+    childPlayback.current?.pause();
+    const request = ++microphoneRequest.current;
+    setRequestingRecording(true);
     setPermissionMessage("");
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!mounted.current || request !== microphoneRequest.current) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       stream.current = mediaStream;
       chunks.current = [];
       const mediaRecorder = new MediaRecorder(mediaStream);
@@ -887,6 +1196,10 @@ function SpeakMission({ book, narrator, onDone }: { book: Book; narrator: Narrat
         if (event.data.size) chunks.current.push(event.data);
       };
       mediaRecorder.onstop = () => {
+        if (!mounted.current || request !== microphoneRequest.current) {
+          mediaStream.getTracks().forEach((track) => track.stop());
+          return;
+        }
         const blob = new Blob(chunks.current, { type: mediaRecorder.mimeType || "audio/webm" });
         setAudioUrl((oldUrl) => {
           if (oldUrl) URL.revokeObjectURL(oldUrl);
@@ -898,9 +1211,14 @@ function SpeakMission({ book, narrator, onDone }: { book: Book; narrator: Narrat
       mediaRecorder.start();
       setRecording(true);
     } catch {
+      if (!mounted.current || request !== microphoneRequest.current) return;
       stream.current?.getTracks().forEach((track) => track.stop());
       setPermissionMessage("No microphone? That is okay — say it aloud, then tap ‘I said it!’");
       setRecordingSupported(false);
+    } finally {
+      if (mounted.current && request === microphoneRequest.current) {
+        setRequestingRecording(false);
+      }
     }
   };
 
@@ -913,8 +1231,8 @@ function SpeakMission({ book, narrator, onDone }: { book: Book; narrator: Narrat
       <div className="model-line">
         <span>Say this</span>
         <blockquote>{task.modelLine}</blockquote>
-        <button className="button button--sound" type="button" onClick={() => narrator.speak(task.modelLine)}>
-          <span aria-hidden="true">🔊</span> Hear the line
+        <button className="button button--sound" type="button" disabled={recording || requestingRecording} onClick={() => modelIsSpeaking ? narrator.stop() : narrator.speak(task.modelLine, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/speak.m4a` })}>
+          <span aria-hidden="true">{modelIsSpeaking ? "■" : "🔊"}</span> {modelIsSpeaking ? "Stop" : "Hear the line"}
         </button>
       </div>
       <div className="speech-tip"><span aria-hidden="true">💡</span><p><strong>Coach&apos;s tip</strong>{task.tip}</p></div>
@@ -925,12 +1243,16 @@ function SpeakMission({ book, narrator, onDone }: { book: Book; narrator: Narrat
           <p>{recording ? "Say the whole line, then stop." : "Speak slowly and clearly. Trying is what matters."}</p>
         </div>
         {recordingSupported && !recording && (
-          <button className="button button--coral" type="button" onClick={startRecording}>Record my voice</button>
+          <button className="button button--coral" type="button" disabled={requestingRecording} onClick={startRecording}>
+            {requestingRecording ? "Opening microphone…" : "Record my voice"}
+          </button>
         )}
         {recording && (
           <button className="button button--coral" type="button" onClick={stopRecording}>■ Stop recording</button>
         )}
-        {audioUrl && <audio className="voice-playback" src={audioUrl} controls aria-label="Play your recording" />}
+        {audioUrl && !recording && !requestingRecording && (
+          <audio ref={childPlayback} className="voice-playback" src={audioUrl} controls aria-label="Play your recording" onPlay={narrator.stop} />
+        )}
         {permissionMessage && <p className="permission-note" role="status">{permissionMessage}</p>}
         <button className="button button--green" type="button" onClick={onDone}>
           ✓ I said it!
@@ -944,6 +1266,8 @@ function ReadMission({ book, narrator, onDone }: { book: Book; narrator: Narrato
   const task = book.tasks.read;
   const [picked, setPicked] = useState<string>();
   const correct = picked === task.correctAnswer;
+  const voiceKey = `read-${book.slug}`;
+  const isSpeaking = narrator.activeKey === voiceKey;
   const choose = (choice: string) => {
     setPicked(choice);
     if (choice === task.correctAnswer) onDone();
@@ -951,7 +1275,7 @@ function ReadMission({ book, narrator, onDone }: { book: Book; narrator: Narrato
   return (
     <div className="read-practice">
       <div className="reading-card">
-        <div className="reading-card__top"><span>Story clue</span><button type="button" onClick={() => narrator.speak(task.passage)}>🔊 Help me hear it</button></div>
+        <div className="reading-card__top"><span>Story clue</span><button type="button" onClick={() => isSpeaking ? narrator.stop() : narrator.speak(task.passage, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/read.m4a` })}>{isSpeaking ? "■ Stop" : "🔊 Help me hear it"}</button></div>
         <p>{task.passage}</p>
       </div>
       <div className="question-block">
@@ -992,6 +1316,8 @@ function WriteMission({
   const [hasInk, setHasInk] = useState(false);
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const drawing = useRef(false);
+  const voiceKey = `write-${book.slug}`;
+  const isSpeaking = narrator.activeKey === voiceKey;
 
   const trimmed = value.trim();
   const sentenceWords = trimmed.toLowerCase().match(/[a-z']+/g) ?? [];
@@ -1069,7 +1395,7 @@ function WriteMission({
       <div className="copy-line">
         <span>My sentence</span>
         <p>{task.modelSentence}</p>
-        <button type="button" onClick={() => narrator.speak(task.modelSentence)}>🔊 Hear it</button>
+        <button type="button" onClick={() => isSpeaking ? narrator.stop() : narrator.speak(task.modelSentence, { purpose: "practice", activeKey: voiceKey, audioSrc: `/audio/${book.slug}/write.m4a` })}>{isSpeaking ? "■ Stop" : "🔊 Hear it"}</button>
       </div>
       <div className="write-tabs" role="tablist" aria-label="Choose how to write">
         <button type="button" role="tab" aria-selected={mode === "type"} onClick={() => setMode("type")}>⌨️ Type it</button>
