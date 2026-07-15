@@ -350,7 +350,7 @@ test("keeps the ten cover shelf and removes disposable starter output", async ()
   await access(new URL("../public/favicon.png", import.meta.url));
 });
 
-test("uses a gentle default storytelling pace and ranks natural English voices", async () => {
+test("uses a child-slow fallback by default and ranks natural English voices", async () => {
   const source = await loadNarrationSource();
   const defaultRate = source.match(
     /(?:DEFAULT_NARRATION_RATE|DEFAULT_STORY_RATE|DEFAULT_PACE)\s*(?::[^=;]+)?=\s*(0?\.\d+)/,
@@ -472,24 +472,65 @@ test("the active TTS run always finishes cleanly when an utterance errors", asyn
   );
 });
 
-test("parents can choose reading pace and storyteller voice from labelled controls", async () => {
+test("parents can choose exactly two prepared reading versions", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   const html = await response.text();
 
   assert.match(
     html,
-    /<label\b[^>]*>[\s\S]{0,240}(?:Reading speed|Story speed|Narration pace|Pace)[\s\S]{0,240}<select\b/i,
-    "The parent corner needs a labelled reading-speed select",
+    /<fieldset\b[^>]*class="[^"]*pace-choice[^"]*"[^>]*>[\s\S]{0,160}<legend>Reading speed<\/legend>/i,
+    "The parent corner needs a labelled two-version reading-speed choice",
+  );
+  assert.equal(
+    (html.match(/<input\b[^>]*type="radio"[^>]*name="reading-speed"/gi) ?? []).length,
+    2,
+    "Reading speed must expose exactly two choices",
+  );
+  assert.match(html, /Child slow[^<]*[—-] best for P1/i);
+  assert.match(html, /Standard story pace/i);
+  assert.doesNotMatch(
+    html,
+    /<label\b[^>]*>[\s\S]{0,240}(?:Storyteller|Narrator|Reading voice|Voice)[\s\S]{0,240}<select\b/i,
+    "Children must not be offered inconsistent browser storyteller voices",
   );
   assert.match(
     html,
-    /<label\b[^>]*>[\s\S]{0,240}(?:Storyteller|Narrator|Reading voice|Voice)[\s\S]{0,240}<select\b/i,
-    "The parent corner needs a labelled storyteller-voice select",
+    /same prepared Aoede picture-book teacher/i,
+    "The parent corner should explain that both versions use the same prepared storyteller",
   );
+  assert.match(html, /separately prepared recording[^<]*never a mechanically slowed browser voice/i);
+});
+
+test("prepared audio switches roots without runtime time-stretching", async () => {
+  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const narrationSource = await readFile(new URL("../app/narration.ts", import.meta.url), "utf8");
+  assert.match(
+    source,
+    /if\s*\(\s*options\.audioSrc\s*&&\s*["']Audio["']\s+in\s+window\s*\)/,
+    "Every narration request with a prepared MP3 must try that recording first",
+  );
+  assert.doesNotMatch(
+    source,
+    /options\.audioSrc[\s\S]{0,160}selectedVoice/,
+    "A saved browser voice must never bypass the prepared storyteller",
+  );
+  assert.match(source, /audio\.onerror\s*=\s*playSpeechFallback/);
+  assert.match(source, /audio\.play\(\)\.catch\(playSpeechFallback\)/);
+  assert.match(source, /audio\.playbackRate\s*=\s*1\s*;/);
+  assert.match(source, /audio\.preservesPitch\s*=\s*true\s*;/);
+  assert.doesNotMatch(source, /playbackRate\s*=\s*pace\s*===/);
+  assert.match(narrationSource, /pace\s*===\s*["']standard["']\s*\?\s*["']\/audio-standard\//);
+  assert.match(narrationSource, /["']\/audio\/["']/);
+  assert.match(
+    narrationSource,
+    /PREPARED_AUDIO_CACHE_VERSION\s*=\s*["'][^"']+["']/,
+    "Prepared audio needs an explicit cache version",
+  );
+  assert.match(narrationSource, /\?v=\$\{PREPARED_AUDIO_CACHE_VERSION\}/);
   assert.ok(
-    (html.match(/<select\b/gi) ?? []).length >= 2,
-    "Reading pace and storyteller voice must be independently selectable",
+    (source.match(/<NarrationSettings narrator=\{narrator\}\s*\/>/g) ?? []).length >= 2,
+    "The version switch should be available on both the bookshelf and the story reader",
   );
 });
 
@@ -548,23 +589,22 @@ test("recording a child stops narration before requesting microphone access", as
   );
 });
 
-test("narration preferences hydrate from safe defaults and validate saved pace", async () => {
+test("narration preferences hydrate safely and migrate all three legacy pace values", async () => {
   const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const narrationSource = await readFile(new URL("../app/narration.ts", import.meta.url), "utf8");
   assert.match(
     source,
-    /Object\.hasOwn\(\s*NARRATION_PACES\s*,\s*stored\?*\.pace\s*\)/,
-    "A saved pace must be accepted only when it is a key in NARRATION_PACES",
+    /normaliseNarrationPace\(\s*stored\?*\.pace\s*\)/,
+    "Saved values must pass through the explicit legacy migration",
   );
   assert.match(
     source,
-    /\[\s*pace\s*,\s*setPace\s*\]\s*=\s*useState<NarrationPace>\(\s*["']gentle["']\s*\)/,
-    "Server and first client render must start from the gentle pace",
+    /\[\s*pace\s*,\s*setPace\s*\]\s*=\s*useState<NarrationPace>\(\s*["']child["']\s*\)/,
+    "Server and first client render must start from the child-slow version",
   );
-  assert.match(
-    source,
-    /\[\s*selectedVoice\s*,\s*setSelectedVoice\s*\]\s*=\s*useState\(\s*["']studio["']\s*\)/,
-    "Server and first client render must start from the recorded studio voice",
-  );
+  assert.match(narrationSource, /value\s*===\s*["']story["'][\s\S]{0,60}return\s+["']standard["']/);
+  assert.match(narrationSource, /value\s*===\s*["']gentle["'][\s\S]{0,80}value\s*===\s*["']practice["'][\s\S]{0,60}return\s+["']child["']/);
+  assert.doesNotMatch(source, /selectedVoice/, "Saved browser voices must no longer affect narration");
   assert.doesNotMatch(
     source,
     /useState(?:<[^>]+>)?\(\s*readNarrationSettings/,

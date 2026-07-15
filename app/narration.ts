@@ -1,6 +1,7 @@
 export const DEFAULT_NARRATION_RATE = 0.68;
+export const PREPARED_AUDIO_CACHE_VERSION = "pro-aoede-words-v2";
 
-export type NarrationPace = "gentle" | "story" | "practice";
+export type NarrationPace = "child" | "standard";
 export type NarrationPurpose = "story" | "practice";
 export type NarrationSegment = {
   text: string;
@@ -20,24 +21,42 @@ export type VoiceDescriptor = {
 
 export const NARRATION_PACES: Record<
   NarrationPace,
-  { label: string; shortLabel: string; rate: number }
+  { label: string; shortLabel: string; description: string; rate: number }
 > = {
-  gentle: {
-    label: "Gentle — best for P1",
-    shortLabel: "Gentle pace",
+  child: {
+    label: "Child slow · 儿童慢速 — best for P1",
+    shortLabel: "Child slow · 儿童慢速",
+    description: "Extra time to hear, point and read along.",
     rate: DEFAULT_NARRATION_RATE,
   },
-  story: {
-    label: "Story pace",
-    shortLabel: "Story pace",
+  standard: {
+    label: "Standard story pace · 标准版",
+    shortLabel: "Standard · 标准版",
+    description: "The storyteller's natural original reading.",
     rate: 0.76,
   },
-  practice: {
-    label: "Word practice — slowest",
-    shortLabel: "Word practice pace",
-    rate: 0.6,
-  },
 };
+
+export function normaliseNarrationPace(value: unknown): NarrationPace {
+  if (value === "standard" || value === "story") return "standard";
+  if (value === "child" || value === "gentle" || value === "practice") return "child";
+  return "child";
+}
+
+export function preparedAudioSource(source: string, pace: NarrationPace): string {
+  const path = source.split(/[?#]/, 1)[0];
+  const storyMatch = path.match(/^\/audio(?:-standard)?\/(.+\.mp3)$/);
+  if (storyMatch) {
+    const root = pace === "standard" ? "/audio-standard/" : "/audio/";
+    return `${root}${storyMatch[1]}?v=${PREPARED_AUDIO_CACHE_VERSION}`;
+  }
+  const wordMatch = path.match(/^\/word-audio(?:-standard)?\/(.+\.mp3)$/);
+  if (wordMatch) {
+    const root = pace === "standard" ? "/word-audio-standard/" : "/word-audio/";
+    return `${root}${wordMatch[1]}?v=${PREPARED_AUDIO_CACHE_VERSION}`;
+  }
+  return source;
+}
 
 const QUALITY_VOICE_NAMES =
   /enhanced|premium|neural|natural|siri|google|microsoft|shelley|flo|sandy|samantha|karen|moira|serena|ava|tessa|fiona|aria|jenny/i;

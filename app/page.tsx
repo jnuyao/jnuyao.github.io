@@ -12,38 +12,37 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { BOOKS, type Book } from "./book-data";
+import { wordsForBook } from "./word-data";
+import { WordGarden } from "./word-garden";
+import {
+  LEGACY_PROGRESS_KEY,
+  PROGRESS_KEY,
+  emptyBookProgress,
+  normaliseProgress,
+  type BookProgress,
+  type ProgressStore,
+  type QuestStep,
+} from "./progress";
+import { wordIsMastered, type SpellingResult } from "./word-progress";
 import {
   DEFAULT_NARRATION_RATE,
   NARRATION_PACES,
   buildStoryNarrationSegments,
+  normaliseNarrationPace,
+  preparedAudioSource,
   rankEnglishVoices,
   voiceQualityScore,
   type NarrationPace,
   type NarrationPurpose,
 } from "./narration";
 
-type QuestStep = "listen" | "speak" | "read" | "write";
 type View =
   | { kind: "shelf" }
   | { kind: "reader"; bookSlug: string; page: number }
+  | { kind: "word-garden"; bookSlug: string }
   | { kind: "quest"; bookSlug: string; step: QuestStep }
   | { kind: "celebration"; bookSlug: string };
 
-type BookProgress = {
-  lastPage: number;
-  readPages: number[];
-  steps: Record<QuestStep, boolean>;
-  writingDraft?: string;
-  completedAt?: string;
-  lastOpened?: number;
-};
-
-type ProgressStore = {
-  version: 2;
-  books: Record<string, BookProgress>;
-};
-
-const PROGRESS_KEY = "story-garden-progress-v2";
 const NARRATION_SETTINGS_KEY = "story-garden-narration-v1";
 const STEP_ORDER: QuestStep[] = ["listen", "speak", "read", "write"];
 const STEP_META: Record<
@@ -80,59 +79,12 @@ const STEP_META: Record<
   },
 };
 
-const emptySteps = (): Record<QuestStep, boolean> => ({
-  listen: false,
-  speak: false,
-  read: false,
-  write: false,
-});
+function hasMasteredWords(book: Book, progress: BookProgress): boolean {
+  return wordsForBook(book.slug).every((word) => wordIsMastered(progress.wordPractice.words[word.id]));
+}
 
-const emptyBookProgress = (): BookProgress => ({
-  lastPage: 0,
-  readPages: [],
-  steps: emptySteps(),
-});
-
-function normaliseProgress(value: unknown): ProgressStore {
-  const safe: ProgressStore = { version: 2, books: {} };
-  if (!value || typeof value !== "object") return safe;
-
-  const candidate = value as { version?: unknown; books?: unknown };
-  if (candidate.version !== 2 || !candidate.books || typeof candidate.books !== "object") {
-    return safe;
-  }
-
-  for (const book of BOOKS) {
-    const raw = (candidate.books as Record<string, unknown>)[book.slug];
-    if (!raw || typeof raw !== "object") continue;
-    const item = raw as Record<string, unknown>;
-    const rawSteps = item.steps && typeof item.steps === "object"
-      ? (item.steps as Record<string, unknown>)
-      : {};
-    const readPages = Array.isArray(item.readPages)
-      ? [...new Set(item.readPages.filter((page): page is number =>
-          Number.isInteger(page) && page >= 0 && page < book.pages.length,
-        ))]
-      : [];
-    const lastPage = typeof item.lastPage === "number" && Number.isInteger(item.lastPage)
-      ? Math.max(0, Math.min(item.lastPage, book.pages.length - 1))
-      : 0;
-
-    safe.books[book.slug] = {
-      lastPage,
-      readPages,
-      steps: {
-        listen: rawSteps.listen === true,
-        speak: rawSteps.speak === true,
-        read: rawSteps.read === true,
-        write: rawSteps.write === true,
-      },
-      writingDraft: typeof item.writingDraft === "string" ? item.writingDraft : undefined,
-      completedAt: typeof item.completedAt === "string" ? item.completedAt : undefined,
-      lastOpened: typeof item.lastOpened === "number" ? item.lastOpened : undefined,
-    };
-  }
-  return safe;
+function bookIsComplete(book: Book, progress: BookProgress): boolean {
+  return STEP_ORDER.every((step) => progress.steps[step]) && hasMasteredWords(book, progress);
 }
 
 function parseViewFromUrl(): View {
@@ -143,6 +95,7 @@ function parseViewFromUrl(): View {
   if (!book) return { kind: "shelf" };
 
   const stage = params.get("stage");
+  if (stage === "words") return { kind: "word-garden", bookSlug };
   if (stage === "quest") {
     const step = params.get("step") as QuestStep | null;
     return {
@@ -164,6 +117,7 @@ function urlForView(view: View): string {
   const params = new URLSearchParams();
   if (view.kind !== "shelf") params.set("book", view.bookSlug);
   if (view.kind === "reader") params.set("page", String(view.page + 1));
+  if (view.kind === "word-garden") params.set("stage", "words");
   if (view.kind === "quest") {
     params.set("stage", "quest");
     params.set("step", view.step);
@@ -179,46 +133,12 @@ type SpeakOptions = {
   audioSrc?: string;
 };
 
-function isSavedVoicePreference(value: unknown): value is string {
-  if (value === "studio" || value === "auto") return true;
-  if (typeof value !== "string") return false;
-  try {
-    const saved = JSON.parse(value) as { voiceURI?: unknown; lang?: unknown; name?: unknown };
-    return typeof saved.voiceURI === "string"
-      && typeof saved.lang === "string"
-      && typeof saved.name === "string";
-  } catch {
-    return false;
-  }
-}
-
-function readNarrationSettings(): { pace: NarrationPace; voice: string } {
+function readNarrationSettings(): { pace: NarrationPace } {
   try {
     const stored = JSON.parse(window.localStorage.getItem(NARRATION_SETTINGS_KEY) ?? "null");
-    const pace = typeof stored?.pace === "string" && Object.hasOwn(NARRATION_PACES, stored.pace)
-      ? stored.pace as NarrationPace
-      : "gentle";
-    const voice = isSavedVoicePreference(stored?.voice) ? stored.voice : "studio";
-    return { pace, voice };
+    return { pace: normaliseNarrationPace(stored?.pace) };
   } catch {
-    return { pace: "gentle", voice: "studio" };
-  }
-}
-
-function voicePreference(voice: SpeechSynthesisVoice) {
-  return JSON.stringify({ voiceURI: voice.voiceURI, lang: voice.lang, name: voice.name });
-}
-
-function resolvePreferredVoice(voices: SpeechSynthesisVoice[], preference: string) {
-  if (preference === "studio" || preference === "auto") return voices[0] ?? null;
-  try {
-    const saved = JSON.parse(preference) as { voiceURI?: string; lang?: string; name?: string };
-    return voices.find((voice) => voice.voiceURI === saved.voiceURI && voice.lang === saved.lang)
-      ?? voices.find((voice) => voice.name === saved.name && voice.lang === saved.lang)
-      ?? voices[0]
-      ?? null;
-  } catch {
-    return voices[0] ?? null;
+    return { pace: "child" };
   }
 }
 
@@ -228,10 +148,8 @@ function useNarrator() {
   const [supported, setSupported] = useState(
     () => typeof window === "undefined" || "Audio" in window || "speechSynthesis" in window,
   );
-  const [pace, setPace] = useState<NarrationPace>("gentle");
-  const [selectedVoice, setSelectedVoice] = useState("studio");
+  const [pace, setPace] = useState<NarrationPace>("child");
   const [settingsReady, setSettingsReady] = useState(false);
-  const [englishVoices, setEnglishVoices] = useState<SpeechSynthesisVoice[]>([]);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const narrationRunRef = useRef(0);
   const segmentTimerRef = useRef<number | null>(null);
@@ -242,7 +160,6 @@ function useNarrator() {
     const settingsTimer = window.setTimeout(() => {
       const saved = readNarrationSettings();
       setPace(saved.pace);
-      setSelectedVoice(saved.voice);
       setSettingsReady(true);
     }, 0);
     return () => window.clearTimeout(settingsTimer);
@@ -256,22 +173,6 @@ function useNarrator() {
       const ranked = rankEnglishVoices(Array.from(window.speechSynthesis.getVoices()))
         .filter((voice) => voiceQualityScore(voice) > 0);
       voicesRef.current = ranked;
-      setEnglishVoices(ranked);
-      if (ranked.length) {
-        setSelectedVoice((preference) => {
-          if (preference === "studio" || preference === "auto") return preference;
-          try {
-            const saved = JSON.parse(preference) as { voiceURI?: string; lang?: string; name?: string };
-            const exists = ranked.some((voice) =>
-              (voice.voiceURI === saved.voiceURI || voice.name === saved.name)
-                && voice.lang === saved.lang,
-            );
-            return exists ? preference : "auto";
-          } catch {
-            return "auto";
-          }
-        });
-      }
     };
     const initialVoiceTimer = window.setTimeout(refreshVoices, 0);
     window.speechSynthesis.addEventListener("voiceschanged", refreshVoices);
@@ -285,11 +186,11 @@ function useNarrator() {
   useEffect(() => {
     if (!settingsReady) return;
     try {
-      window.localStorage.setItem(NARRATION_SETTINGS_KEY, JSON.stringify({ pace, voice: selectedVoice }));
+      window.localStorage.setItem(NARRATION_SETTINGS_KEY, JSON.stringify({ pace }));
     } catch {
       // Narration still works when private browsing blocks local preferences.
     }
-  }, [pace, selectedVoice, settingsReady]);
+  }, [pace, settingsReady]);
 
   const stop = useCallback(() => {
     narrationRunRef.current += 1;
@@ -344,7 +245,7 @@ function useNarrator() {
       const refreshed = rankEnglishVoices(Array.from(window.speechSynthesis.getVoices()))
         .filter((voice) => voiceQualityScore(voice) > 0);
       if (refreshed.length) voicesRef.current = refreshed;
-      const voice = resolvePreferredVoice(voicesRef.current, selectedVoice);
+      const voice = voicesRef.current[0] ?? null;
       const segments = buildStoryNarrationSegments(text, purpose);
 
       const playSegment = (index: number) => {
@@ -357,7 +258,7 @@ function useNarrator() {
         const utterance = new SpeechSynthesisUtterance(segment.text);
         currentUtteranceRef.current = utterance;
         utterance.voice = voice;
-        utterance.lang = voice?.lang ?? "en-GB";
+        utterance.lang = voice?.lang ?? "en-US";
         utterance.rate = (NARRATION_PACES[pace]?.rate ?? DEFAULT_NARRATION_RATE)
           * segment.rateMultiplier
           * (purpose === "practice" ? 0.94 : 1);
@@ -381,13 +282,11 @@ function useNarrator() {
       else finish();
     };
 
-    if (options.audioSrc
-      && (selectedVoice === "studio" || !("speechSynthesis" in window))
-      && "Audio" in window) {
-      const audio = new Audio(options.audioSrc);
+    if (options.audioSrc && "Audio" in window) {
+      const audio = new Audio(preparedAudioSource(options.audioSrc, pace));
       currentAudioRef.current = audio;
       audio.preload = "auto";
-      audio.playbackRate = pace === "gentle" ? 1 : pace === "practice" ? 0.88 : 1.08;
+      audio.playbackRate = 1;
       audio.preservesPitch = true;
       audio.onended = finish;
       audio.onerror = playSpeechFallback;
@@ -396,13 +295,12 @@ function useNarrator() {
     }
 
     playSpeechFallback();
-  }, [pace, selectedVoice]);
+  }, [pace]);
 
-  const currentVoiceLabel = selectedVoice === "studio"
-    ? "Gentle story voice"
-    : selectedVoice === "auto"
-      ? (englishVoices[0]?.name ?? "Best available voice")
-      : (resolvePreferredVoice(englishVoices, selectedVoice)?.name ?? "Best available voice");
+  const audioSourceFor = useCallback(
+    (source: string) => preparedAudioSource(source, pace),
+    [pace],
+  );
 
   return {
     speak,
@@ -412,16 +310,14 @@ function useNarrator() {
     activeKey,
     pace,
     setPace,
-    selectedVoice,
-    setSelectedVoice,
-    englishVoices,
-    currentVoiceLabel,
+    audioSourceFor,
+    currentVoiceLabel: "Aoede picture-book teacher",
   };
 }
 
 export default function StoryGarden() {
   const [view, setView] = useState<View>({ kind: "shelf" });
-  const [progress, setProgress] = useState<ProgressStore>({ version: 2, books: {} });
+  const [progress, setProgress] = useState<ProgressStore>({ version: 3, books: {} });
   const [progressReady, setProgressReady] = useState(false);
   const [saveWarning, setSaveWarning] = useState(false);
   const narrator = useNarrator();
@@ -440,8 +336,9 @@ export default function StoryGarden() {
   useEffect(() => {
     const loadTimer = window.setTimeout(() => {
       try {
-        const raw = window.localStorage.getItem(PROGRESS_KEY);
-        setProgress(raw ? normaliseProgress(JSON.parse(raw)) : { version: 2, books: {} });
+        const raw = window.localStorage.getItem(PROGRESS_KEY)
+          ?? window.localStorage.getItem(LEGACY_PROGRESS_KEY);
+        setProgress(raw ? normaliseProgress(JSON.parse(raw)) : { version: 3, books: {} });
       } catch {
         setSaveWarning(true);
       } finally {
@@ -486,9 +383,19 @@ export default function StoryGarden() {
     [],
   );
 
+  const resetProgress = useCallback(() => {
+    try {
+      window.localStorage.removeItem(PROGRESS_KEY);
+      window.localStorage.removeItem(LEGACY_PROGRESS_KEY);
+    } catch {
+      setSaveWarning(true);
+    }
+    setProgress({ version: 3, books: {} });
+  }, []);
+
   const openBook = useCallback((book: Book) => {
     const saved = progress.books[book.slug];
-    const finished = saved ? STEP_ORDER.every((step) => saved.steps[step]) : false;
+    const finished = saved ? bookIsComplete(book, saved) : false;
     const page = finished ? 0 : saved?.lastPage ?? 0;
     updateBookProgress(book.slug, (current) => ({ ...current, lastOpened: Date.now() }));
     navigate({ kind: "reader", bookSlug: book.slug, page });
@@ -499,7 +406,7 @@ export default function StoryGarden() {
     : BOOKS.find((item) => item.slug === view.bookSlug);
 
   if (view.kind !== "shelf" && !book) {
-    return <Shelf progress={progress} narrator={narrator} onOpenBook={openBook} onReset={() => setProgress({ version: 2, books: {} })} saveWarning={saveWarning} />;
+    return <Shelf progress={progress} narrator={narrator} onOpenBook={openBook} onOpenWords={(selected) => navigate({ kind: "word-garden", bookSlug: selected.slug })} onReset={resetProgress} saveWarning={saveWarning} />;
   }
 
   if (view.kind === "reader" && book) {
@@ -524,7 +431,110 @@ export default function StoryGarden() {
         narrator={narrator}
         onPageChange={changePage}
         onBack={() => navigate({ kind: "shelf" })}
-        onQuest={() => navigate({ kind: "quest", bookSlug: book.slug, step: "listen" })}
+        onWords={() => navigate({ kind: "word-garden", bookSlug: book.slug })}
+      />
+    );
+  }
+
+  if (view.kind === "word-garden" && book) {
+    const bookProgress = progress.books[book.slug] ?? emptyBookProgress();
+    const confirmRead = (wordId: string) => {
+      updateBookProgress(book.slug, (current) => {
+        const existing = current.wordPractice.words[wordId] ?? {
+          readConfirmed: false,
+          spelling: "new" as const,
+          attempts: 0,
+        };
+        return {
+          ...current,
+          lastOpened: Date.now(),
+          wordPractice: {
+            ...current.wordPractice,
+            words: {
+              ...current.wordPractice.words,
+              [wordId]: { ...existing, readConfirmed: true, lastPractisedAt: Date.now() },
+            },
+          },
+        };
+      });
+    };
+    const finishSpelling = (
+      wordId: string,
+      result: Exclude<SpellingResult, "new">,
+      attempts: number,
+    ) => {
+      updateBookProgress(book.slug, (current) => {
+        const existing = current.wordPractice.words[wordId] ?? {
+          readConfirmed: false,
+          spelling: "new" as const,
+          attempts: 0,
+        };
+        const spelling = result;
+        const words = {
+          ...current.wordPractice.words,
+          [wordId]: {
+            ...existing,
+            readConfirmed: true,
+            spelling,
+            attempts: Math.min(99, existing.attempts + Math.max(1, Math.min(1, attempts))),
+            lastPractisedAt: Date.now(),
+          },
+        };
+        const complete = wordsForBook(book.slug).every((word) => wordIsMastered(words[word.id]));
+        const wholeBookComplete = complete && STEP_ORDER.every((step) => current.steps[step]);
+        return {
+          ...current,
+          completedAt: wholeBookComplete
+            ? current.completedAt ?? new Date().toISOString()
+            : current.completedAt,
+          lastOpened: Date.now(),
+          wordPractice: {
+            words,
+            completedAt: complete
+              ? current.wordPractice.completedAt ?? new Date().toISOString()
+              : current.wordPractice.completedAt,
+          },
+        };
+      });
+    };
+    const recordSpellingMiss = (wordId: string) => {
+      updateBookProgress(book.slug, (current) => {
+        const existing = current.wordPractice.words[wordId] ?? {
+          readConfirmed: true,
+          spelling: "new" as const,
+          attempts: 0,
+        };
+        return {
+          ...current,
+          lastOpened: Date.now(),
+          wordPractice: {
+            ...current.wordPractice,
+            words: {
+              ...current.wordPractice.words,
+              [wordId]: {
+                ...existing,
+                readConfirmed: true,
+                spelling: "new",
+                attempts: Math.min(99, existing.attempts + 1),
+                lastPractisedAt: Date.now(),
+              },
+            },
+          },
+        };
+      });
+    };
+    return (
+      <WordGarden
+        key={book.slug}
+        book={book}
+        progress={bookProgress.wordPractice}
+        narrator={narrator}
+        onBack={() => navigate({ kind: "shelf" })}
+        onOpenStory={(page) => navigate({ kind: "reader", bookSlug: book.slug, page })}
+        onConfirmRead={confirmRead}
+        onFinishSpelling={finishSpelling}
+        onSpellingMiss={recordSpellingMiss}
+        onContinue={() => navigate({ kind: "quest", bookSlug: book.slug, step: "listen" })}
       />
     );
   }
@@ -535,11 +545,12 @@ export default function StoryGarden() {
       updateBookProgress(book.slug, (current) => {
         const steps = { ...current.steps, [step]: true };
         const allDone = STEP_ORDER.every((item) => steps[item]);
+        const wholeBookComplete = allDone && hasMasteredWords(book, current);
         return {
           ...current,
           steps,
           writingDraft: writingDraft ?? current.writingDraft,
-          completedAt: allDone ? new Date().toISOString() : current.completedAt,
+          completedAt: wholeBookComplete ? current.completedAt ?? new Date().toISOString() : current.completedAt,
           lastOpened: Date.now(),
         };
       });
@@ -549,7 +560,9 @@ export default function StoryGarden() {
       const nextStep = STEP_ORDER[stepIndex + 1];
       navigate(nextStep
         ? { kind: "quest", bookSlug: book.slug, step: nextStep }
-        : { kind: "celebration", bookSlug: book.slug });
+        : hasMasteredWords(book, bookProgress)
+          ? { kind: "celebration", bookSlug: book.slug }
+          : { kind: "word-garden", bookSlug: book.slug });
     };
     return (
       <QuestPage
@@ -558,7 +571,7 @@ export default function StoryGarden() {
         step={view.step}
         progress={bookProgress}
         narrator={narrator}
-        onBack={() => navigate({ kind: "reader", bookSlug: book.slug, page: bookProgress.lastPage })}
+        onBack={() => navigate({ kind: "word-garden", bookSlug: book.slug })}
         onComplete={completeStep}
         onContinue={continueQuest}
       />
@@ -566,6 +579,21 @@ export default function StoryGarden() {
   }
 
   if (view.kind === "celebration" && book) {
+    const bookProgress = progress.books[book.slug] ?? emptyBookProgress();
+    if (!bookIsComplete(book, bookProgress)) {
+      return (
+        <AlmostComplete
+          book={book}
+          needsWords={!hasMasteredWords(book, bookProgress)}
+          onContinue={() => navigate(
+            !hasMasteredWords(book, bookProgress)
+              ? { kind: "word-garden", bookSlug: book.slug }
+              : { kind: "quest", bookSlug: book.slug, step: STEP_ORDER.find((step) => !bookProgress.steps[step]) ?? "listen" },
+          )}
+          onShelf={() => navigate({ kind: "shelf" })}
+        />
+      );
+    }
     return (
       <Celebration
         book={book}
@@ -580,7 +608,8 @@ export default function StoryGarden() {
       progress={progress}
       narrator={narrator}
       onOpenBook={openBook}
-      onReset={() => setProgress({ version: 2, books: {} })}
+      onOpenWords={(selected) => navigate({ kind: "word-garden", bookSlug: selected.slug })}
+      onReset={resetProgress}
       saveWarning={saveWarning}
     />
   );
@@ -598,68 +627,36 @@ function Brand({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function NarrationSettings({ narrator, compact = false }: { narrator: Narrator; compact?: boolean }) {
-  const previewKey = `voice-preview-${compact ? "parent" : "reader"}`;
-  const previewText = "I am Dan, the flying man. Catch me, catch me if you can.";
-  const previewActive = narrator.activeKey === previewKey;
-  const paceDetails = NARRATION_PACES[narrator.pace] ?? NARRATION_PACES.gentle;
+function NarrationSettings({ narrator }: { narrator: Narrator }) {
+  const paceDetails = NARRATION_PACES[narrator.pace] ?? NARRATION_PACES.child;
 
   return (
-    <details className={`narration-settings ${compact ? "narration-settings--compact" : ""}`}>
+    <details className="narration-settings narration-settings--compact">
       <summary>
         <span aria-hidden="true">🎧</span>
         <span><strong>Story voice</strong><small>{paceDetails.shortLabel} · {narrator.currentVoiceLabel}</small></span>
         <span aria-hidden="true">⌄</span>
       </summary>
       <div className="narration-settings__panel">
-        <label>
-          <span>Reading speed</span>
-          <select
-            aria-label="Reading speed"
-            value={narrator.pace}
-            onChange={(event) => {
-              narrator.stop();
-              narrator.setPace(event.target.value as NarrationPace);
-            }}
-          >
-            {Object.entries(NARRATION_PACES).map(([value, option]) => (
-              <option key={value} value={value}>{option.label}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>Storyteller voice</span>
-          <select
-            aria-label="Storyteller voice"
-            value={narrator.selectedVoice}
-            onChange={(event) => {
-              narrator.stop();
-              narrator.setSelectedVoice(event.target.value);
-            }}
-          >
-            <option value="studio">Gentle story voice — recommended</option>
-            <option value="auto">Best voice on this device</option>
-            {narrator.englishVoices.slice(0, 14).map((voice) => (
-              <option key={`${voice.voiceURI}-${voice.lang}`} value={voicePreference(voice)}>
-                {voice.name} · {voice.lang}{voice.localService ? " · on this device" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          className="narration-settings__preview"
-          type="button"
-          onClick={() => previewActive
-            ? narrator.stop()
-            : narrator.speak(previewText, {
-                purpose: "story",
-                activeKey: previewKey,
-                audioSrc: "/audio/dan-the-flying-man/02.mp3",
-              })}
-        >
-          {previewActive ? "■ Stop preview" : "▶ Preview this voice"}
-        </button>
-        <p>The recommended voice is prepared page by page, with child-friendly pacing and consistent pauses.</p>
+        <fieldset className="pace-choice">
+          <legend>Reading speed</legend>
+          {Object.entries(NARRATION_PACES).map(([value, option]) => (
+            <label key={value} className={narrator.pace === value ? "is-selected" : ""}>
+              <input
+                type="radio"
+                name="reading-speed"
+                value={value}
+                checked={narrator.pace === value}
+                onChange={() => {
+                  narrator.stop();
+                  narrator.setPace(value as NarrationPace);
+                }}
+              />
+              <span><strong>{option.label}</strong><small>{option.description}</small></span>
+            </label>
+          ))}
+        </fieldset>
+        <p>Both choices use the same prepared Aoede picture-book teacher. The child version is a separately prepared recording, never a mechanically slowed browser voice.</p>
       </div>
     </details>
   );
@@ -669,17 +666,19 @@ function Shelf({
   progress,
   narrator,
   onOpenBook,
+  onOpenWords,
   onReset,
   saveWarning,
 }: {
   progress: ProgressStore;
   narrator: Narrator;
   onOpenBook: (book: Book) => void;
+  onOpenWords: (book: Book) => void;
   onReset: () => void;
   saveWarning: boolean;
 }) {
   const completedBooks = BOOKS.filter((book) =>
-    STEP_ORDER.every((step) => progress.books[book.slug]?.steps[step]),
+    bookIsComplete(book, progress.books[book.slug] ?? emptyBookProgress()),
   ).length;
   const latestBook = useMemo(() => {
     return [...BOOKS]
@@ -710,7 +709,7 @@ function Shelf({
         <div className="welcome__copy">
           <p className="eyebrow"><span aria-hidden="true">☀️</span> Today&apos;s story time</p>
           <h1 id="welcome-title">Which story shall we read today?</h1>
-          <p>Open a real picture book. Listen to every page, read it aloud, then grow a story flower.</p>
+          <p>Read a real picture book, grow its five word flowers, then finish the listening, speaking, reading and writing missions.</p>
           {latestBook && (
             <button className="button button--sun" type="button" onClick={() => onOpenBook(latestBook)}>
               <span aria-hidden="true">▶</span>
@@ -729,16 +728,21 @@ function Shelf({
         </div>
       </section>
 
-      <section className="how-it-works" aria-label="Four learning steps">
+      <section className="how-it-works" aria-label="Story and word learning steps">
         <div className="how-it-works__intro">
           <span className="little-label">How it works</span>
-          <strong>Read first. Then grow!</strong>
+          <strong>Read. Say. Spell. Grow!</strong>
         </div>
-        {STEP_ORDER.map((step, index) => (
-          <div className="mini-step" key={step}>
+        {[
+          { icon: "📖", label: "Story", garden: "Read" },
+          { icon: "🔊", label: "Words", garden: "Hear" },
+          { icon: "🎙️", label: "Say", garden: "Try" },
+          { icon: "🔤", label: "Spell", garden: "Build" },
+        ].map((step, index) => (
+          <div className="mini-step" key={step.label}>
             <span className="mini-step__number">{index + 1}</span>
-            <span className="mini-step__icon" aria-hidden="true">{STEP_META[step].icon}</span>
-            <span><strong>{STEP_META[step].label}</strong><small>{STEP_META[step].garden}</small></span>
+            <span className="mini-step__icon" aria-hidden="true">{step.icon}</span>
+            <span><strong>{step.label}</strong><small>{step.garden}</small></span>
           </div>
         ))}
       </section>
@@ -758,6 +762,7 @@ function Shelf({
               book={book}
               progress={progress.books[book.slug] ?? emptyBookProgress()}
               onOpen={() => onOpenBook(book)}
+              onOpenWords={() => onOpenWords(book)}
             />
           ))}
         </div>
@@ -778,9 +783,9 @@ function Shelf({
         <div className="parent-corner__body">
           <div>
             <h3>本网站怎样使用</h3>
-            <p>建议每次 8–12 分钟：先陪孩子逐页读完一本绘本，再完成同一本书的听、说、读、写四步。语音评分不作为过关条件，避免设备或口音误判。</p>
-            <p>所有阅读进度与孩子的录音都只留在当前设备；录音不会上传，刷新后录音即消失。</p>
-            <NarrationSettings narrator={narrator} compact />
+            <p>建议每次 8–12 分钟：先读绘本，再到单词花园完成“听范音—跟读—拼字—默写”，最后完成故事听、说、读、写任务。网站不对口音打分，避免设备或口音误判。</p>
+            <p>进度只保存在当前设备。孩子的录音只在当前练习页临时回放，不上传、不写入进度，离开页面即删除。</p>
+            <NarrationSettings narrator={narrator} />
           </div>
           <div>
             <h3>2026 P1 课程资料核对</h3>
@@ -798,10 +803,25 @@ function Shelf({
   );
 }
 
-function BookCard({ book, progress, onOpen }: { book: Book; progress: BookProgress; onOpen: () => void }) {
+function BookCard({
+  book,
+  progress,
+  onOpen,
+  onOpenWords,
+}: {
+  book: Book;
+  progress: BookProgress;
+  onOpen: () => void;
+  onOpenWords: () => void;
+}) {
   const stepCount = STEP_ORDER.filter((step) => progress.steps[step]).length;
-  const complete = stepCount === STEP_ORDER.length;
-  const hasStarted = progress.readPages.length > 0 || stepCount > 0;
+  const words = wordsForBook(book.slug);
+  const masteredWords = words.filter((word) => wordIsMastered(progress.wordPractice.words[word.id])).length;
+  const complete = stepCount === STEP_ORDER.length && masteredWords === words.length;
+  const hasStartedWords = Object.values(progress.wordPractice.words).some((result) =>
+    result.readConfirmed || result.spelling !== "new",
+  );
+  const hasStarted = progress.readPages.length > 0 || stepCount > 0 || hasStartedWords;
   const label = complete
     ? "Read again"
     : hasStarted
@@ -825,9 +845,17 @@ function BookCard({ book, progress, onOpen }: { book: Book; progress: BookProgre
             </span>
           ))}
         </div>
-        <button className="book-card__button" type="button" onClick={onOpen}>
-          {label} <span aria-hidden="true">→</span>
-        </button>
+        <div className="book-card__word-progress" aria-label={`${masteredWords} of ${words.length} words mastered`}>
+          <span aria-hidden="true">{masteredWords === words.length ? "🌼" : "🌱"}</span>
+          <span><strong>{masteredWords} / {words.length} words</strong><small>{masteredWords === words.length ? "Ready to review" : "Hear · Say · Spell"}</small></span>
+          <b aria-hidden="true">→</b>
+        </div>
+        <div className="book-card__actions">
+          <button className="book-card__button" type="button" onClick={onOpen}>
+            {label} <span aria-hidden="true">→</span>
+          </button>
+          <button className="book-card__words-button" type="button" onClick={onOpenWords}>Practice words</button>
+        </div>
       </div>
     </article>
   );
@@ -842,7 +870,7 @@ function StoryReader({
   narrator,
   onPageChange,
   onBack,
-  onQuest,
+  onWords,
 }: {
   book: Book;
   page: number;
@@ -850,15 +878,15 @@ function StoryReader({
   narrator: Narrator;
   onPageChange: (page: number) => void;
   onBack: () => void;
-  onQuest: () => void;
+  onWords: () => void;
 }) {
-  const [showWords, setShowWords] = useState(true);
   const [zoomed, setZoomed] = useState(false);
   const startX = useRef<number | null>(null);
   const current = book.pages[page];
   const isLast = page === book.pages.length - 1;
   const pageHasBeenRead = bookProgress.readPages.includes(page);
   const stopNarration = narrator.stop;
+  const audioSourceFor = narrator.audioSourceFor;
 
   useEffect(() => {
     if (!pageHasBeenRead) onPageChange(page);
@@ -869,10 +897,10 @@ function StoryReader({
     if (next) {
       const image = new Image();
       image.src = next.src;
-      const audio = new Audio(next.audioSrc);
+      const audio = new Audio(audioSourceFor(next.audioSrc));
       audio.preload = "metadata";
     }
-  }, [book.pages, page]);
+  }, [audioSourceFor, book.pages, page]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -919,6 +947,12 @@ function StoryReader({
           <h1>{book.title}</h1>
         </div>
         <div className="reader__mission-dots" aria-label="Learning missions">
+          <span
+            className={wordsForBook(book.slug).every((word) => wordIsMastered(bookProgress.wordPractice.words[word.id])) ? "is-done" : ""}
+            title="Word Garden"
+          >
+            🌱
+          </span>
           {STEP_ORDER.map((step) => (
             <span key={step} className={bookProgress.steps[step] ? "is-done" : ""} title={STEP_META[step].label}>
               {STEP_META[step].icon}
@@ -968,24 +1002,14 @@ function StoryReader({
               <span className="listen-button__icon" aria-hidden="true">{pageIsSpeaking ? "■" : "🔊"}</span>
               <span><strong>{pageIsSpeaking ? "Stop" : "Hear this page"}</strong><small>{narrator.currentVoiceLabel} · listen, then point to the words</small></span>
             </button>
-            <button className="words-toggle" type="button" onClick={() => setShowWords((shown) => !shown)} aria-expanded={showWords}>
-              <span aria-hidden="true">Aa</span> {showWords ? "Hide words" : "Show words"}
-            </button>
           </div>
           <NarrationSettings narrator={narrator} />
-
-          {showWords && (
-            <div className="page-transcript">
-              <span className="page-transcript__label">Read with me</span>
-              <p>{current.transcript}</p>
-            </div>
-          )}
 
           {isLast && (
             <div className="quest-invite">
               <span className="quest-invite__plant" aria-hidden="true">🌱</span>
-              <div><small>You finished the story!</small><strong>Ready to grow its flower?</strong></div>
-              <button className="button button--green" type="button" onClick={onQuest}>Start my 4 missions <span aria-hidden="true">→</span></button>
+              <div><small>You finished the story!</small><strong>Ready to grow five word flowers?</strong></div>
+              <button className="button button--green" type="button" onClick={onWords}>Grow my Word Garden <span aria-hidden="true">→</span></button>
             </div>
           )}
         </section>
@@ -1320,7 +1344,7 @@ function WriteMission({
   const isSpeaking = narrator.activeKey === voiceKey;
 
   const trimmed = value.trim();
-  const sentenceWords = trimmed.toLowerCase().match(/[a-z']+/g) ?? [];
+  const sentenceWords: string[] = trimmed.toLowerCase().match(/[a-z']+/g) ?? [];
   const hasCapital = /^[A-Z]/.test(trimmed);
   const hasPunctuation = /[.!?]$/.test(trimmed);
   const hasWords = task.targetWords.every((word) =>
@@ -1465,6 +1489,37 @@ function MissionComplete({ step, onContinue }: { step: QuestStep; onContinue: ()
   );
 }
 
+function AlmostComplete({
+  book,
+  needsWords,
+  onContinue,
+  onShelf,
+}: {
+  book: Book;
+  needsWords: boolean;
+  onContinue: () => void;
+  onShelf: () => void;
+}) {
+  return (
+    <main className="celebration" style={{ "--book-colour": book.colour } as CSSProperties}>
+      <section className="celebration__card">
+        <p className="eyebrow">One garden step left</p>
+        <div className="bloom-badge" aria-hidden="true"><span>🌱</span></div>
+        <h1>Your flower is still growing!</h1>
+        <p>{needsWords
+          ? "Some spelling words still need one try without a clue. Let's make those roots strong."
+          : "Finish the remaining story mission, then your flower can bloom."}</p>
+        <div className="celebration__actions">
+          <button className="button button--light" type="button" onClick={onShelf}>Back to my bookshelf</button>
+          <button className="button button--green" type="button" onClick={onContinue}>
+            {needsWords ? "Review my words" : "Finish my mission"} →
+          </button>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function Celebration({ book, onReadAgain, onShelf }: { book: Book; onReadAgain: () => void; onShelf: () => void }) {
   return (
     <main className="celebration" style={{ "--book-colour": book.colour } as CSSProperties}>
@@ -1472,10 +1527,10 @@ function Celebration({ book, onReadAgain, onShelf }: { book: Book; onReadAgain: 
         {Array.from({ length: 14 }, (_, index) => <i key={index} />)}
       </div>
       <section className="celebration__card">
-        <p className="eyebrow">All 4 missions complete</p>
+        <p className="eyebrow">Word Garden + all 4 missions complete</p>
         <div className="bloom-badge" aria-hidden="true"><span>🌼</span></div>
         <h1>Your story flower bloomed!</h1>
-        <p>You listened, spoke, read and wrote with <strong>{book.title}</strong>.</p>
+        <p>You learned five story words, then listened, spoke, read and wrote with <strong>{book.title}</strong>.</p>
         <div className="celebration__steps">
           {STEP_ORDER.map((step) => <span key={step}>{STEP_META[step].icon}<strong>{STEP_META[step].label}</strong><small>✓ done</small></span>)}
         </div>
