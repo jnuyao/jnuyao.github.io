@@ -43,6 +43,10 @@ const PRECISION_DIRECTIONS = {
   "dans-lost-hat/cat": "Precision retake: say cat one time only, releasing a crisp final t sound, then become silent immediately.",
   "first-day-hari-raya/baju": "Precision retake: say the Singapore Malay word baju one time only, as two syllables, bah-joo. Stop immediately after it.",
   "first-day-hari-raya/kurung": "Precision retake: say the Singapore Malay word kurung one time only, as two syllables, koo-roong, ending with the ng sound. Stop immediately after it.",
+  "lazy-duck/prowled": "Precision retake: say prowled one time only. Make the l sound clearly audible before the final d, so it sounds like prowl plus d, not proud. Stop immediately.",
+  "mr-gumpys-outing/bleating": "Final precision retake: say bleating one time only as BLEE-TING, IPA /ˈbliːtɪŋ/. Keep a tiny natural syllable boundary after bleat and release a crisp unvoiced t before ing. Do not use a voiced d or an American t-flap; it must not sound like bleeding. Stop immediately after the single word.",
+  "life-in-a-shell/tide": "Precision retake: say tide one time only, then become silent immediately. Do not add a rhyme, echo, example, or second word.",
+  "the-growl/rumble": "Precision retake: say rumble exactly one time, then become silent immediately. Do not repeat or echo the word.",
 };
 
 const FLASH25_REPAIR_IDS = new Set([
@@ -57,6 +61,10 @@ const FLASH31_REPAIR_IDS = new Set([
 ]);
 
 const SIGNAL_REPAIRS = {};
+
+const TTS_TEXT_OVERRIDES = {
+  "mr-gumpys-outing/bleating": "bleat-ing",
+};
 
 function sourceModelFor(job) {
   if (FLASH25_REPAIR_IDS.has(job.id)) return FLASH_REPAIR_MODEL;
@@ -138,6 +146,7 @@ function promptFor(job) {
     ? "This is a Malay-origin word used in Singapore. Use its natural Singapore pronunciation, not an invented English phonics reading."
     : "Use clear, neutral General American English pronunciation suitable for a Singapore Primary 1 classroom.";
   const precisionDirection = PRECISION_DIRECTIONS[job.id];
+  const targetText = TTS_TEXT_OVERRIDES[job.id] || job.spokenText;
   return [
     "Say the supplied target word as a warm, patient Primary 1 English teacher.",
     culturalDirection,
@@ -146,7 +155,7 @@ function promptFor(job) {
     ...(precisionDirection ? [precisionDirection] : []),
     "Do not speak the markers.",
     "TARGET WORD START",
-    job.spokenText,
+    targetText,
     "TARGET WORD END",
   ].join("\n");
 }
@@ -370,10 +379,17 @@ async function main() {
   };
   if (await exists(MANIFEST_PATH)) {
     const loaded = JSON.parse(await readFile(MANIFEST_PATH, "utf8"));
-    if (loaded?.model !== MODEL || loaded?.voice !== VOICE || loaded?.promptVersion !== PROMPT_VERSION || loaded?.expectedJobs !== EXPECTED) {
+    if (
+      loaded?.model !== MODEL ||
+      loaded?.voice !== VOICE ||
+      loaded?.promptVersion !== PROMPT_VERSION ||
+      !Number.isInteger(loaded?.expectedJobs) ||
+      loaded.expectedJobs > EXPECTED ||
+      !Array.isArray(loaded?.jobs)
+    ) {
       throw new Error("Existing word-audio manifest has an incompatible identity.");
     }
-    manifest = loaded;
+    manifest = { ...loaded, expectedJobs: EXPECTED };
   }
   const records = new Map(manifest.jobs.map((record) => [record.id, record]));
   const generatedBySpokenHash = new Map();
@@ -455,7 +471,31 @@ async function main() {
   process.stdout.write(`Complete: ${EXPECTED} book-local pairs; ${generated} new Gemini requests this run.\n`);
 }
 
-main().catch((error) => {
-  process.stderr.write(`${safeMessage(error?.stack || error?.message)}\n`);
-  process.exitCode = 1;
-});
+export {
+  EXPECTED,
+  MANIFEST_PATH,
+  MODEL,
+  PROMPT_VERSION,
+  ROOT,
+  VOICE,
+  apiKey,
+  applySignalRepair,
+  atomicJson,
+  decodePcm,
+  exists,
+  inspect,
+  makeChild,
+  makeStandard,
+  planJobs,
+  requestFor,
+  safeMessage,
+  sha256,
+  stableJson,
+};
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    process.stderr.write(`${safeMessage(error?.stack || error?.message)}\n`);
+    process.exitCode = 1;
+  });
+}

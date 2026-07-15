@@ -1,5 +1,5 @@
 export const DEFAULT_NARRATION_RATE = 0.68;
-export const PREPARED_AUDIO_CACHE_VERSION = "pro-aoede-words-v2";
+export const PREPARED_AUDIO_CACHE_VERSION = "pro-aoede-p1-p2-v1";
 
 export type NarrationPace = "child" | "standard";
 export type NarrationPurpose = "story" | "practice";
@@ -24,7 +24,7 @@ export const NARRATION_PACES: Record<
   { label: string; shortLabel: string; description: string; rate: number }
 > = {
   child: {
-    label: "Child slow · 儿童慢速 — best for P1",
+    label: "Child slow · 儿童慢速 — best for young readers",
     shortLabel: "Child slow · 儿童慢速",
     description: "Extra time to hear, point and read along.",
     rate: DEFAULT_NARRATION_RATE,

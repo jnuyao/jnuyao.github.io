@@ -14,6 +14,14 @@ const EXPECTED_PAGE_COUNTS = new Map([
   ["the-hungry-giant", 9],
   ["to-town", 9],
   ["walking-through-jungle", 14],
+  ["lazy-duck", 12],
+  ["mr-gumpys-outing", 16],
+  ["a-day-in-the-kitchen-with-grandma", 9],
+  ["life-in-a-shell", 16],
+  ["the-growl", 9],
+  ["magnetic-max", 9],
+  ["the-feast", 17],
+  ["willy-and-hugh", 13],
 ]);
 
 const LSRW_STEPS = ["listen", "speak", "read", "write"];
@@ -125,9 +133,9 @@ test("server-renders the child-first Story Garden bookshelf", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("book data contains ten complete Listen-Speak-Read-Write journeys", async () => {
+test("book data contains eighteen complete Listen-Speak-Read-Write journeys", async () => {
   const books = await loadBookData();
-  assert.equal(books.length, 10);
+  assert.equal(books.length, 18);
 
   const actualSlugs = books.map((book) => book.slug).sort();
   assert.deepEqual(actualSlugs, [...EXPECTED_PAGE_COUNTS.keys()].sort());
@@ -137,6 +145,8 @@ test("book data contains ten complete Listen-Speak-Read-Write journeys", async (
       typeof book.title === "string" && book.title.trim(),
       `${book.slug || "A book"} needs a title`,
     );
+    assert.ok([1, 2].includes(book.level), `${book.slug} needs a Primary level`);
+    assert.ok([1, 2, 3, 4].includes(book.term), `${book.slug} needs a valid term`);
     assert.ok(book.tasks && typeof book.tasks === "object", `${book.slug} needs tasks`);
 
     for (const step of LSRW_STEPS) {
@@ -152,10 +162,11 @@ test("book data contains ten complete Listen-Speak-Read-Write journeys", async (
   }
 });
 
-test("all 94 readable story pages are transcribed, referenced once, and web-sized", async () => {
+test("all 195 story images are referenced once and web-sized", async () => {
   const books = await loadBookData();
   const referencedAssets = new Set();
   let pageTotal = 0;
+  let wordlessTotal = 0;
 
   for (const book of books) {
     const expectedCount = EXPECTED_PAGE_COUNTS.get(book.slug);
@@ -166,10 +177,11 @@ test("all 94 readable story pages are transcribed, referenced once, and web-size
     for (const [index, page] of book.pages.entries()) {
       const label = `${book.slug} page ${index + 1}`;
       assert.equal(typeof page, "object", `${label} must pair an image with its transcript`);
-      assert.ok(
-        typeof page.transcript === "string" && page.transcript.trim(),
-        `${label} needs a non-empty transcript`,
-      );
+      assert.equal(typeof page.transcript, "string", `${label} needs a transcript string`);
+      if (!page.transcript.trim()) {
+        wordlessTotal += 1;
+        assert.equal(page.audioSrc, null, `${label} is wordless and must not invent narration`);
+      }
       assert.match(
         page.src ?? "",
         new RegExp(`^/pages/${book.slug}/\\d{2}\\.webp$`),
@@ -191,7 +203,8 @@ test("all 94 readable story pages are transcribed, referenced once, and web-size
     }
   }
 
-  assert.equal(pageTotal, 94);
+  assert.equal(pageTotal, 195);
+  assert.equal(wordlessTotal, 6);
 
   const pageFolders = (await readdir(new URL("../public/pages/", import.meta.url), {
     withFileTypes: true,
@@ -214,11 +227,11 @@ test("all 94 readable story pages are transcribed, referenced once, and web-size
     diskAssets.push(...files.map((file) => `/pages/${slug}/${file}`));
   }
 
-  assert.equal(diskAssets.length, 94);
+  assert.equal(diskAssets.length, 195);
   assert.deepEqual([...referencedAssets].sort(), diskAssets.sort());
 });
 
-test("all 94 pages and 40 tasks have unique, valid, web-sized MP3 narration tracks", async () => {
+test("all narrated pages and 72 tasks have unique, valid MP3 tracks in both paces", async () => {
   const books = await loadBookData();
   const referencedAudio = new Set();
   let audioTotal = 0;
@@ -280,6 +293,18 @@ test("all 94 pages and 40 tasks have unique, valid, web-sized MP3 narration trac
       hasId3Header || firstFrame === 0,
       `${audioSrc} must begin with either an ID3 header or an MPEG audio frame`,
     );
+
+    const standardSrc = audioSrc.replace(/^\/audio\//, "/audio-standard/");
+    const standard = await readFile(new URL(`../public${standardSrc}`, import.meta.url));
+    assert.ok(
+      standard.byteLength >= MIN_STORY_AUDIO_BYTES && standard.byteLength <= MAX_STORY_AUDIO_BYTES,
+      `${standardSrc} must be a web-sized standard narration track`,
+    );
+    assert.ok(
+      standard.subarray(0, 3).toString("ascii") === "ID3"
+        || (standard[0] === 0xff && (standard[1] & 0xe0) === 0xe0),
+      `${standardSrc} must begin with ID3 or an MPEG audio frame`,
+    );
     audioTotal += 1;
   };
 
@@ -289,12 +314,16 @@ test("all 94 pages and 40 tasks have unique, valid, web-sized MP3 narration trac
       const expectedSrc = `/audio/${book.slug}/${number}.mp3`;
       const label = `${book.slug} page ${index + 1}`;
 
-      assert.equal(
-        page.audioSrc,
-        expectedSrc,
-        `${label} must reference the narration track with the same book slug and page number`,
-      );
-      await checkAudio(page.audioSrc, label);
+      if (page.transcript.trim()) {
+        assert.equal(
+          page.audioSrc,
+          expectedSrc,
+          `${label} must reference the narration track with the same book slug and page number`,
+        );
+        await checkAudio(page.audioSrc, label);
+      } else {
+        assert.equal(page.audioSrc, null, `${label} must stay silent`);
+      }
     }
 
     for (const step of LSRW_STEPS) {
@@ -302,8 +331,8 @@ test("all 94 pages and 40 tasks have unique, valid, web-sized MP3 narration trac
     }
   }
 
-  assert.equal(audioTotal, 134);
-  assert.equal(referencedAudio.size, 134);
+  assert.equal(audioTotal, 261);
+  assert.equal(referencedAudio.size, 261);
 
   const audioFolders = (await readdir(new URL("../public/audio/", import.meta.url), {
     withFileTypes: true,
@@ -318,13 +347,13 @@ test("all 94 pages and 40 tasks have unique, valid, web-sized MP3 narration trac
   );
 
   const diskAudio = [];
-  for (const [slug, expectedCount] of EXPECTED_PAGE_COUNTS) {
+  const booksBySlug = new Map(books.map((book) => [book.slug, book]));
+  for (const [slug] of EXPECTED_PAGE_COUNTS) {
     const files = (await readdir(new URL(`../public/audio/${slug}/`, import.meta.url)))
       .sort();
-    const expectedPageFiles = Array.from(
-      { length: expectedCount },
-      (_, index) => `${String(index + 1).padStart(2, "0")}.mp3`,
-    );
+    const expectedPageFiles = booksBySlug.get(slug).pages
+      .map((page, index) => page.audioSrc ? `${String(index + 1).padStart(2, "0")}.mp3` : null)
+      .filter(Boolean);
     const expectedFiles = [...expectedPageFiles, ...LSRW_STEPS.map((step) => `${step}.mp3`)].sort();
     assert.deepEqual(
       files,
@@ -334,17 +363,23 @@ test("all 94 pages and 40 tasks have unique, valid, web-sized MP3 narration trac
     diskAudio.push(...files.map((file) => `/audio/${slug}/${file}`));
   }
 
-  assert.equal(diskAudio.length, 134);
+  assert.equal(diskAudio.length, 261);
   assert.deepEqual([...referencedAudio].sort(), diskAudio.sort());
+
+  for (const [slug] of EXPECTED_PAGE_COUNTS) {
+    const child = (await readdir(new URL(`../public/audio/${slug}/`, import.meta.url))).sort();
+    const standard = (await readdir(new URL(`../public/audio-standard/${slug}/`, import.meta.url))).sort();
+    assert.deepEqual(standard, child, `${slug} must have matching standard and child-slow files`);
+  }
 });
 
-test("keeps the ten cover shelf and removes disposable starter output", async () => {
+test("keeps the eighteen-cover shelf and removes disposable starter output", async () => {
   const [packageJson, covers] = await Promise.all([
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readdir(new URL("../public/books/", import.meta.url)),
   ]);
 
-  assert.equal(covers.filter((file) => file.endsWith(".jpg")).length, 10);
+  assert.equal(covers.filter((file) => file.endsWith(".jpg")).length, 18);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   await assert.rejects(access(new URL("../app/_sites-preview/", import.meta.url)));
   await access(new URL("../public/favicon.png", import.meta.url));
@@ -487,7 +522,7 @@ test("parents can choose exactly two prepared reading versions", async () => {
     2,
     "Reading speed must expose exactly two choices",
   );
-  assert.match(html, /Child slow[^<]*[—-] best for P1/i);
+  assert.match(html, /Child slow[^<]*[—-] best for young readers/i);
   assert.match(html, /Standard story pace/i);
   assert.doesNotMatch(
     html,

@@ -755,17 +755,29 @@ function Shelf({
           </div>
           <p>{BOOKS.length} stories ready to read</p>
         </div>
-        <div className="book-grid">
-          {BOOKS.map((book) => (
-            <BookCard
-              key={book.slug}
-              book={book}
-              progress={progress.books[book.slug] ?? emptyBookProgress()}
-              onOpen={() => onOpenBook(book)}
-              onOpenWords={() => onOpenWords(book)}
-            />
-          ))}
-        </div>
+        {([1, 2] as const).map((level) => {
+          const levelBooks = BOOKS.filter((book) => book.level === level);
+          if (!levelBooks.length) return null;
+          return (
+            <section className="level-shelf" key={level} aria-labelledby={`level-${level}-title`}>
+              <div className="level-shelf__heading">
+                <h3 id={`level-${level}-title`}>Primary {level}</h3>
+                <span>{levelBooks.length} picture books</span>
+              </div>
+              <div className="book-grid">
+                {levelBooks.map((book) => (
+                  <BookCard
+                    key={book.slug}
+                    book={book}
+                    progress={progress.books[book.slug] ?? emptyBookProgress()}
+                    onOpen={() => onOpenBook(book)}
+                    onOpenWords={() => onOpenWords(book)}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })}
       </section>
 
       {saveWarning && (
@@ -788,8 +800,8 @@ function Shelf({
             <NarrationSettings narrator={narrator} />
           </div>
           <div>
-            <h3>2026 P1 课程资料核对</h3>
-            <p>学校 SOW 全年列出 14 个单元；当前目录有 10 本并已全部制作。尚未放入目录的是 Unit 5 <em>Crocodile Tea</em>、Unit 12 <em>Lazy Duck</em>、Unit 13 <em>The King&apos;s Cake</em>、Unit 14 <em>The Broken Bangle</em>。</p>
+            <h3>P1 与 P2 绘本课程</h3>
+            <p>书架按 Primary 1 和 Primary 2 分组。每本书都配有标准版、儿童慢速版朗读，以及五个核心单词和听、说、读、写练习。</p>
             <button className="text-button" type="button" onClick={resetProgress}>清除这台设备上的学习进度</button>
           </div>
         </div>
@@ -832,7 +844,7 @@ function BookCard({
     <article className={`book-card ${complete ? "book-card--complete" : ""}`} style={{ "--book-colour": book.colour } as CSSProperties}>
       <button className="book-card__cover" type="button" onClick={onOpen} aria-label={`${label}: ${book.title}`}>
         <img src={book.cover} alt={`Cover of ${book.title}`} loading="lazy" />
-        <span className="book-card__unit">Unit {book.unit}</span>
+        <span className="book-card__unit">P{book.level} · Unit {book.unit}</span>
         {complete && <span className="book-card__bloom" aria-label="Story flower grown">🌼</span>}
       </button>
       <div className="book-card__body">
@@ -897,8 +909,10 @@ function StoryReader({
     if (next) {
       const image = new Image();
       image.src = next.src;
-      const audio = new Audio(audioSourceFor(next.audioSrc));
-      audio.preload = "metadata";
+      if (next.audioSrc) {
+        const audio = new Audio(audioSourceFor(next.audioSrc));
+        audio.preload = "metadata";
+      }
     }
   }, [audioSourceFor, book.pages, page]);
 
@@ -992,15 +1006,18 @@ function StoryReader({
               type="button"
               onClick={() => pageIsSpeaking
                 ? narrator.stop()
-                : narrator.speak(current.transcript, {
+                : current.audioSrc && narrator.speak(current.transcript, {
                     purpose: "story",
                     activeKey: pageVoiceKey,
                     audioSrc: current.audioSrc,
                   })}
-              disabled={!narrator.supported}
+              disabled={!narrator.supported || !current.audioSrc}
             >
               <span className="listen-button__icon" aria-hidden="true">{pageIsSpeaking ? "■" : "🔊"}</span>
-              <span><strong>{pageIsSpeaking ? "Stop" : "Hear this page"}</strong><small>{narrator.currentVoiceLabel} · listen, then point to the words</small></span>
+              <span>
+                <strong>{pageIsSpeaking ? "Stop" : current.audioSrc ? "Hear this page" : "Picture page"}</strong>
+                <small>{current.audioSrc ? `${narrator.currentVoiceLabel} · listen, then point to the words` : "Pause and tell the story from the picture"}</small>
+              </span>
             </button>
           </div>
           <NarrationSettings narrator={narrator} />

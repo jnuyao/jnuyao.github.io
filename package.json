@@ -16,7 +16,10 @@
     "audio:pace": "node scripts/normalize-aoede-pacing.mjs",
     "audio:check": "node scripts/promote-aoede-audio.mjs --check",
     "audio:promote": "node scripts/promote-aoede-audio.mjs --promote",
+    "audio:new-books": "node scripts/generate-new-book-audio.mjs",
+    "audio:new-books:batch": "node scripts/generate-missing-audio-batch.mjs --scope story",
     "words:audio": "node scripts/generate-word-audio.mjs",
+    "words:audio:batch": "node scripts/generate-missing-audio-batch.mjs --scope word",
     "words:verify": "node scripts/verify-word-audio.mjs",
     "db:generate": "drizzle-kit generate"
   },
