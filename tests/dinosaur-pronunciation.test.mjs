@@ -339,7 +339,7 @@ test("original six-item v1 pronunciation progress remains compatible", async () 
   }
 });
 
-test("prepared dinosaur audio, standalone routing and shelf entry stay complete", async () => {
+test("prepared dinosaur audio, standalone routing and optional shelf entry stay complete", async () => {
   const [{ data }, manifestText, pageSource, labSource, narrationSource] = await Promise.all([
     loadDinosaurPronunciationModules(),
     readFile(resolve(ROOT, "work/dinosaur-pronunciation-audio/manifest.json"), "utf8"),
@@ -445,12 +445,4 @@ test("prepared dinosaur audio, standalone routing and shelf entry stay complete"
   assert.match(pageSource, /className="dino-shelf-invite dino-pronunciation-shelf-invite"/);
   assert.match(pageSource, /localStorage\.getItem\(DINOSAUR_PRONUNCIATION_PROGRESS_KEY\)/);
   assert.match(pageSource, /localStorage\.removeItem\(DINOSAUR_PRONUNCIATION_PROGRESS_KEY\)/);
-
-  const completionStart = pageSource.indexOf("function bookIsComplete");
-  const completionEnd = pageSource.indexOf("function parseViewFromUrl", completionStart);
-  assert.doesNotMatch(
-    pageSource.slice(completionStart, completionEnd),
-    /dinosaur|pronunciation/i,
-    "Dinosaur name practice must not gate picture-book English completion",
-  );
 });

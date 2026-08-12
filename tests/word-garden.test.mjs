@@ -146,7 +146,7 @@ test("thirty-two books each expose five unique, story-grounded words", async () 
   assert.equal(total, 160);
 });
 
-test("v2 progress migrates to v3 without losing story or mission work", async () => {
+test("v2 progress migration preserves existing story and archived practice records", async () => {
   const { bookData, progress } = await loadCourseModules();
   const book = bookData.BOOKS[0];
   const longDraft = "A".repeat(400);
@@ -231,51 +231,28 @@ test("v3 word progress is allow-listed, bounded and mastery is deterministic", a
   assert.deepEqual(progress.normaliseProgress({ version: 99, books: {} }), { version: 3, books: {} });
 });
 
-test("word practice keeps the microphone optional, local and unscored", async () => {
-  const source = await readFile(new URL("../app/word-garden.tsx", import.meta.url), "utf8");
-  assert.match(source, /navigator\.mediaDevices\.getUserMedia\(\{\s*audio:\s*true\s*\}\)/);
-  const start = source.indexOf("const startRecording");
-  const microphone = source.indexOf("getUserMedia", start);
-  const stopModel = source.indexOf("narrator.stop()", start);
-  assert.ok(start >= 0 && stopModel > start && stopModel < microphone);
-  assert.match(source, /window\.setTimeout\(stopRecording,\s*10_000\)/);
-  assert.match(source, /URL\.createObjectURL\(blob\)/);
-  assert.match(source, /URL\.revokeObjectURL/);
-  assert.match(source, /getTracks\(\)\.forEach\(\(track\)\s*=>\s*track\.stop\(\)\)/);
-  assert.match(source, /never uploaded and is deleted when you leave/i);
-  assert.match(source, /No scores for your accent/i);
-  assert.doesNotMatch(source, /SpeechRecognition|webkitSpeechRecognition|FormData|XMLHttpRequest|sendBeacon|WebSocket/);
-  assert.doesNotMatch(source, /fetch\s*\(|localStorage|indexedDB|caches\.open/);
-  assert.doesNotMatch(source, /phoneme.{0,40}(?:score|confidence)|accent.{0,40}(?:score|rating)/i);
-});
+test("the child picture-book path has no Word Garden, speaking, or spelling entry point", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 
-test("dictation disables answer helpers and requires a guided rebuild after two misses", async () => {
-  const source = await readFile(new URL("../app/word-garden.tsx", import.meta.url), "utf8");
-  assert.match(source, /\.normalize\(["']NFKC["']\)\.trim\(\)\.toLocaleLowerCase\(["']en["']\)/);
-  assert.match(source, /autoComplete=["']off["']/);
-  assert.match(source, /autoCorrect=["']off["']/);
-  assert.match(source, /autoCapitalize=["']none["']/);
-  assert.match(source, /spellCheck=\{false\}/);
-  assert.match(source, /nextTries\s*>=\s*2[\s\S]{0,100}setSupportMode\(true\)/);
-  assert.match(source, /supportMode\s*\?\s*["']supported["']\s*:\s*["']correct["']/);
-  assert.match(source, /disabled=\{!answer\s*\|\|\s*!heard\}/);
-});
-
-test("the site wires Word Garden into reading, the shelf and dual-speed prepared audio", async () => {
-  const [page, narration, worker] = await Promise.all([
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/narration.ts", import.meta.url), "utf8"),
-    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
-  ]);
-  assert.match(page, /stage\s*===\s*["']words["']/);
-  assert.match(page, /Grow my Word Garden/);
-  assert.match(page, /Practice words/);
-  assert.match(page, /LEGACY_PROGRESS_KEY/);
-  assert.match(page, /localStorage\.removeItem\(PROGRESS_KEY\)/);
-  assert.match(page, /localStorage\.removeItem\(LEGACY_PROGRESS_KEY\)/);
-  assert.match(narration, /word-audio-standard/);
-  assert.match(narration, /word-audio\//);
-  assert.match(worker, /Permissions-Policy["'],\s*["']microphone=\(self\)/);
+  assert.doesNotMatch(page, /from\s+["']\.\/word-(?:data|garden)["']/);
+  assert.doesNotMatch(page, /stage\s*===\s*["']words["']|kind:\s*["']word-garden["']/);
+  assert.doesNotMatch(page, /Grow my Word Garden|Practice words|Hear\s*·\s*Say\s*·\s*Spell/i);
+  assert.doesNotMatch(page, /onOpenWords|<WordGarden\b/);
+  assert.doesNotMatch(
+    page,
+    /function\s+(?:QuestPage|SpeakMission|ReadMission|WriteMission|Celebration|AlmostComplete)\b/,
+  );
+  assert.doesNotMatch(page, /navigator\.mediaDevices\.getUserMedia|new\s+MediaRecorder\b/);
+  assert.match(
+    page,
+    /function bookIsComplete[\s\S]{0,220}book\.pages\.every\([\s\S]{0,140}progress\.readPages\.includes\(page\)/,
+    "finishing a picture book must depend only on visiting all of its pages",
+  );
+  const reader = page.slice(page.indexOf("function StoryReader"));
+  assert.match(reader, /Hear both pages/);
+  assert.match(reader, /Hear \$\{sideLabel\} page/);
+  assert.match(reader, /↻ Read again/);
+  assert.match(reader, /Choose another book/);
 });
 
 test("all 160 word clips have verified standard and child-slow files", async () => {

@@ -311,9 +311,23 @@ test("server-renders the child-first Story Garden bookshelf", async () => {
     html,
     /Which story|Choose (?:a|your) (?:book|story)|Pick (?:a|your) (?:book|story)|Bookshelf/i,
   );
-  for (const step of ["Listen", "Speak", "Read", "Write"]) {
-    assert.match(html, new RegExp(`\\b${step}\\b`, "i"));
-  }
+
+  const mainStart = html.indexOf('<main class="shelf-page"');
+  const firstSection = html.indexOf("<section", mainStart);
+  const bookshelf = html.indexOf('<section class="bookshelf bookshelf--first"', mainStart);
+  const chooseBook = html.indexOf("Choose a book", bookshelf);
+  const moreToExplore = html.indexOf("More to explore", chooseBook);
+  assert.ok(mainStart >= 0, "the rendered homepage needs its shelf main landmark");
+  assert.equal(firstSection, bookshelf, "Choose a book must be the first homepage section");
+  assert.ok(
+    chooseBook > bookshelf && moreToExplore > chooseBook,
+    "the picture-book shelf must appear before optional learning labs",
+  );
+  assert.doesNotMatch(
+    html,
+    /Read\. Say\. Spell\. Grow!|Hear\s*·\s*Say\s*·\s*Spell|Practice words|Grow my Word Garden/i,
+    "the child homepage must not advertise the removed word and mission path",
+  );
 
   // These were the previous parent-dashboard's primary modules. A small parent
   // corner may remain, but the old dashboard must not be the homepage experience.
@@ -321,7 +335,7 @@ test("server-renders the child-first Story Garden bookshelf", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("book data contains thirty-two complete Listen-Speak-Read-Write journeys", async () => {
+test("book data contains thirty-two complete stories with valid archived task metadata", async () => {
   const books = await loadBookData();
   assert.equal(books.length, 32);
 
@@ -474,7 +488,7 @@ test("all story images have audited single-page or physical left/right reading d
   assert.equal(reorderedSpreads, 3);
 });
 
-test("all whole-page, left/right, and task narration has valid MP3 tracks in both paces", async () => {
+test("all whole-page, left/right, and archived task narration has valid MP3 tracks in both paces", async () => {
   const books = await loadBookData();
   const referencedAudio = new Set();
   let audioTotal = 0;
@@ -757,7 +771,6 @@ test("Ride a Bike is the only book with an optional four-step Art Studio", async
   assert.match(pageSource, /kind:\s*"art-studio"/);
   assert.match(pageSource, /stage\s*===\s*"art"\s*&&\s*artStudioForBook\(bookSlug\)/);
   assert.match(pageSource, /params\.set\("stage",\s*"art"\)/);
-  assert.doesNotMatch(pageSource, /STEP_ORDER\s*=\s*\[[^\]]*art/s);
   assert.match(progressSource, /artStudio\?:\s*ArtStudioProgress/);
   assert.match(progressSource, /selectedMission/);
   assert.match(progressSource, /checkedItems/);
@@ -984,7 +997,7 @@ test("Dinosaur Art Lab progress is independently allow-listed and bounded", asyn
   assert.doesNotMatch(progressSource, /book-data|word-data|\bPROGRESS_KEY\b|normaliseProgress/);
 });
 
-test("Dinosaur Art Lab routing is standalone and never gates English completion", async () => {
+test("Dinosaur Art Lab routing stays standalone from the picture-book reader", async () => {
   const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 
   const parseStart = source.indexOf("function parseViewFromUrl");
@@ -997,8 +1010,8 @@ test("Dinosaur Art Lab routing is standalone and never gates English completion"
   const directRouteBlock = source.slice(directLabRoute, bookLookup);
   assert.doesNotMatch(
     directRouteBlock,
-    /BOOKS|bookIsComplete|hasMasteredWords/,
-    "Opening ?lab=dinosaur-art must not require a story or English completion",
+    /BOOKS/,
+    "Opening ?lab=dinosaur-art must not require a story lookup",
   );
 
   const labRender = source.indexOf('if (view.kind === "dinosaur-art-lab")');
@@ -1006,15 +1019,6 @@ test("Dinosaur Art Lab routing is standalone and never gates English completion"
   assert.ok(
     labRender >= 0 && labRender < missingBookGuard,
     "The lab must render before the missing-story fallback",
-  );
-
-  const completionStart = source.indexOf("function bookIsComplete");
-  const completionEnd = source.indexOf("function parseViewFromUrl", completionStart);
-  const completionContract = source.slice(completionStart, completionEnd);
-  assert.doesNotMatch(
-    completionContract,
-    /dinosaur|art/i,
-    "Dinosaur drawing progress must not become a requirement for English book completion",
   );
 
   assert.match(
@@ -1319,7 +1323,7 @@ test("Moonlight Market progress is independently allow-listed and bounded", asyn
   );
 });
 
-test("Moonlight Market routing stays book-specific and never gates English completion", async () => {
+test("Moonlight Market routing stays book-specific and keeps independent progress", async () => {
   const [source, progressSource] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/progress.ts", import.meta.url), "utf8"),
@@ -1351,18 +1355,6 @@ test("Moonlight Market routing stays book-specific and never gates English compl
   assert.match(marketUrlBlock, /params\.set\("mission",\s*view\.missionId\)/);
   assert.match(marketUrlBlock, /String\(view\.step\s*\+\s*1\)/);
 
-  const completionStart = source.indexOf("function bookIsComplete");
-  const completionEnd = source.indexOf("function parseViewFromUrl", completionStart);
-  const completionContract = source.slice(completionStart, completionEnd);
-  assert.doesNotMatch(
-    completionContract,
-    /mid-autumn|festival|moonlight|adventure/i,
-    "Optional festival exploration must not become an English completion requirement",
-  );
-  assert.match(
-    source,
-    /const STEP_ORDER:\s*QuestStep\[\]\s*=\s*\["listen",\s*"speak",\s*"read",\s*"write"\]/,
-  );
   assert.doesNotMatch(
     progressSource,
     /mid-autumn|moonlight|adventure/i,
@@ -1591,8 +1583,7 @@ test("prepared audio switches roots without runtime time-stretching", async () =
 test("page navigation always stays quiet until the child presses a listening button", async () => {
   const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const readerStart = source.indexOf("function StoryReader");
-  const readerEnd = source.indexOf("function QuestPage", readerStart);
-  const reader = source.slice(readerStart, readerEnd);
+  const reader = source.slice(readerStart);
 
   assert.match(
     reader,
@@ -1618,8 +1609,7 @@ test("story spreads offer independent left and right read-along controls", async
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
   const readerStart = source.indexOf("function StoryReader");
-  const readerEnd = source.indexOf("function QuestPage", readerStart);
-  const reader = source.slice(readerStart, readerEnd);
+  const reader = source.slice(readerStart);
 
   assert.match(reader, /current\.layout\s*===\s*["']spread["']/);
   assert.match(reader, /`english-\$\{book\.slug\}-\$\{page\}-\$\{side\}`/);
@@ -1631,61 +1621,6 @@ test("story spreads offer independent left and right read-along controls", async
   assert.match(css, /\.story-page__side-listeners/);
   assert.doesNotMatch(reader, /story-page__side-highlight/);
   assert.doesNotMatch(css, /\.story-page__side-highlight/);
-});
-
-test("recording a child stops narration before requesting microphone access", async () => {
-  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  const speakMissionIndex = source.indexOf("function SpeakMission");
-  assert.ok(speakMissionIndex >= 0, "app/page.tsx must contain SpeakMission");
-
-  const recordingIndex = source.indexOf("const startRecording", speakMissionIndex);
-  assert.ok(recordingIndex >= 0, "SpeakMission must contain startRecording");
-
-  const microphoneIndex = source.indexOf("getUserMedia", recordingIndex);
-  assert.ok(microphoneIndex >= 0, "startRecording must request microphone access");
-
-  const stopIndex = source.indexOf("narrator.stop()", recordingIndex);
-  assert.ok(
-    stopIndex >= recordingIndex && stopIndex < microphoneIndex,
-    "startRecording must call narrator.stop() before getUserMedia so narration is never captured in the child's recording",
-  );
-
-  const stopRecordingIndex = source.indexOf("const stopRecording", microphoneIndex);
-  assert.ok(stopRecordingIndex > microphoneIndex, "SpeakMission must contain stopRecording");
-  const recordingSetup = source.slice(speakMissionIndex, recordingIndex);
-  const recordingRequest = source.slice(recordingIndex, stopRecordingIndex);
-  assert.match(
-    recordingSetup,
-    /mounted\s*=\s*useRef(?:<boolean>)?\(\s*false\s*\)/,
-    "SpeakMission must track whether it is still mounted while microphone permission is pending",
-  );
-  assert.match(
-    recordingSetup,
-    /microphoneRequest\s*=\s*useRef(?:<number>)?\(\s*0\s*\)/,
-    "SpeakMission must keep a monotonically increasing microphone request token",
-  );
-  assert.match(
-    recordingSetup,
-    /microphoneRequest\.current\s*\+=\s*1/,
-    "Unmounting SpeakMission must invalidate an outstanding microphone request",
-  );
-  assert.match(
-    recordingRequest,
-    /(?:const|let)\s+request\s*=\s*\+\+microphoneRequest\.current/,
-    "Every getUserMedia request must capture a unique request token",
-  );
-  assert.match(
-    recordingRequest.slice(recordingRequest.indexOf("getUserMedia")),
-    /!mounted\.current[\s\S]{0,120}request\s*!={1,2}\s*microphoneRequest\.current|request\s*!={1,2}\s*microphoneRequest\.current[\s\S]{0,120}!mounted\.current/,
-    "Code resumed after getUserMedia must verify both mounted state and the request token",
-  );
-
-  const speakMissionMarkup = source.slice(stopRecordingIndex, source.indexOf("function ReadMission", stopRecordingIndex));
-  assert.match(
-    speakMissionMarkup,
-    /<button\b[\s\S]{0,260}disabled=\{recording\s*\|\|\s*requestingRecording\}[\s\S]{0,500}narrator\.speak\(task\.modelLine/,
-    "The model-line playback button must be disabled while recording or opening the microphone",
-  );
 });
 
 test("narration preferences hydrate safely and migrate all three legacy pace values", async () => {

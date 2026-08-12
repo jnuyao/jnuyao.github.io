@@ -2,16 +2,16 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Story Garden — Read, Say, Spell & Grow",
+  title: "Story Garden — Picture Books to Read and Hear",
   description:
-    "A playful Primary 1, Primary 2 and Primary 3 storybook garden for reading, word pronunciation, voice practice, spelling and dictation.",
+    "A child-friendly Primary 1, Primary 2 and Primary 3 picture-book library with prepared English narration.",
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
   },
   openGraph: {
     title: "Story Garden",
-    description: "Read a story. Hear, say and spell its words. Grow your English.",
+    description: "Choose a picture book, follow every page and hear the story read aloud.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "Story Garden reading adventure" }],
   },
 };
