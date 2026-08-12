@@ -77,6 +77,11 @@ import { MoonlightMarketAdventure } from "./moonlight-market-adventure";
 import { storyGuideForBook } from "./story-guide-data";
 import { wordsForBook } from "./word-data";
 import { WordGarden } from "./word-garden";
+import { HackersPaintersReader } from "./adult-reader/hackers-painters-reader";
+import {
+  HACKERS_PAINTERS_UNIT_IDS,
+  type HackersPaintersUnitId,
+} from "./adult-reader/hackers-painters-data";
 import {
   LEGACY_PROGRESS_KEY,
   PROGRESS_KEY,
@@ -102,6 +107,7 @@ import {
 
 type View =
   | { kind: "shelf" }
+  | { kind: "hackers-painters"; unitId: HackersPaintersUnitId | null }
   | { kind: "dinosaur-art-lab"; lessonId: DinosaurArtLessonId | null; step: DinosaurArtStep; fromBookSlug?: string }
   | { kind: "dinosaur-pronunciation-lab"; dinosaurId: DinosaurPronunciationId | null }
   | { kind: "everyday-discovery-lab"; sceneId: EverydayDiscoverySceneId | null; itemId: EverydayDiscoveryId | null }
@@ -164,6 +170,15 @@ function bookIsComplete(book: Book, progress: BookProgress): boolean {
 function parseViewFromUrl(): View {
   if (typeof window === "undefined") return { kind: "shelf" };
   const params = new URLSearchParams(window.location.search);
+  if (params.get("studio") === "hackers-painters") {
+    const rawUnit = params.get("unit");
+    return {
+      kind: "hackers-painters",
+      unitId: rawUnit && HACKERS_PAINTERS_UNIT_IDS.includes(rawUnit as HackersPaintersUnitId)
+        ? rawUnit as HackersPaintersUnitId
+        : null,
+    };
+  }
   if (params.get("lab") === "everyday-discovery") {
     const rawScene = params.get("scene");
     const rawItem = params.get("word");
@@ -250,6 +265,11 @@ function parseViewFromUrl(): View {
 
 function urlForView(view: View): string {
   const params = new URLSearchParams();
+  if (view.kind === "hackers-painters") {
+    params.set("studio", "hackers-painters");
+    if (view.unitId) params.set("unit", view.unitId);
+    return `${window.location.pathname}?${params.toString()}`;
+  }
   if (view.kind === "everyday-discovery-lab") {
     params.set("lab", "everyday-discovery");
     if (view.sceneId) params.set("scene", view.sceneId);
@@ -735,11 +755,23 @@ export default function StoryGarden() {
   }, [navigate, progress.books, updateBookProgress]);
 
   const book = view.kind === "shelf"
+    || view.kind === "hackers-painters"
     || view.kind === "dinosaur-art-lab"
     || view.kind === "dinosaur-pronunciation-lab"
     || view.kind === "everyday-discovery-lab"
     ? undefined
     : BOOKS.find((item) => item.slug === view.bookSlug);
+
+  if (view.kind === "hackers-painters") {
+    return (
+      <HackersPaintersReader
+        unitId={view.unitId}
+        onBack={() => navigate({ kind: "shelf" })}
+        onHome={() => navigate({ kind: "hackers-painters", unitId: null })}
+        onOpenUnit={(unitId) => navigate({ kind: "hackers-painters", unitId })}
+      />
+    );
+  }
 
   if (view.kind === "everyday-discovery-lab") {
     const openScene = (sceneId: EverydayDiscoverySceneId) => {
@@ -932,7 +964,23 @@ export default function StoryGarden() {
   }
 
   if (view.kind !== "shelf" && !book) {
-    return <Shelf progress={progress} dinosaurArtProgress={dinosaurArtProgress} dinosaurPronunciationProgress={dinosaurPronunciationProgress} everydayDiscoveryProgress={everydayDiscoveryProgress} narrator={narrator} onOpenBook={openBook} onOpenWords={(selected) => navigate({ kind: "word-garden", bookSlug: selected.slug })} onOpenDinosaurArt={() => navigate({ kind: "dinosaur-art-lab", lessonId: null, step: 0 })} onOpenDinosaurPronunciation={() => navigate({ kind: "dinosaur-pronunciation-lab", dinosaurId: null })} onOpenEverydayDiscovery={() => navigate({ kind: "everyday-discovery-lab", sceneId: null, itemId: null })} onReset={resetProgress} saveWarning={saveWarning} />;
+    return (
+      <Shelf
+        progress={progress}
+        dinosaurArtProgress={dinosaurArtProgress}
+        dinosaurPronunciationProgress={dinosaurPronunciationProgress}
+        everydayDiscoveryProgress={everydayDiscoveryProgress}
+        narrator={narrator}
+        onOpenBook={openBook}
+        onOpenWords={(selected) => navigate({ kind: "word-garden", bookSlug: selected.slug })}
+        onOpenDinosaurArt={() => navigate({ kind: "dinosaur-art-lab", lessonId: null, step: 0 })}
+        onOpenDinosaurPronunciation={() => navigate({ kind: "dinosaur-pronunciation-lab", dinosaurId: null })}
+        onOpenEverydayDiscovery={() => navigate({ kind: "everyday-discovery-lab", sceneId: null, itemId: null })}
+        onOpenAdultReading={() => navigate({ kind: "hackers-painters", unitId: null })}
+        onReset={resetProgress}
+        saveWarning={saveWarning}
+      />
+    );
   }
 
   if (view.kind === "mid-autumn-adventure" && book) {
@@ -1269,6 +1317,7 @@ export default function StoryGarden() {
       onOpenDinosaurArt={() => navigate({ kind: "dinosaur-art-lab", lessonId: null, step: 0 })}
       onOpenDinosaurPronunciation={() => navigate({ kind: "dinosaur-pronunciation-lab", dinosaurId: null })}
       onOpenEverydayDiscovery={() => navigate({ kind: "everyday-discovery-lab", sceneId: null, itemId: null })}
+      onOpenAdultReading={() => navigate({ kind: "hackers-painters", unitId: null })}
       onReset={resetProgress}
       saveWarning={saveWarning}
     />
@@ -1336,6 +1385,7 @@ function Shelf({
   onOpenDinosaurArt,
   onOpenDinosaurPronunciation,
   onOpenEverydayDiscovery,
+  onOpenAdultReading,
   onReset,
   saveWarning,
 }: {
@@ -1349,6 +1399,7 @@ function Shelf({
   onOpenDinosaurArt: () => void;
   onOpenDinosaurPronunciation: () => void;
   onOpenEverydayDiscovery: () => void;
+  onOpenAdultReading: () => void;
   onReset: () => void;
   saveWarning: boolean;
 }) {
@@ -1425,6 +1476,27 @@ function Shelf({
             <span><strong>{step.label}</strong><small>{step.garden}</small></span>
           </div>
         ))}
+      </section>
+
+      <section className="adult-reading-shelf-invite" aria-labelledby="adult-reading-shelf-title">
+        <div className="adult-reading-shelf-invite__copy">
+          <p className="eyebrow">For grown-ups · 成人精读</p>
+          <h2 id="adult-reading-shelf-title">Hackers &amp; Painters — Deep Reading</h2>
+          <p>精读 Chapter 2：听段落、拆长句、积累表达，再用英语说出和写出自己的观点。</p>
+          <div className="adult-reading-shelf-invite__features">
+            <span>6 focused sessions</span>
+            <span>English + 中文支架</span>
+            <span>Progress on this device</span>
+          </div>
+          <button className="adult-reading-shelf-invite__button" type="button" onClick={onOpenAdultReading}>
+            Open my English studio <span aria-hidden="true">→</span>
+          </button>
+        </div>
+        <div className="adult-reading-shelf-invite__mark" aria-hidden="true">
+          <span>Chapter</span>
+          <strong>02</strong>
+          <small>Hackers &amp; Painters</small>
+        </div>
       </section>
 
       <section className="dino-shelf-invite" aria-labelledby="dino-shelf-title">
