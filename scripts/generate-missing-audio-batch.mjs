@@ -185,14 +185,15 @@ async function loadStoryState({ applyCopies }) {
     loaded?.voice !== storyAudio.VOICE ||
     loaded?.promptVersion !== storyAudio.PROMPT_VERSION ||
     loaded?.childTransformVersion !== storyAudio.CHILD_TRANSFORM_VERSION ||
-    loaded?.expectedJobs !== jobs.length ||
+    !Number.isInteger(loaded?.expectedJobs) ||
+    loaded.expectedJobs > jobs.length ||
     !Array.isArray(loaded?.jobs)
   ) throw new Error("New-book audio manifest identity does not match the current plan.");
 
   const state = {
     scope: "story",
     jobs,
-    manifest: loaded,
+    manifest: { ...loaded, expectedJobs: jobs.length },
     records: new Map(),
     inspect: storyAudio.inspect,
     save: saveStoryState,

@@ -42,6 +42,20 @@ const NEW_BOOK_SLUGS = new Set([
   "magnetic-max",
   "the-feast",
   "willy-and-hugh",
+  "the-gruffalo",
+  "predators-and-prey",
+  "the-stars-of-chek-jawa",
+  "dinosaur-school",
+  "danny-dinosaur-goes-to-camp",
+  "danny-dinosaur-school-days",
+  "santas-moose",
+  "horse-in-harrys-room",
+  "danny-dinosaur-too-tall",
+  "danny-dinosaur-sand-castle-contest",
+  "danny-dinosaur-new-puppy",
+  "sammy-the-seal",
+  "danny-dinosaur-mind-manners",
+  "danny-dinosaur-ride-a-bike",
 ]);
 const sensitiveValues = new Set();
 
@@ -392,11 +406,11 @@ async function makeChild(job, standard, destination) {
 
 async function inspect(path) {
   const info = await lstat(path);
-  if (!info.isFile() || info.isSymbolicLink() || info.size < 4_000 || info.size > 500 * 1024) {
+  if (!info.isFile() || info.isSymbolicLink() || info.size < 4_000 || info.size > 2 * 1024 * 1024) {
     throw new Error(`Unsafe MP3 size at ${path}.`);
   }
   const durationSeconds = await probe(path);
-  if (durationSeconds < 0.65 || durationSeconds > 90) throw new Error(`Unsafe MP3 duration at ${path}.`);
+  if (durationSeconds < 0.65 || durationSeconds > 240) throw new Error(`Unsafe MP3 duration at ${path}.`);
   await run("ffmpeg", ["-nostdin", "-v", "error", "-i", path, "-f", "null", "-"], {
     encoding: "utf8", timeout: 30_000, maxBuffer: 1024 * 1024,
   });
@@ -439,10 +453,12 @@ async function main() {
       loaded?.voice !== VOICE ||
       loaded?.promptVersion !== PROMPT_VERSION ||
       loaded?.childTransformVersion !== CHILD_TRANSFORM_VERSION ||
-      loaded?.expectedJobs !== jobs.length ||
+      !Number.isInteger(loaded?.expectedJobs) ||
+      loaded.expectedJobs > jobs.length ||
       !Array.isArray(loaded?.jobs)
     ) throw new Error("Existing new-book audio manifest has an incompatible identity.");
-    manifest = loaded;
+    manifest = { ...loaded, expectedJobs: jobs.length };
+    if (manifest.jobs.length < jobs.length) delete manifest.completedAt;
   }
 
   const records = new Map(manifest.jobs.map((record) => [record.id, record]));

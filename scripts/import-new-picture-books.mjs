@@ -22,6 +22,20 @@ const BOOKS = [
   { directory: "The Feast", slug: "the-feast", include: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] },
   { directory: "The Growl", slug: "the-growl" },
   { directory: "Lazy Duck", slug: "lazy-duck", include: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+  { directory: "The Gruffalo", slug: "the-gruffalo", include: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] },
+  { directory: "Predators and Prey", slug: "predators-and-prey", include: [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] },
+  { directory: "The Stars of Chek Jawa", slug: "the-stars-of-chek-jawa" },
+  { directory: "dinosaur school/pages", slug: "dinosaur-school" },
+  { directory: "Danny and the Dinosaur Goes to Camp/pages", slug: "danny-dinosaur-goes-to-camp" },
+  { directory: "Danny and the Dinosaur School Days/pages", slug: "danny-dinosaur-school-days" },
+  { directory: "Santa's Moose/pages", slug: "santas-moose" },
+  { directory: "The Horse in Harry's Room/pages", slug: "horse-in-harrys-room" },
+  { directory: "Danny and the Dinosaur Too Tall/pages", slug: "danny-dinosaur-too-tall" },
+  { directory: "Danny and the Dinosaur Sand Castle Contest/pages", slug: "danny-dinosaur-sand-castle-contest" },
+  { directory: "Danny and the Dinosaur New Puppy/pages", slug: "danny-dinosaur-new-puppy" },
+  { directory: "Danny and the Dinosaur Sammy Seal/pages", slug: "sammy-the-seal" },
+  { directory: "Danny and the Dinosaur Mind Manners/pages", slug: "danny-dinosaur-mind-manners" },
+  { directory: "Danny and the Dinosaur Ride a Bike/pages", slug: "danny-dinosaur-ride-a-bike" },
 ];
 
 const selectedSlug = process.argv[2] || null;

@@ -912,11 +912,11 @@ p {
 }
 
 .reader__stage {
-  width: min(1280px, 100%);
+  width: min(1720px, 100%);
   margin: 0 auto;
   padding: 6px 20px 24px;
   display: grid;
-  grid-template-columns: 80px minmax(0, 980px) 80px;
+  grid-template-columns: 72px minmax(0, 1fr) 72px;
   align-items: start;
   justify-content: center;
   gap: 18px;
@@ -958,6 +958,13 @@ p {
   min-width: 0;
 }
 
+.story-page__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 290px);
+  align-items: start;
+  gap: 20px;
+}
+
 .story-page__paper {
   border: 1px solid rgba(23, 60, 50, 0.12);
   border-radius: 20px;
@@ -981,7 +988,7 @@ p {
 .story-page__image-button img {
   width: 100%;
   height: auto;
-  max-height: min(65svh, 740px);
+  max-height: min(80svh, 980px);
   margin: 0 auto;
   object-fit: contain;
   user-select: none;
@@ -989,6 +996,7 @@ p {
 
 .story-page__zoom {
   position: absolute;
+  z-index: 2;
   right: 12px;
   bottom: 12px;
   width: 38px;
@@ -1002,17 +1010,187 @@ p {
   font-weight: 900;
 }
 
+.story-page__side-listeners {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.story-page__side-listeners button {
+  --side-listener-colour: #3d8bb1;
+  min-width: 0;
+  min-height: 66px;
+  border: 2px solid color-mix(in srgb, var(--side-listener-colour) 25%, white);
+  border-radius: 15px;
+  padding: 9px 13px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  background: color-mix(in srgb, var(--side-listener-colour) 8%, white);
+  color: var(--green-dark);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.story-page__side-listeners button:nth-child(2) {
+  --side-listener-colour: #8770b5;
+}
+
+.story-page__side-listeners button.is-speaking {
+  --side-listener-colour: #d45f50;
+  border-color: var(--side-listener-colour);
+  background: #fff0ec;
+  box-shadow: 0 4px 0 #a6483d;
+}
+
+.story-page__side-listeners button:disabled {
+  border-style: dashed;
+  background: #f4f1e9;
+  box-shadow: none;
+  color: #7c837c;
+  cursor: default;
+  opacity: 0.76;
+}
+
+.story-page__side-listener-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--side-listener-colour) 16%, white);
+  font-size: 17px;
+}
+
+.story-page__side-listeners button > span:last-child,
+.story-page__side-listeners strong,
+.story-page__side-listeners small {
+  min-width: 0;
+  display: block;
+}
+
+.story-page__side-listeners strong {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.story-page__side-listeners small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.story-page__side-listeners button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--side-listener-colour) 62%, white);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .story-page__side-listeners button:not(:disabled):hover {
+    border-color: var(--side-listener-colour);
+    box-shadow: 0 4px 0 color-mix(in srgb, var(--side-listener-colour) 65%, #173c32);
+    transform: translateY(-1px);
+  }
+}
+
 .reader__tools {
-  margin-top: 19px;
+  margin: 0;
   display: flex;
   align-items: stretch;
-  justify-content: center;
+  justify-content: stretch;
   gap: 10px;
 }
 
+.reader__controls {
+  position: sticky;
+  top: 92px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.story-mode-toggle {
+  width: 100%;
+  border: 1px solid rgba(23, 60, 50, 0.12);
+  border-radius: 17px;
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  background: rgba(255, 253, 247, 0.9);
+  box-shadow: 0 6px 18px rgba(23, 60, 50, 0.05);
+}
+
+.story-mode-toggle button {
+  min-width: 0;
+  min-height: 53px;
+  border: 0;
+  border-radius: 12px;
+  padding: 7px 8px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.story-mode-toggle button > span:first-child {
+  width: 27px;
+  height: 27px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: rgba(23, 60, 50, 0.06);
+  font-size: 14px;
+}
+
+.story-mode-toggle button span,
+.story-mode-toggle button strong,
+.story-mode-toggle button small {
+  display: block;
+}
+
+.story-mode-toggle button strong {
+  overflow: hidden;
+  color: inherit;
+  font-size: 11px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.story-mode-toggle button small {
+  margin-top: 2px;
+  font-size: 8px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.story-mode-toggle button.is-selected {
+  background: var(--green);
+  box-shadow: 0 3px 0 var(--green-dark);
+  color: white;
+}
+
+.story-mode-toggle button.is-selected > span:first-child {
+  background: rgba(255, 255, 255, 0.17);
+}
+
 .listen-button {
-  min-height: 62px;
-  min-width: min(430px, 70%);
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
   border: 0;
   border-radius: 18px;
   padding: 10px 18px;
@@ -1056,6 +1234,101 @@ p {
   font-weight: 700;
 }
 
+.story-guide-cue {
+  border: 1px solid rgba(62, 152, 184, 0.24);
+  border-radius: 17px;
+  padding: 14px;
+  background: linear-gradient(145deg, #f2fbff, #fffdf7);
+  box-shadow: 0 6px 18px rgba(23, 60, 50, 0.05);
+}
+
+.story-guide-cue__eyebrow {
+  margin-top: 11px;
+  display: block;
+  color: #397891;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.story-guide-cue__coverage {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 4px 8px;
+  align-items: center;
+  background: #dff3ea;
+  color: #256d52;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.story-guide-cue > strong {
+  margin-top: 4px;
+  display: block;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.story-guide-cue > p {
+  margin: 11px 0 0;
+  border-top: 1px dashed rgba(23, 60, 50, 0.14);
+  padding-top: 10px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.story-guide-cue details {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.story-guide-cue summary {
+  color: #397891;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.story-guide-cue details div {
+  margin-top: 7px;
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.story-guide-cue details div small {
+  display: block;
+  margin-top: 9px;
+  color: #397891;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.story-guide-cue details div small:first-child {
+  margin-top: 0;
+}
+
+.story-guide-cue details div p {
+  margin: 2px 0 0;
+}
+
+.story-guide-cue details div p[lang="en"] {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
 .narration-settings {
   width: min(590px, 100%);
   margin: 13px auto 0;
@@ -1063,6 +1336,29 @@ p {
   border-radius: 17px;
   background: rgba(255, 253, 247, 0.84);
   box-shadow: 0 6px 18px rgba(23, 60, 50, 0.05);
+}
+
+.reader__controls .narration-settings {
+  width: 100%;
+  margin: 0;
+}
+
+.reader__controls .narration-settings__panel,
+.reader__controls .pace-choice {
+  grid-template-columns: 1fr;
+}
+
+.narration-settings--brief .narration-settings__panel {
+  padding: 10px;
+}
+
+.narration-settings--brief .pace-choice label {
+  min-height: 52px;
+  padding: 8px 10px;
+}
+
+.narration-settings--brief .pace-choice strong {
+  font-size: 12px;
 }
 
 .narration-settings summary {
@@ -3159,7 +3455,1740 @@ p {
   font-weight: 850;
 }
 
+/* Art Studio */
+
+.art-studio {
+  min-height: 100svh;
+  padding-bottom: 64px;
+  background:
+    radial-gradient(circle at 8% 8%, rgba(247, 185, 74, 0.2), transparent 26rem),
+    radial-gradient(circle at 92% 18%, rgba(62, 152, 184, 0.17), transparent 30rem),
+    #f4efe0;
+}
+
+.art-studio__header {
+  width: min(1180px, calc(100% - 40px));
+  min-height: 78px;
+  margin: 0 auto;
+  border-bottom: 1px solid rgba(23, 60, 50, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.art-studio__book {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.art-studio__book img {
+  width: 38px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  box-shadow: 0 4px 10px rgba(23, 60, 50, 0.14);
+}
+
+.art-studio__book small,
+.art-studio__book strong { display: block; }
+.art-studio__book small { color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.art-studio__book strong { max-width: 520px; overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+
+.art-studio__privacy {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #5b7469;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.art-studio__hero {
+  width: min(1180px, calc(100% - 40px));
+  margin: 28px auto 20px;
+  border: 1px solid rgba(23, 60, 50, 0.1);
+  border-radius: 28px;
+  padding: 30px 34px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  background: linear-gradient(120deg, #fffaf0 0 58%, #e8f6f8 100%);
+  box-shadow: 0 14px 34px rgba(23, 60, 50, 0.08);
+}
+
+.art-studio__hero h1 { margin: 2px 0 3px; font-size: clamp(34px, 5vw, 58px); letter-spacing: -0.05em; }
+.art-studio__hero > div:first-child > p:last-child { margin: 0; color: var(--muted); font-weight: 750; }
+.art-studio__count { min-width: 104px; margin-left: auto; border: 2px solid rgba(62, 152, 184, 0.18); border-radius: 22px; padding: 13px; display: grid; background: white; text-align: center; }
+.art-studio__count strong { color: #397891; font-size: 34px; line-height: 1; }
+.art-studio__count span { margin-top: 4px; color: var(--muted); font-size: 9px; font-weight: 900; text-transform: uppercase; }
+
+.art-path {
+  width: min(850px, calc(100% - 40px));
+  margin: 0 auto 20px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.art-path button {
+  min-height: 68px;
+  border: 2px solid rgba(23, 60, 50, 0.1);
+  border-radius: 18px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 9px;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.art-path button > span { grid-row: 1 / 3; width: 38px; height: 38px; border-radius: 13px; display: grid; place-items: center; background: rgba(23, 60, 50, 0.06); font-size: 17px; font-weight: 950; }
+.art-path button small { align-self: end; font-size: 8px; font-weight: 900; letter-spacing: 0.07em; text-transform: uppercase; }
+.art-path button strong { align-self: start; color: inherit; font-size: 12px; }
+.art-path button.is-current { border-color: #3e98b8; background: white; box-shadow: 0 5px 0 #b8dce7; color: var(--ink); transform: translateY(-2px); }
+.art-path button.is-current > span { background: #dff2f6; }
+.art-path button.is-done:not(.is-current) { border-color: #a7cda6; color: #3e7747; }
+.art-path button.is-done:not(.is-current) > span { background: #dff0dc; }
+
+.art-workspace {
+  width: min(1180px, calc(100% - 40px));
+  min-height: 600px;
+  margin: 0 auto;
+  border: 1px solid rgba(23, 60, 50, 0.11);
+  border-radius: 30px;
+  padding: 34px;
+  background: rgba(255, 254, 249, 0.96);
+  box-shadow: 0 20px 55px rgba(23, 60, 50, 0.11);
+}
+
+.art-heading { margin-bottom: 28px; display: flex; align-items: center; gap: 16px; }
+.art-heading > span { width: 62px; height: 62px; flex: 0 0 62px; border-radius: 20px; display: grid; place-items: center; background: #fff0bd; box-shadow: 0 5px 0 #ead48a; font-size: 29px; }
+.art-heading .eyebrow { margin: 0 0 2px; }
+.art-heading h2 { margin: 0; font-size: clamp(28px, 4vw, 43px); letter-spacing: -0.04em; }
+.art-heading > div > p:last-child { margin: 2px 0 0; color: var(--muted); font-size: 13px; font-weight: 700; }
+
+.art-observation-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.art-observation-card { border: 1px solid #dfe3dc; border-radius: 21px; overflow: hidden; background: #fbf8ef; }
+.art-observation-card > button { position: relative; width: 100%; min-height: 180px; border: 0; padding: 0; display: block; overflow: hidden; background: #e9e5da; cursor: zoom-in; }
+.art-observation-card > button img { width: 100%; height: 220px; display: block; object-fit: cover; object-position: center; }
+.art-observation-card > button > span { position: absolute; right: 10px; bottom: 10px; border-radius: 999px; padding: 6px 9px; background: rgba(255, 255, 255, 0.92); color: var(--ink); font-size: 9px; font-weight: 900; }
+.art-observation-card > div { padding: 16px; }
+.art-observation-card small { color: #397891; font-size: 9px; font-weight: 950; letter-spacing: 0.05em; text-transform: uppercase; }
+.art-observation-card h2 { margin: 4px 0 7px; font-size: 20px; }
+.art-observation-card p { min-height: 58px; margin: 0; color: #41574f; font-size: 13px; font-weight: 750; }
+.art-observation-card ul { margin: 13px 0 0; padding: 12px 12px 12px 30px; border-radius: 13px; background: white; color: var(--muted); font-size: 11px; font-weight: 700; }
+.art-observation-card li + li { margin-top: 4px; }
+
+.art-next { margin-top: 28px; border-top: 1px dashed #d7d9d1; padding-top: 22px; display: flex; align-items: center; justify-content: flex-end; gap: 18px; }
+.art-next > span { margin-right: auto; color: var(--muted); font-size: 11px; font-weight: 750; }
+
+.pose-picker { max-width: 700px; margin: 0 auto 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pose-picker button { min-height: 58px; border: 2px solid #d9ded6; border-radius: 16px; padding: 8px 12px; display: flex; align-items: center; gap: 9px; background: #f8f5eb; color: var(--muted); cursor: pointer; }
+.pose-picker button span { width: 31px; height: 31px; border-radius: 50%; display: grid; place-items: center; background: white; font-weight: 950; }
+.pose-picker button strong { font-size: 13px; }
+.pose-picker button.is-selected { border-color: #ef7963; background: #fff0ec; box-shadow: 0 4px 0 #e7b7ad; color: var(--ink); }
+
+.art-drawing-guide {
+  max-width: 1000px;
+  margin: 0 auto;
+  border: 2px solid #d9dfd8;
+  border-radius: 26px;
+  padding: 24px;
+  background: #fffef9;
+  box-shadow: 0 10px 26px rgba(23, 60, 50, 0.08);
+}
+
+.art-drawing-guide__intro {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.art-drawing-guide__intro h2 { margin: 3px 0 5px; font-size: 25px; }
+.art-drawing-guide__intro p:not(.eyebrow) { max-width: 720px; margin: 0; color: var(--muted); font-size: 12px; font-weight: 750; }
+.art-drawing-guide__intro > span { margin-left: auto; border-radius: 999px; padding: 8px 11px; flex: 0 0 auto; background: #fff0bd; color: #6f5a1e; font-size: 10px; font-weight: 950; }
+
+.art-drawing-guide__visual {
+  position: relative;
+  margin: 0;
+  border: 1px solid #e4e0d4;
+  border-radius: 20px;
+  padding: 10px 10px 0;
+  overflow: hidden;
+  background: #fbf7ec;
+}
+
+.art-drawing-guide__visual img {
+  width: 100%;
+  height: auto;
+  border-radius: 13px;
+  display: block;
+  user-select: none;
+}
+
+.art-drawing-guide__focus {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  bottom: 31px;
+  left: 10px;
+  width: calc((100% - 20px) / 4);
+  border: 5px solid #ef7963;
+  border-radius: 14px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 7px 22px rgba(143, 65, 49, 0.2);
+  pointer-events: none;
+  transform: translateX(calc(var(--guide-step) * 100%));
+  transition: transform 180ms ease;
+}
+
+.art-drawing-guide__visual figcaption { min-height: 30px; padding: 8px 5px 7px; color: var(--muted); font-size: 9px; font-weight: 750; text-align: center; }
+
+.art-drawing-guide__track { margin-top: 13px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.art-drawing-guide__track button { min-height: 58px; border: 2px solid #dfe3dc; border-radius: 15px; padding: 8px; display: flex; align-items: center; gap: 8px; background: #f8f5eb; color: #62756d; text-align: left; cursor: pointer; }
+.art-drawing-guide__track button > span { width: 30px; height: 30px; border-radius: 10px; flex: 0 0 30px; display: grid; place-items: center; background: white; font-size: 11px; font-weight: 950; }
+.art-drawing-guide__track button strong { font-size: 11px; line-height: 1.2; }
+.art-drawing-guide__track button.is-current { border-color: #ef7963; background: #fff0ec; box-shadow: 0 4px 0 #e7b7ad; color: var(--ink); transform: translateY(-1px); }
+.art-drawing-guide__track button.is-current > span { background: #ef7963; color: white; }
+.art-drawing-guide__track button.is-done { border-color: #b8d7b5; background: #eef8ec; color: #3f7748; }
+.art-drawing-guide__track button.is-done > span { background: #73b576; color: white; }
+
+.art-drawing-guide__instruction { margin-top: 15px; border-left: 7px solid #ef7963; border-radius: 16px; padding: 17px 19px; background: #fff5f1; }
+.art-drawing-guide__instruction > span { color: #ad4e3e; font-size: 9px; font-weight: 950; letter-spacing: 0.06em; text-transform: uppercase; }
+.art-drawing-guide__instruction h3 { margin: 3px 0 5px; font-size: 23px; }
+.art-drawing-guide__instruction p { margin: 0; color: #324b42; font-size: 16px; font-weight: 800; line-height: 1.55; }
+.art-drawing-guide__instruction small { margin-top: 9px; display: block; color: #6a756e; font-size: 11px; font-weight: 750; }
+
+.art-drawing-guide__actions { margin-top: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.art-drawing-guide__actions .button { min-height: 48px; }
+.art-guide-back { border: 2px solid #d7ddd6; background: white; box-shadow: none; color: #53675e; }
+.art-guide-back:disabled { opacity: 0.35; cursor: default; }
+.art-guide-celebration { min-height: 50px; border-radius: 16px; padding: 9px 14px; display: flex; align-items: center; gap: 9px; background: #e9f7e6; color: #356b3e; }
+.art-guide-celebration span { font-size: 24px; }
+.art-guide-celebration strong { font-size: 13px; }
+
+.sketch-challenge,
+.art-finishing-tools { max-width: 1000px; margin: 18px auto 0; border: 2px solid #e4d49e; border-radius: 20px; overflow: hidden; background: #fff9e7; }
+.sketch-challenge > summary,
+.art-finishing-tools > summary { min-height: 70px; padding: 13px 18px; display: grid; grid-template-columns: 42px minmax(0, 1fr); align-items: center; gap: 11px; cursor: pointer; list-style: none; }
+.sketch-challenge > summary::-webkit-details-marker,
+.art-finishing-tools > summary::-webkit-details-marker { display: none; }
+.sketch-challenge > summary > span:first-child,
+.art-finishing-tools > summary > span:first-child { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; background: white; font-size: 21px; }
+.sketch-challenge > summary strong,
+.sketch-challenge > summary small,
+.art-finishing-tools > summary strong,
+.art-finishing-tools > summary small { display: block; }
+.sketch-challenge > summary strong,
+.art-finishing-tools > summary strong { font-size: 14px; }
+.sketch-challenge > summary small,
+.art-finishing-tools > summary small { margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 750; }
+.sketch-challenge[open] > summary,
+.art-finishing-tools[open] > summary { border-bottom: 1px dashed #ddcf9d; }
+.sketch-challenge .sketch-timer { border: 0; border-radius: 0; box-shadow: none; }
+
+.art-finishing-tools { border-color: #cfdedc; background: #f4faf9; }
+.art-finishing-tools[open] > summary { border-bottom-color: #cfdedc; }
+.art-finishing-tools .art-brief { border: 0; border-radius: 0; }
+
+.sketch-timer { max-width: 850px; margin: 0 auto; border: 2px solid #ead9a0; border-radius: 26px; padding: 28px; display: grid; grid-template-columns: 190px minmax(0, 1fr); align-items: center; gap: 30px; background: linear-gradient(135deg, #fff8df, #fffdf8); }
+.sketch-timer__clock { aspect-ratio: 1; border: 9px solid #f3d268; border-radius: 50%; display: grid; place-content: center; background: white; box-shadow: inset 0 0 0 7px #fff7d8, 0 8px 20px rgba(94, 78, 30, 0.12); text-align: center; }
+.sketch-timer__clock strong { font-size: 58px; line-height: 0.9; }
+.sketch-timer__clock span { margin-top: 7px; color: var(--muted); font-size: 9px; font-weight: 950; text-transform: uppercase; }
+.sketch-timer h2 { margin: 4px 0 7px; font-size: 24px; line-height: 1.25; }
+.sketch-timer p:not(.eyebrow) { color: var(--muted); font-size: 13px; }
+.sketch-timer.is-running .sketch-timer__clock { border-color: #ef7963; animation: listen-pulse 1s ease-in-out infinite; }
+.sketch-timer.is-finished .sketch-timer__clock { border-color: #73b576; background: #edfaeb; }
+
+.art-mission-picker { max-width: 850px; margin: 0 auto 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.art-mission-picker button { min-height: 92px; border: 2px solid #dce1da; border-radius: 20px; padding: 14px; display: grid; grid-template-columns: 51px minmax(0, 1fr); align-items: center; gap: 12px; background: #faf7ee; color: var(--muted); text-align: left; cursor: pointer; }
+.art-mission-picker button > span:first-child { width: 51px; height: 51px; border-radius: 16px; display: grid; place-items: center; background: white; font-size: 25px; }
+.art-mission-picker button strong,
+.art-mission-picker button small { display: block; }
+.art-mission-picker button strong { color: var(--ink); font-size: 18px; }
+.art-mission-picker button small { margin-top: 4px; font-size: 10px; font-weight: 750; }
+.art-mission-picker button.is-selected { border-color: #3e98b8; background: #eaf6f8; box-shadow: 0 5px 0 #b8dce7; color: #42636c; transform: translateY(-2px); }
+
+.art-brief { border: 1px solid #dfe3dc; border-radius: 24px; padding: 25px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(290px, 0.75fr); gap: 28px; background: #fbfaf5; }
+.art-brief__main > h2 { margin: 5px 0 8px; font-size: 30px; }
+.art-brief__main > p:not(.eyebrow) { max-width: 690px; color: var(--muted); }
+.art-brief h3 { margin: 22px 0 9px; font-size: 12px; letter-spacing: 0.03em; text-transform: uppercase; }
+.material-chips,
+.word-bank { display: flex; flex-wrap: wrap; gap: 7px; }
+.material-chips span,
+.word-bank span { border-radius: 999px; padding: 7px 10px; background: #eef3ec; color: #4e665c; font-size: 10px; font-weight: 850; }
+.word-bank span { background: #fff0bd; color: #715e24; }
+.english-toolbox { display: grid; gap: 7px; }
+.english-toolbox button { min-height: 43px; border: 1px solid #cadfdf; border-radius: 12px; padding: 8px 12px; background: white; color: #285e70; font-family: inherit; font-size: 13px; font-weight: 850; text-align: left; cursor: pointer; }
+.art-checklist { border-radius: 19px; padding: 19px; background: white; box-shadow: 0 7px 20px rgba(23, 60, 50, 0.07); }
+.art-checklist h3 { margin-top: 4px; font-size: 15px; text-transform: none; }
+.art-checklist label { min-height: 48px; border-bottom: 1px dashed #dde0da; display: grid; grid-template-columns: 23px minmax(0, 1fr); align-items: center; gap: 9px; cursor: pointer; }
+.art-checklist input { width: 20px; height: 20px; accent-color: #3e98b8; }
+.art-checklist label span { font-size: 11px; font-weight: 750; }
+.art-checklist > p:last-child { margin: 14px 0 0; color: #397891; font-size: 10px; font-weight: 950; text-align: right; }
+
+.art-share-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr); gap: 25px; }
+.art-share-form,
+.art-photo-card { border: 1px solid #dfe3dc; border-radius: 22px; padding: 22px; background: #fbfaf5; }
+.art-share-form > label { display: block; margin-bottom: 18px; }
+.art-share-form label > span,
+.art-share-form legend { display: block; margin-bottom: 7px; color: #52675e; font-size: 10px; font-weight: 950; letter-spacing: 0.05em; text-transform: uppercase; }
+.art-share-form input,
+.art-share-form textarea { width: 100%; border: 2px solid #d6ded4; border-radius: 14px; padding: 12px 14px; background: white; color: var(--ink); font: inherit; font-size: 16px; font-weight: 750; }
+.art-share-form textarea { resize: vertical; line-height: 1.5; }
+.art-share-form fieldset { margin: 0 0 18px; border: 0; padding: 0; display: grid; gap: 7px; }
+.art-share-form fieldset button { min-height: 42px; border: 1px solid #c8dcdf; border-radius: 12px; padding: 8px 11px; background: #eef8fa; color: #285e70; font-weight: 850; text-align: left; cursor: pointer; }
+.art-speaking-tip { border-radius: 13px; padding: 11px; display: flex; gap: 8px; background: #fff2c8; color: #6d5b27; font-size: 11px; font-weight: 800; }
+.art-photo-card__heading { display: flex; align-items: center; gap: 10px; }
+.art-photo-card__heading > span { width: 43px; height: 43px; border-radius: 14px; display: grid; place-items: center; background: #e8f6f8; font-size: 21px; }
+.art-photo-card__heading strong,
+.art-photo-card__heading small { display: block; }
+.art-photo-card__heading small { margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 750; }
+.art-photo-empty { min-height: 230px; margin: 17px 0 12px; border: 2px dashed #cfd8cd; border-radius: 17px; padding: 20px; display: grid; place-content: center; color: var(--muted); text-align: center; }
+.art-photo-empty span { font-size: 43px; }
+.art-photo-empty p { max-width: 230px; margin: 8px auto 0; font-size: 11px; font-weight: 750; }
+.art-photo-preview { position: relative; margin: 17px 0 12px; border-radius: 17px; overflow: hidden; background: #e8e5dc; }
+.art-photo-preview img { width: 100%; max-height: 340px; display: block; object-fit: contain; }
+.art-photo-preview button { position: absolute; right: 8px; bottom: 8px; min-height: 38px; border: 0; border-radius: 999px; padding: 7px 11px; background: rgba(255, 255, 255, 0.92); color: #7b4942; font-size: 9px; font-weight: 900; cursor: pointer; }
+.art-photo-upload { min-height: 48px; border-radius: 14px; display: grid; place-items: center; background: #3e98b8; box-shadow: 0 5px 0 #2b7089; color: white; font-size: 12px; font-weight: 950; cursor: pointer; }
+.art-photo-card > p { min-height: 16px; margin: 9px 0 0; color: var(--muted); font-size: 9px; line-height: 1.4; }
+#art-photo-status { color: #397891; font-weight: 850; }
+.art-complete { margin-top: 25px; border: 2px solid #a9d1a8; border-radius: 22px; padding: 18px; display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; align-items: center; gap: 15px; background: #eef8eb; }
+.art-complete > span { font-size: 40px; }
+.art-complete small,
+.art-complete strong { display: block; }
+.art-complete small { color: #4c8051; font-size: 9px; font-weight: 950; text-transform: uppercase; }
+.art-complete strong { font-size: 20px; }
+.art-complete p { margin: 2px 0 0; color: var(--muted); font-size: 11px; }
+
+.art-reader-invite { border: 1px solid rgba(62, 152, 184, 0.25); border-radius: 17px; padding: 11px; display: grid; grid-template-columns: 35px minmax(0, 1fr) auto; align-items: center; gap: 9px; background: linear-gradient(135deg, #fff9e7, #edf8fa); }
+.art-reader-invite__icon { width: 35px; height: 35px; border-radius: 11px; display: grid; place-items: center; background: white; font-size: 18px; }
+.art-reader-invite small,
+.art-reader-invite strong { display: block; }
+.art-reader-invite small { color: #397891; font-size: 7px; font-weight: 950; letter-spacing: 0.06em; text-transform: uppercase; }
+.art-reader-invite strong { margin-top: 1px; font-size: 12px; }
+.art-reader-invite p { margin: 2px 0 0; overflow: hidden; color: var(--muted); font-size: 9px; font-weight: 700; line-height: 1.25; }
+.art-reader-invite > button { min-height: 39px; border: 0; border-radius: 12px; padding: 7px 9px; background: #3e98b8; color: white; font-size: 9px; font-weight: 950; cursor: pointer; }
+.art-reader-invite.is-observation { border-color: #e0bd56; background: #fff8dc; }
+.art-finish-invite { margin-top: 12px; border: 2px solid #e4c56c; border-radius: 20px; padding: 15px 18px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 13px; background: #fff7d9; }
+.art-finish-invite > span { font-size: 30px; }
+.art-finish-invite small,
+.art-finish-invite strong { display: block; }
+.art-finish-invite small { color: #776326; font-size: 8px; font-weight: 950; letter-spacing: 0.06em; text-transform: uppercase; }
+.art-finish-invite strong { font-size: 15px; }
+.art-finish-invite p { margin: 2px 0 0; color: #6c6858; font-size: 9px; font-weight: 700; }
+.art-finish-invite .button { min-height: 44px; border: 0; background: #3e98b8; box-shadow: none; color: white; }
+
+.art-studio button:focus-visible,
+.art-studio input:focus-visible,
+.art-studio textarea:focus-visible,
+.art-photo-upload:focus-within,
+.art-reader-invite button:focus-visible,
+.art-finish-invite button:focus-visible { outline: 4px solid rgba(239, 121, 99, 0.38); outline-offset: 2px; }
+
+/* Dinosaur Art Lab */
+
+.dino-lab {
+  min-height: 100svh;
+  padding-bottom: 64px;
+  background:
+    radial-gradient(circle at 7% 7%, rgba(255, 212, 94, 0.2), transparent 24rem),
+    radial-gradient(circle at 94% 18%, rgba(60, 140, 145, 0.16), transparent 30rem),
+    #f3efdf;
+}
+
+.dino-lab__header {
+  width: min(1180px, calc(100% - 40px));
+  min-height: 78px;
+  margin: 0 auto;
+  border-bottom: 1px solid rgba(23, 60, 50, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.dino-lab__header > div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dino-lab__header > div > span:first-child {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  background: #e4f2ec;
+  box-shadow: inset 0 -3px 0 rgba(23, 60, 50, 0.08);
+  font-size: 22px;
+}
+
+.dino-lab__header small,
+.dino-lab__header strong {
+  display: block;
+}
+
+.dino-lab__header small {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dino-lab__header strong {
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dino-lab__header > span:last-child {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #5b7469;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.dino-lab__hero,
+.dino-lesson-hero,
+.dino-lesson-workspace,
+.dino-lab__level-note,
+.dino-lesson-grid,
+.dino-lab__science-note {
+  width: min(1180px, calc(100% - 40px));
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.dino-lab__hero {
+  position: relative;
+  margin-top: 28px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(23, 60, 50, 0.1);
+  border-radius: 32px;
+  padding: 38px 42px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 34px;
+  overflow: hidden;
+  background: linear-gradient(120deg, #fffaf0 0 62%, #dfeeed 100%);
+  box-shadow: 0 16px 40px rgba(23, 60, 50, 0.1);
+}
+
+.dino-lab__hero::after {
+  position: absolute;
+  right: -72px;
+  bottom: -116px;
+  width: 280px;
+  height: 280px;
+  border: 35px solid rgba(60, 140, 145, 0.08);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.dino-lab__hero > div:first-child {
+  position: relative;
+  z-index: 1;
+}
+
+.dino-lab__hero h1 {
+  margin: 3px 0 9px;
+  font-size: clamp(40px, 5.2vw, 66px);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.dino-lab__hero > div:first-child > p:not(.eyebrow) {
+  max-width: 700px;
+  margin-bottom: 22px;
+  color: #52665e;
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.dino-lab__progress {
+  position: relative;
+  z-index: 1;
+  min-width: 154px;
+  min-height: 154px;
+  border: 3px solid rgba(60, 140, 145, 0.2);
+  border-radius: 31px;
+  padding: 17px;
+  display: grid;
+  place-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 24px rgba(23, 60, 50, 0.09);
+  text-align: center;
+}
+
+.dino-lab__progress > span {
+  font-size: 29px;
+  line-height: 1;
+}
+
+.dino-lab__progress strong {
+  margin-top: 5px;
+  color: #32777c;
+  font-size: 43px;
+  line-height: 1;
+}
+
+.dino-lab__progress small {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dino-lab__level-note {
+  min-height: 88px;
+  margin-bottom: 38px;
+  border: 1px solid #d9dfd5;
+  border-radius: 22px;
+  padding: 17px 20px;
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+  align-items: center;
+  gap: 15px;
+  background: rgba(255, 254, 249, 0.88);
+}
+
+.dino-lab__level-note > span {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: #fff0bd;
+  box-shadow: 0 4px 0 #ead48a;
+  font-size: 25px;
+}
+
+.dino-lab__level-note strong {
+  font-size: 16px;
+}
+
+.dino-lab__level-note p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dino-lesson-grid {
+  margin-bottom: 24px;
+}
+
+.dino-lesson-grid__heading {
+  align-items: end;
+}
+
+.dino-lesson-grid__cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.dino-lesson-card {
+  min-width: 0;
+  border: 1px solid rgba(23, 60, 50, 0.12);
+  border-radius: 23px;
+  overflow: hidden;
+  background: #fffdf8;
+  box-shadow: 0 10px 28px rgba(23, 60, 50, 0.08);
+  transition: box-shadow 170ms ease, transform 170ms ease;
+}
+
+.dino-lesson-card > button {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  padding: 0;
+  display: block;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dino-lesson-card__image {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #f4eddd;
+}
+
+.dino-lesson-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 220ms ease;
+}
+
+.dino-lesson-card__image > span {
+  position: absolute;
+  top: 11px;
+  left: 11px;
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 3px 10px rgba(23, 60, 50, 0.1);
+  color: #476157;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.03em;
+}
+
+.dino-lesson-card__body {
+  min-height: 128px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 11px;
+}
+
+.dino-lesson-card__body > span {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--dino-colour) 14%, white);
+  font-size: 22px;
+}
+
+.dino-lesson-card__body h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.dino-lesson-card__body strong {
+  margin-top: 4px;
+  display: block;
+  color: var(--dino-colour);
+  font-size: 11px;
+}
+
+.dino-lesson-card__body p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.dino-lesson-card__open {
+  min-height: 46px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background: var(--dino-colour);
+  color: white;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.dino-lab__science-note {
+  margin-top: 20px;
+  margin-bottom: 0;
+  border-top: 1px dashed rgba(23, 60, 50, 0.15);
+  padding-top: 16px;
+  color: #6b7973;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.dino-lesson-tabs {
+  width: min(1000px, calc(100% - 40px));
+  margin: 18px auto;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.dino-lesson-tabs button {
+  min-width: 0;
+  min-height: 62px;
+  border: 2px solid rgba(23, 60, 50, 0.11);
+  border-radius: 17px;
+  padding: 7px 5px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.dino-lesson-tabs button > span {
+  width: 29px;
+  height: 29px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(23, 60, 50, 0.06);
+  font-size: 15px;
+}
+
+.dino-lesson-tabs button strong {
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dino-lesson-tabs button.is-current {
+  border-color: var(--dino-colour);
+  background: color-mix(in srgb, var(--dino-colour) 11%, white);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--dino-colour) 34%, white);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.dino-lesson-tabs button.is-current > span {
+  background: var(--dino-colour);
+  color: white;
+}
+
+.dino-lesson-tabs button.is-done:not(.is-current) {
+  border-color: #a7cda6;
+  color: #3e7747;
+}
+
+.dino-lesson-tabs button.is-done:not(.is-current) > span {
+  background: #dff0dc;
+}
+
+.dino-lesson-hero {
+  margin-top: 20px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(23, 60, 50, 0.11);
+  border-left: 9px solid var(--dino-colour);
+  border-radius: 27px;
+  padding: 27px 30px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 28px;
+  background:
+    linear-gradient(120deg, #fffdf8 0 69%, color-mix(in srgb, var(--dino-colour) 12%, white) 100%);
+  box-shadow: 0 12px 30px rgba(23, 60, 50, 0.08);
+}
+
+.dino-lesson-hero h1 {
+  margin: 3px 0 4px;
+  overflow-wrap: anywhere;
+  font-size: clamp(35px, 4.7vw, 57px);
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+}
+
+.dino-lesson-hero h1 span {
+  color: var(--dino-colour);
+  font-size: 0.52em;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.dino-lesson-hero > div > strong {
+  color: var(--dino-colour);
+  font-size: 14px;
+}
+
+.dino-lesson-hero > div > p:not(.eyebrow) {
+  max-width: 780px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.dino-lesson-hero > div > small {
+  max-width: 780px;
+  margin-top: 10px;
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: inline-block;
+  background: #edf6f5;
+  color: #4f6c65;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.dino-lesson-hero__icon {
+  width: 91px;
+  height: 91px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--dino-colour) 18%, white);
+  box-shadow: inset 0 -6px 0 color-mix(in srgb, var(--dino-colour) 25%, white);
+  font-size: 45px;
+}
+
+.dino-lesson-workspace {
+  border: 1px solid rgba(23, 60, 50, 0.11);
+  border-radius: 30px;
+  padding: 32px;
+  background: rgba(255, 254, 249, 0.96);
+  box-shadow: 0 20px 55px rgba(23, 60, 50, 0.1);
+}
+
+.dino-lesson-workspace .art-drawing-guide {
+  max-width: none;
+  border-color: color-mix(in srgb, var(--dino-colour) 45%, #d9dfd8);
+}
+
+.dino-lesson-workspace .art-drawing-guide__focus {
+  border-color: var(--dino-colour);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.82), 0 7px 22px rgba(23, 60, 50, 0.2);
+}
+
+.dino-lesson-workspace .art-drawing-guide__track button.is-current {
+  border-color: var(--dino-colour);
+  background: color-mix(in srgb, var(--dino-colour) 10%, white);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--dino-colour) 30%, white);
+}
+
+.dino-lesson-workspace .art-drawing-guide__track button.is-current > span {
+  background: var(--dino-colour);
+}
+
+.dino-lesson-workspace .art-drawing-guide__instruction {
+  border-left-color: var(--dino-colour);
+  background: color-mix(in srgb, var(--dino-colour) 7%, white);
+}
+
+.dino-lesson-workspace .art-drawing-guide__instruction > span {
+  color: var(--dino-colour);
+}
+
+.dino-learning-grid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  gap: 20px;
+}
+
+.dino-word-tools,
+.dino-artist-challenge {
+  border: 1px solid #dce2da;
+  border-radius: 22px;
+  padding: 22px;
+}
+
+.dino-word-tools {
+  background: #f5faf9;
+}
+
+.dino-word-tools h2,
+.dino-artist-challenge h2 {
+  margin: 3px 0 15px;
+  font-size: 21px;
+  line-height: 1.25;
+}
+
+.dino-word-tools__words {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dino-word-tools__words button {
+  min-width: 0;
+  min-height: 70px;
+  border: 2px solid #cfdfdc;
+  border-radius: 15px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 5px;
+  background: white;
+  color: #315e57;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dino-word-tools__words button > span {
+  grid-row: 1 / 3;
+  font-size: 16px;
+}
+
+.dino-word-tools__words button strong,
+.dino-word-tools__words button small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dino-word-tools__words button strong {
+  align-self: end;
+  font-size: 13px;
+}
+
+.dino-word-tools__words button small {
+  align-self: start;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.dino-word-tools__words button.is-speaking {
+  border-color: var(--dino-colour);
+  background: color-mix(in srgb, var(--dino-colour) 12%, white);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--dino-colour) 30%, white);
+}
+
+.dino-sentence {
+  width: 100%;
+  min-height: 70px;
+  margin-top: 11px;
+  border: 0;
+  border-radius: 16px;
+  padding: 11px 14px;
+  display: grid;
+  grid-template-columns: 39px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  background: var(--dino-colour);
+  color: white;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dino-sentence.is-speaking {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dino-colour) 24%, white);
+}
+
+.dino-sentence > span:first-child {
+  width: 39px;
+  height: 39px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 20px;
+}
+
+.dino-sentence small,
+.dino-sentence strong {
+  display: block;
+}
+
+.dino-sentence small {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dino-sentence strong {
+  margin-top: 2px;
+  font-size: 17px;
+}
+
+.dino-artist-challenge {
+  background: #fff7d9;
+}
+
+.dino-artist-challenge > p:not(.eyebrow) {
+  margin-bottom: 18px;
+  color: #635f4d;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.dino-artist-challenge h3 {
+  margin: 0 0 8px;
+  color: #76652c;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.dino-artist-challenge > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dino-artist-challenge > div > span {
+  border-radius: 999px;
+  padding: 7px 9px;
+  background: white;
+  color: #695d37;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.dino-finish {
+  margin-top: 24px;
+  border: 2px solid color-mix(in srgb, var(--dino-colour) 45%, white);
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 15px;
+  background: color-mix(in srgb, var(--dino-colour) 8%, white);
+}
+
+.dino-finish > span {
+  font-size: 39px;
+  text-align: center;
+}
+
+.dino-finish small,
+.dino-finish strong {
+  display: block;
+}
+
+.dino-finish small {
+  color: var(--dino-colour);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dino-finish strong {
+  font-size: 19px;
+}
+
+.dino-finish p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dino-finish.is-complete {
+  border-color: #9fcb9d;
+  background: #edf8eb;
+}
+
+.dino-shelf-invite {
+  position: relative;
+  min-height: 300px;
+  margin: -22px 0 48px;
+  border-radius: 31px;
+  padding: 34px 38px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  align-items: center;
+  gap: 35px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 17% 115%, rgba(255, 212, 94, 0.2), transparent 16rem),
+    linear-gradient(125deg, #173c32, #28644d);
+  box-shadow: 0 18px 46px rgba(23, 60, 50, 0.18);
+  color: white;
+}
+
+.dino-shelf-invite__copy {
+  position: relative;
+  z-index: 1;
+  max-width: 650px;
+}
+
+.dino-shelf-invite .eyebrow {
+  color: #f7cf61;
+}
+
+.dino-shelf-invite h2 {
+  margin: 3px 0 10px;
+  font-size: clamp(32px, 4vw, 50px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.dino-shelf-invite__copy > p:not(.eyebrow) {
+  margin-bottom: 17px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.dino-shelf-invite__copy > div {
+  margin-bottom: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.dino-shelf-invite__copy > div > span {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.dino-shelf-invite__picture {
+  position: relative;
+  border: 8px solid rgba(255, 255, 255, 0.93);
+  border-radius: 22px;
+  overflow: hidden;
+  background: #f5eddd;
+  box-shadow: 0 18px 34px rgba(9, 37, 26, 0.25);
+  transform: rotate(1.5deg);
+}
+
+.dino-shelf-invite__picture img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.dino-shelf-invite__picture > span {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.93);
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.dino-shelf-invite__picture > span strong {
+  color: #32777c;
+  font-size: 16px;
+}
+
+.dino-pronunciation-shelf-invite {
+  margin-top: -18px;
+  background:
+    radial-gradient(circle at 82% -10%, rgba(255, 220, 104, 0.26), transparent 19rem),
+    linear-gradient(125deg, #17495b, #276d73);
+}
+
+.dino-pronunciation-shelf-invite .eyebrow {
+  color: #ffe07a;
+}
+
+.dino-pronunciation-shelf-invite .dino-shelf-invite__picture {
+  background: white;
+  transform: rotate(-1.5deg);
+}
+
+.dino-pronunciation-shelf-invite .dino-shelf-invite__picture img {
+  object-fit: contain;
+}
+
+.dino-reader-invite {
+  border: 1px solid rgba(60, 140, 145, 0.3);
+  border-radius: 17px;
+  padding: 11px;
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  background: linear-gradient(135deg, #edf8f7, #fff7da);
+}
+
+.dino-reader-invite > span {
+  width: 35px;
+  height: 35px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: white;
+  font-size: 18px;
+}
+
+.dino-reader-invite small,
+.dino-reader-invite strong {
+  display: block;
+}
+
+.dino-reader-invite small {
+  color: #32777c;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dino-reader-invite strong {
+  margin-top: 1px;
+  font-size: 12px;
+}
+
+.dino-reader-invite p {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.dino-reader-invite > button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: #3c8c91;
+  color: white;
+  font-size: 9px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.dino-finish-invite {
+  margin-top: 12px;
+  border: 2px solid #abd0cc;
+  border-radius: 20px;
+  padding: 15px 18px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  background: #edf8f7;
+}
+
+.dino-finish-invite > span {
+  font-size: 30px;
+}
+
+.dino-finish-invite small,
+.dino-finish-invite strong {
+  display: block;
+}
+
+.dino-finish-invite small {
+  color: #32777c;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dino-finish-invite strong {
+  font-size: 15px;
+}
+
+.dino-finish-invite p {
+  margin: 2px 0 0;
+  color: #5f716b;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.dino-finish-invite .button {
+  min-height: 44px;
+  border: 0;
+  background: #3c8c91;
+  box-shadow: none;
+  color: white;
+}
+
+.dino-lab button,
+.dino-shelf-invite button,
+.dino-reader-invite button,
+.dino-finish-invite button {
+  min-height: 44px;
+}
+
+.dino-lab button:focus-visible,
+.dino-shelf-invite button:focus-visible,
+.dino-reader-invite button:focus-visible,
+.dino-finish-invite button:focus-visible {
+  outline: 4px solid rgba(244, 119, 95, 0.48);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .dino-lesson-card:hover {
+    box-shadow: 0 16px 36px rgba(23, 60, 50, 0.14);
+    transform: translateY(-3px);
+  }
+
+  .dino-lesson-card:hover .dino-lesson-card__image img {
+    transform: scale(1.025);
+  }
+
+  .dino-lesson-tabs button:hover,
+  .dino-word-tools__words button:hover {
+    border-color: var(--dino-colour, #3c8c91);
+  }
+}
+
+@media (max-width: 1000px) {
+  .dino-lab__hero,
+  .dino-lesson-hero,
+  .dino-lesson-workspace,
+  .dino-lab__level-note,
+  .dino-lesson-grid,
+  .dino-lab__science-note {
+    width: min(920px, calc(100% - 32px));
+  }
+
+  .dino-lesson-grid__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dino-lesson-tabs {
+    width: calc(100% - 32px);
+    padding-bottom: 5px;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  .dino-lesson-tabs button {
+    min-width: 122px;
+    flex: 1 0 122px;
+    scroll-snap-align: start;
+  }
+
+  .dino-learning-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dino-shelf-invite {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr);
+    gap: 26px;
+  }
+}
+
+@media (max-width: 700px) {
+  .dino-lab {
+    padding-bottom: calc(30px + env(safe-area-inset-bottom));
+  }
+
+  .dino-lab__header {
+    width: calc(100% - 24px);
+    min-height: 68px;
+    gap: 9px;
+  }
+
+  .dino-lab__header > div > span:first-child {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+    border-radius: 12px;
+    font-size: 19px;
+  }
+
+  .dino-lab__header strong {
+    max-width: 50vw;
+    font-size: 12px;
+  }
+
+  .dino-lab__header small {
+    font-size: 7px;
+  }
+
+  .dino-lab__header > span:last-child {
+    display: none;
+  }
+
+  .dino-lab__hero,
+  .dino-lesson-hero,
+  .dino-lesson-workspace,
+  .dino-lab__level-note,
+  .dino-lesson-grid,
+  .dino-lab__science-note {
+    width: calc(100% - 20px);
+  }
+
+  .dino-lab__hero {
+    margin-top: 12px;
+    margin-bottom: 13px;
+    border-radius: 24px;
+    padding: 25px 20px;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .dino-lab__hero::after {
+    right: -95px;
+    bottom: -140px;
+  }
+
+  .dino-lab__hero h1 {
+    font-size: clamp(36px, 12vw, 50px);
+  }
+
+  .dino-lab__hero > div:first-child > p:not(.eyebrow) {
+    margin-bottom: 17px;
+    font-size: 13px;
+  }
+
+  .dino-lab__hero .button {
+    width: 100%;
+  }
+
+  .dino-lab__progress {
+    width: 100%;
+    min-width: 0;
+    min-height: 76px;
+    border-radius: 18px;
+    padding: 10px 14px;
+    grid-template-columns: auto auto 1fr;
+    place-content: center;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+  }
+
+  .dino-lab__progress > span {
+    font-size: 24px;
+  }
+
+  .dino-lab__progress strong {
+    margin: 0;
+    font-size: 32px;
+  }
+
+  .dino-lab__progress small {
+    margin: 0;
+    font-size: 8px;
+  }
+
+  .dino-lab__level-note {
+    min-height: 0;
+    margin-bottom: 28px;
+    border-radius: 18px;
+    padding: 14px;
+    grid-template-columns: 43px minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .dino-lab__level-note > span {
+    width: 43px;
+    height: 43px;
+    border-radius: 14px;
+    font-size: 21px;
+  }
+
+  .dino-lab__level-note strong {
+    font-size: 13px;
+  }
+
+  .dino-lab__level-note p {
+    font-size: 10px;
+  }
+
+  .dino-lesson-grid__heading {
+    align-items: flex-start;
+  }
+
+  .dino-lesson-grid__heading > p {
+    max-width: 120px;
+    font-size: 10px;
+    text-align: right;
+  }
+
+  .dino-lesson-grid__cards {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .dino-lesson-card {
+    border-radius: 19px;
+  }
+
+  .dino-lesson-card__body {
+    min-height: 112px;
+    padding: 14px;
+  }
+
+  .dino-lesson-card__body h3 {
+    font-size: 19px;
+  }
+
+  .dino-lesson-card__open {
+    min-height: 48px;
+  }
+
+  .dino-lab__science-note {
+    font-size: 9px;
+  }
+
+  .dino-lesson-tabs {
+    width: calc(100% - 20px);
+    margin: 11px auto;
+  }
+
+  .dino-lesson-tabs button {
+    min-width: 98px;
+    min-height: 58px;
+    flex-basis: 98px;
+    border-radius: 14px;
+  }
+
+  .dino-lesson-hero {
+    margin-top: 12px;
+    margin-bottom: 12px;
+    border-left-width: 6px;
+    border-radius: 22px;
+    padding: 21px 17px;
+    gap: 11px;
+  }
+
+  .dino-lesson-hero h1 {
+    font-size: clamp(29px, 9vw, 41px);
+  }
+
+  .dino-lesson-hero h1 span {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.48em;
+  }
+
+  .dino-lesson-hero > div > strong {
+    font-size: 11px;
+  }
+
+  .dino-lesson-hero > div > p:not(.eyebrow) {
+    font-size: 10px;
+  }
+
+  .dino-lesson-hero > div > small {
+    font-size: 9px;
+  }
+
+  .dino-lesson-hero__icon {
+    width: 59px;
+    height: 59px;
+    border-radius: 19px;
+    font-size: 29px;
+  }
+
+  .dino-lesson-workspace {
+    border-radius: 23px;
+    padding: 14px 12px 20px;
+  }
+
+  .dino-learning-grid {
+    margin-top: 15px;
+    gap: 12px;
+  }
+
+  .dino-word-tools,
+  .dino-artist-challenge {
+    border-radius: 17px;
+    padding: 16px 13px;
+  }
+
+  .dino-word-tools h2,
+  .dino-artist-challenge h2 {
+    font-size: 18px;
+  }
+
+  .dino-word-tools__words {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .dino-word-tools__words button {
+    min-height: 64px;
+    border-radius: 13px;
+  }
+
+  .dino-sentence {
+    min-height: 66px;
+  }
+
+  .dino-sentence strong {
+    font-size: 15px;
+  }
+
+  .dino-artist-challenge > p:not(.eyebrow) {
+    font-size: 11px;
+  }
+
+  .dino-finish {
+    border-radius: 18px;
+    padding: 14px;
+    grid-template-columns: 45px minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .dino-finish > span {
+    font-size: 31px;
+  }
+
+  .dino-finish strong {
+    font-size: 16px;
+  }
+
+  .dino-finish .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .dino-shelf-invite {
+    min-height: 0;
+    margin: -20px 0 36px;
+    border-radius: 24px;
+    padding: 25px 20px;
+    grid-template-columns: 1fr;
+    gap: 23px;
+  }
+
+  .dino-shelf-invite h2 {
+    font-size: 37px;
+  }
+
+  .dino-shelf-invite__copy > p:not(.eyebrow) {
+    font-size: 13px;
+  }
+
+  .dino-shelf-invite__copy .button {
+    width: 100%;
+  }
+
+  .dino-shelf-invite__picture {
+    border-width: 6px;
+    border-radius: 18px;
+    transform: none;
+  }
+
+  .dino-reader-invite {
+    margin-top: 10px;
+    grid-template-columns: 35px minmax(0, 1fr);
+  }
+
+  .dino-reader-invite > button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .dino-finish-invite {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 14px;
+  }
+
+  .dino-finish-invite .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+@media (max-width: 390px) {
+  .dino-lab__hero h1 {
+    font-size: 34px;
+  }
+
+  .dino-lesson-grid__heading {
+    display: block;
+  }
+
+  .dino-lesson-grid__heading > p {
+    max-width: none;
+    margin-top: 6px;
+    text-align: left;
+  }
+
+  .dino-lesson-tabs button {
+    min-width: 88px;
+    flex-basis: 88px;
+  }
+
+  .dino-lesson-hero {
+    grid-template-columns: minmax(0, 1fr) 48px;
+  }
+
+  .dino-lesson-hero__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    font-size: 24px;
+  }
+
+  .dino-word-tools__words button {
+    padding: 7px 5px;
+    grid-template-columns: 23px minmax(0, 1fr);
+  }
+
+  .dino-word-tools__words button strong {
+    font-size: 11px;
+  }
+
+  .dino-sentence {
+    padding: 10px;
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .dino-sentence > span:first-child {
+    width: 34px;
+    height: 34px;
+  }
+}
+
 /* Responsive */
+
+@media (max-width: 1350px) {
+  .reader__stage {
+    width: min(1280px, 100%);
+    grid-template-columns: 66px minmax(0, 1fr) 66px;
+  }
+  .story-page__layout { display: block; }
+  .reader__controls {
+    position: static;
+    margin-top: 18px;
+    display: block;
+  }
+  .reader__tools { justify-content: center; }
+  .story-mode-toggle {
+    width: min(590px, 100%);
+    margin: 0 auto 13px;
+  }
+  .listen-button {
+    width: auto;
+    min-width: min(430px, 70%);
+    min-height: 62px;
+  }
+  .reader__controls .narration-settings {
+    width: min(590px, 100%);
+    margin: 13px auto 0;
+  }
+  .story-guide-cue {
+    width: min(590px, 100%);
+    margin: 13px auto 0;
+  }
+  .reader__controls .narration-settings__panel {
+    grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.3fr);
+  }
+  .reader__controls .narration-settings--brief .narration-settings__panel {
+    grid-template-columns: 1fr;
+  }
+  .reader__controls .pace-choice { grid-template-columns: 1fr 1fr; }
+}
 
 @media (max-width: 1100px) {
   .book-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -3242,6 +5271,21 @@ p {
   .story-page__paper { border-radius: 14px; padding: 5px; }
   .story-page__image-button { border-radius: 9px; }
   .story-page__image-button img { max-height: 58svh; }
+  .story-page__side-listeners { margin-top: 7px; gap: 6px; }
+  .story-page__side-listeners button {
+    min-height: 58px;
+    border-radius: 12px;
+    padding: 7px 8px;
+    gap: 7px;
+  }
+  .story-page__side-listener-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  .story-page__side-listeners strong { font-size: 11px; }
+  .story-page__side-listeners small { font-size: 8px; }
   .reader__tools { margin-top: 13px; display: block; }
   .listen-button { width: 100%; min-width: 0; min-height: 58px; padding: 8px 12px; }
   .listen-button__icon { width: 34px; height: 34px; flex: 0 0 34px; }
@@ -3404,11 +5448,15 @@ p {
 @media (orientation: landscape) and (max-height: 650px) and (min-width: 700px) {
   .reader__header { min-height: 58px; }
   .reader__stage { grid-template-columns: 62px minmax(0, 1fr) 62px; padding-top: 0; }
-  .story-page { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr); gap: 14px; }
-  .story-page__paper { grid-row: span 3; }
+  .story-page__layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr); gap: 14px; }
+  .story-page__paper { grid-row: auto; }
   .story-page__image-button img { max-height: calc(100svh - 90px); }
+  .reader__controls { position: sticky; top: 64px; margin-top: 0; display: flex; }
   .reader__tools { margin-top: 0; flex-direction: column; }
   .listen-button { min-width: 0; }
+  .reader__controls .narration-settings { width: 100%; margin: 0; }
+  .reader__controls .narration-settings__panel,
+  .reader__controls .pace-choice { grid-template-columns: 1fr; }
   .quest-invite { margin-top: 0; grid-template-columns: auto 1fr; }
   .quest-invite .button { grid-column: 1 / -1; }
 }
@@ -3420,5 +5468,3569 @@ p {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+@media (max-width: 1350px) {
+  .reader__controls .art-reader-invite {
+    width: min(590px, 100%);
+    margin: 13px auto 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .art-observation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .art-observation-card:last-child { grid-column: 1 / -1; }
+  .art-brief,
+  .art-share-grid { grid-template-columns: 1fr; }
+  .art-checklist { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; }
+  .art-checklist > p,
+  .art-checklist > h3 { grid-column: 1 / -1; }
+}
+
+@media (max-width: 700px) {
+  .art-studio { padding-bottom: calc(30px + env(safe-area-inset-bottom)); }
+  .art-studio__header { width: calc(100% - 24px); min-height: 68px; gap: 9px; }
+  .art-studio__book img { width: 32px; height: 40px; }
+  .art-studio__book small { font-size: 7px; }
+  .art-studio__book strong { max-width: 48vw; font-size: 11px; }
+  .art-studio__privacy { display: none; }
+  .art-studio__hero { width: calc(100% - 20px); margin: 12px auto; border-radius: 23px; padding: 22px 18px; gap: 10px; }
+  .art-studio__hero h1 { font-size: 36px; }
+  .art-studio__hero > div:first-child > p:last-child { font-size: 11px; }
+  .art-studio__count { min-width: 75px; border-radius: 16px; padding: 9px; }
+  .art-studio__count strong { font-size: 27px; }
+  .art-studio__count span { font-size: 7px; }
+  .art-path { width: calc(100% - 20px); gap: 5px; }
+  .art-path button { min-height: 62px; border-radius: 14px; padding: 5px; display: flex; flex-direction: column; justify-content: center; gap: 2px; text-align: center; }
+  .art-path button > span { width: 31px; height: 31px; flex: 0 0 31px; font-size: 14px; }
+  .art-path button small { display: none; }
+  .art-path button strong { font-size: 9px; }
+  .art-workspace { width: calc(100% - 16px); min-height: 0; border-radius: 23px; padding: 21px 13px 24px; }
+  .art-heading { margin-bottom: 20px; align-items: flex-start; gap: 11px; }
+  .art-heading > span { width: 50px; height: 50px; flex-basis: 50px; border-radius: 16px; font-size: 24px; }
+  .art-heading h2 { font-size: 27px; }
+  .art-heading > div > p:last-child { font-size: 11px; }
+  .art-observation-grid { grid-template-columns: 1fr; }
+  .art-observation-card:last-child { grid-column: auto; }
+  .art-observation-card > button img { height: auto; max-height: 54svh; object-fit: contain; }
+  .art-observation-card p { min-height: 0; }
+  .art-next { align-items: stretch; flex-direction: column; gap: 9px; }
+  .art-next > span { margin: 0; text-align: center; }
+  .art-next .button { width: 100%; }
+  .pose-picker { gap: 5px; }
+  .pose-picker button { min-height: 65px; border-radius: 13px; padding: 6px; flex-direction: column; justify-content: center; gap: 3px; text-align: center; }
+  .pose-picker button span { width: 25px; height: 25px; font-size: 11px; }
+  .pose-picker button strong { font-size: 10px; }
+  .art-drawing-guide { border-radius: 19px; padding: 12px; }
+  .art-drawing-guide__intro { margin-bottom: 11px; display: block; }
+  .art-drawing-guide__intro h2 { font-size: 20px; }
+  .art-drawing-guide__intro > span { margin-top: 9px; display: inline-block; font-size: 8px; }
+  .art-drawing-guide__visual { border-radius: 14px; padding: 5px 5px 0; }
+  .art-drawing-guide__visual img { border-radius: 10px; }
+  .art-drawing-guide__focus { top: 5px; bottom: 29px; left: 5px; width: calc((100% - 10px) / 4); border-width: 3px; border-radius: 10px; }
+  .art-drawing-guide__visual figcaption { font-size: 7px; }
+  .art-drawing-guide__track { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .art-drawing-guide__track button { min-height: 52px; border-radius: 12px; }
+  .art-drawing-guide__track button strong { font-size: 10px; }
+  .art-drawing-guide__instruction { border-left-width: 5px; border-radius: 13px; padding: 14px; }
+  .art-drawing-guide__instruction h3 { font-size: 20px; }
+  .art-drawing-guide__instruction p { font-size: 14px; }
+  .art-drawing-guide__instruction small { font-size: 10px; }
+  .art-drawing-guide__actions { align-items: stretch; flex-direction: column-reverse; }
+  .art-drawing-guide__actions .button { width: 100%; }
+  .art-guide-celebration { justify-content: center; text-align: center; }
+  .sketch-challenge,
+  .art-finishing-tools { border-radius: 16px; }
+  .sketch-challenge > summary,
+  .art-finishing-tools > summary { min-height: 64px; padding: 11px 13px; }
+  .sketch-timer { border-radius: 20px; padding: 18px 14px; grid-template-columns: 110px minmax(0, 1fr); gap: 15px; }
+  .sketch-timer__clock { border-width: 6px; }
+  .sketch-timer__clock strong { font-size: 39px; }
+  .sketch-timer h2 { font-size: 17px; }
+  .sketch-timer p:not(.eyebrow) { font-size: 10px; }
+  .sketch-timer .button { min-height: 44px; padding: 8px 10px; font-size: 10px; }
+  .art-mission-picker { grid-template-columns: 1fr; }
+  .art-mission-picker button { min-height: 78px; }
+  .art-brief { border-radius: 18px; padding: 17px 13px; }
+  .art-brief__main > h2 { font-size: 25px; }
+  .art-checklist { display: block; border-radius: 15px; padding: 15px; }
+  .art-share-form,
+  .art-photo-card { border-radius: 17px; padding: 16px 13px; }
+  .art-complete { grid-template-columns: 45px minmax(0, 1fr); border-radius: 18px; padding: 14px; }
+  .art-complete > span { font-size: 32px; }
+  .art-complete .button { grid-column: 1 / -1; width: 100%; }
+  .art-finish-invite { grid-template-columns: auto 1fr; padding: 14px; }
+  .art-finish-invite .button { grid-column: 1 / -1; width: 100%; }
+  .art-reader-invite { margin-top: 10px; }
+}
+
+@media (max-width: 390px) {
+  .art-studio__hero h1 { font-size: 31px; }
+  .art-drawing-guide__track button { min-height: 48px; padding: 5px; }
+  .art-drawing-guide__track button > span { width: 26px; height: 26px; flex-basis: 26px; }
+  .sketch-timer { grid-template-columns: 1fr; text-align: center; }
+  .sketch-timer__clock { width: 120px; margin: 0 auto; }
+}
+
+/* Mid-Autumn Festival · Moonlight Market Adventure */
+
+.moonlight-adventure {
+  --moonlight-night: #17284f;
+  --moonlight-night-deep: #101d3d;
+  --moonlight-gold: #f3bd49;
+  --moonlight-red: #ce5d49;
+  --moonlight-plum: #764965;
+  --moonlight-mint: #dff0e4;
+  min-height: 100svh;
+  padding: 22px 30px 56px;
+  background:
+    radial-gradient(circle at 88% 7%, rgba(255, 223, 128, 0.35), transparent 16rem),
+    radial-gradient(circle at 10% 42%, rgba(207, 91, 70, 0.11), transparent 23rem),
+    #f8f1dc;
+}
+
+.moonlight-adventure > * {
+  width: min(1240px, 100%);
+  margin-inline: auto;
+}
+
+.moonlight-adventure__header {
+  min-height: 62px;
+  border: 1px solid rgba(23, 40, 79, 0.12);
+  border-radius: 22px;
+  padding: 6px 12px 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: rgba(255, 253, 247, 0.9);
+  box-shadow: 0 10px 30px rgba(24, 38, 65, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.moonlight-adventure__header > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.moonlight-adventure__header > div > span:first-child {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #ffe8b0;
+  font-size: 23px;
+}
+
+.moonlight-adventure__header small,
+.moonlight-adventure__header strong {
+  display: block;
+  line-height: 1.12;
+}
+
+.moonlight-adventure__header small {
+  color: #81745f;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.moonlight-adventure__header strong {
+  margin-top: 3px;
+  color: var(--moonlight-night);
+  font-size: 15px;
+}
+
+.moonlight-adventure__header > span:last-child {
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #edf3ef;
+  color: #587069;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.moonlight-hero {
+  position: relative;
+  min-height: 330px;
+  margin-top: 20px;
+  border-radius: 34px;
+  padding: 45px 255px 42px 48px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  background:
+    radial-gradient(circle at 74% 17%, rgba(255, 223, 139, 0.16), transparent 11rem),
+    linear-gradient(135deg, var(--moonlight-night) 0%, #253b6c 64%, #6d445f 100%);
+  box-shadow: 0 18px 0 rgba(16, 29, 61, 0.12);
+  color: white;
+}
+
+.moonlight-hero::before,
+.moonlight-hero::after {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow:
+    66px 28px 0 rgba(255, 255, 255, 0.4),
+    112px -18px 0 rgba(255, 255, 255, 0.5),
+    168px 42px 0 rgba(255, 255, 255, 0.3);
+  content: "";
+}
+
+.moonlight-hero::before { top: 34px; left: 53%; width: 3px; height: 3px; }
+.moonlight-hero::after { right: 31%; bottom: 39px; width: 2px; height: 2px; }
+
+.moonlight-hero__copy {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+}
+
+.moonlight-hero .eyebrow { color: #ffd982; }
+
+.moonlight-hero h1 {
+  margin-bottom: 16px;
+  font-size: clamp(40px, 5vw, 69px);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.moonlight-hero h1 span {
+  margin-top: 13px;
+  display: block;
+  color: #ffd982;
+  font-size: 0.53em;
+  letter-spacing: -0.02em;
+}
+
+.moonlight-hero__copy > p:not(.eyebrow) {
+  max-width: 670px;
+  margin-bottom: 24px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.moonlight-hero__moon {
+  position: absolute;
+  z-index: 1;
+  top: 30px;
+  right: 78px;
+  width: 145px;
+  height: 145px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #ffe3a0;
+  box-shadow: 0 0 60px rgba(255, 222, 133, 0.48);
+}
+
+.moonlight-hero__moon > span {
+  font-size: 100px;
+  line-height: 1;
+}
+
+.moonlight-hero__moon i {
+  position: absolute;
+  right: -20px;
+  bottom: -51px;
+  font-size: 68px;
+  font-style: normal;
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.2));
+}
+
+.moonlight-hero__progress {
+  position: absolute;
+  right: 30px;
+  bottom: 25px;
+  min-width: 126px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 10px 14px;
+  background: rgba(8, 18, 43, 0.42);
+  color: white;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+
+.moonlight-hero__progress strong { font-size: 31px; }
+.moonlight-hero__progress > span { margin-left: 4px; color: #ffd982; font-size: 13px; font-weight: 900; }
+.moonlight-hero__progress small { display: block; color: rgba(255, 255, 255, 0.65); font-size: 8px; font-weight: 900; text-transform: uppercase; }
+
+.moonlight-mission-grid,
+.moonlight-discoveries {
+  margin-top: 45px;
+}
+
+.moonlight-mission-grid__cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.moonlight-mission-card {
+  min-width: 0;
+}
+
+.moonlight-mission-card > button {
+  width: 100%;
+  min-height: 235px;
+  border: 2px solid rgba(23, 40, 79, 0.1);
+  border-radius: 27px;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto 1fr;
+  gap: 15px;
+  align-items: start;
+  background: rgba(255, 253, 247, 0.96);
+  box-shadow: 0 12px 30px rgba(35, 46, 68, 0.09);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.moonlight-mission-card > button:hover {
+  border-color: rgba(206, 93, 73, 0.42);
+  box-shadow: 0 16px 35px rgba(35, 46, 68, 0.13);
+  transform: translateY(-4px);
+}
+
+.moonlight-mission-card__number {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--moonlight-night);
+  color: white;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.moonlight-mission-card__icon {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 43px;
+  line-height: 1;
+}
+
+.moonlight-mission-card__copy {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.moonlight-mission-card__copy small {
+  margin-bottom: 5px;
+  color: var(--moonlight-red);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.moonlight-mission-card__copy strong {
+  font-size: 25px;
+  line-height: 1.05;
+}
+
+.moonlight-mission-card__copy b {
+  margin-top: 4px;
+  color: #765d42;
+  font-size: 13px;
+}
+
+.moonlight-mission-card__copy > span {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.moonlight-mission-card__open {
+  grid-column: 3;
+  grid-row: 1;
+  font-size: 27px;
+  font-weight: 950;
+}
+
+.moonlight-discoveries__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.moonlight-discovery {
+  border: 1px solid rgba(23, 40, 79, 0.12);
+  border-radius: 21px;
+  overflow: hidden;
+  background: rgba(255, 253, 247, 0.92);
+  box-shadow: 0 8px 24px rgba(35, 46, 68, 0.07);
+}
+
+.moonlight-discovery > summary {
+  min-height: 86px;
+  padding: 15px 16px;
+  display: grid;
+  grid-template-columns: 45px minmax(0, 1fr) auto;
+  gap: 11px;
+  align-items: center;
+  list-style: none;
+  cursor: pointer;
+}
+
+.moonlight-discovery > summary::-webkit-details-marker { display: none; }
+
+.moonlight-discovery > summary > span:first-child {
+  width: 45px;
+  height: 45px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: #fff0c8;
+  font-size: 23px;
+}
+
+.moonlight-discovery > summary small,
+.moonlight-discovery > summary strong {
+  display: block;
+}
+
+.moonlight-discovery > summary small {
+  color: #927048;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.moonlight-discovery > summary strong {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.moonlight-discovery__open {
+  font-size: 22px;
+  transition: transform 160ms ease;
+}
+
+.moonlight-discovery[open] .moonlight-discovery__open { transform: rotate(45deg); }
+
+.moonlight-discovery > div {
+  border-top: 1px dashed rgba(23, 40, 79, 0.14);
+  padding: 15px 17px 17px;
+  background: #fffaf0;
+}
+
+.moonlight-discovery > div p {
+  margin: 0;
+  color: #3d4e48;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.moonlight-discovery > div p + p {
+  margin-top: 8px;
+  color: #79664e;
+}
+
+.moonlight-mission-tabs {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.moonlight-mission-tabs button {
+  min-height: 59px;
+  border: 2px solid rgba(23, 40, 79, 0.1);
+  border-radius: 17px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: rgba(255, 253, 247, 0.92);
+  color: #6f716d;
+  cursor: pointer;
+}
+
+.moonlight-mission-tabs button > span {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #f3ede0;
+}
+
+.moonlight-mission-tabs button strong { font-size: 12px; }
+.moonlight-mission-tabs button.is-current { border-color: var(--moonlight-red); background: #fff3ec; color: var(--ink); }
+.moonlight-mission-tabs button.is-current > span { background: var(--moonlight-red); color: white; }
+.moonlight-mission-tabs button.is-complete:not(.is-current) { border-color: #9fc7aa; color: #3b744f; }
+
+.moonlight-mission-heading {
+  min-height: 165px;
+  margin-top: 17px;
+  border-radius: 29px;
+  padding: 27px 35px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  background:
+    radial-gradient(circle at 88% 35%, rgba(255, 225, 141, 0.28), transparent 10rem),
+    var(--moonlight-night);
+  color: white;
+}
+
+.moonlight-mission-heading .eyebrow { color: #ffd982; }
+.moonlight-mission-heading h1 { margin: 0 0 6px; font-size: clamp(31px, 4.1vw, 52px); line-height: 1.02; }
+.moonlight-mission-heading h1 span { margin-left: 7px; color: #ffd982; font-size: 0.48em; letter-spacing: 0; }
+.moonlight-mission-heading p:last-child { margin: 0; color: rgba(255, 255, 255, 0.72); font-size: 12px; font-weight: 750; }
+.moonlight-mission-heading__icon { flex: 0 0 auto; font-size: 72px; filter: drop-shadow(0 12px 13px rgba(0, 0, 0, 0.23)); }
+
+.moonlight-step-track {
+  position: relative;
+  margin: 18px auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.moonlight-step-track button {
+  min-height: 57px;
+  border: 2px solid rgba(23, 40, 79, 0.1);
+  border-radius: 15px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 253, 247, 0.92);
+  color: #747871;
+  text-align: left;
+  cursor: pointer;
+}
+
+.moonlight-step-track button > span {
+  width: 29px;
+  height: 29px;
+  flex: 0 0 29px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #eee8dc;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.moonlight-step-track button strong { font-size: 10px; line-height: 1.15; }
+.moonlight-step-track button.is-current { border-color: var(--moonlight-gold); background: #fff8df; color: var(--ink); box-shadow: 0 4px 0 #e4c268; }
+.moonlight-step-track button.is-current > span { background: var(--moonlight-gold); color: #4e3b13; }
+.moonlight-step-track button.is-visited { border-color: #a9ccb2; color: #437653; }
+.moonlight-step-track button.is-visited > span { background: #70a87e; color: white; }
+
+.moonlight-find,
+.moonlight-market,
+.moonlight-lantern {
+  margin-top: 18px;
+  border: 1px solid rgba(23, 40, 79, 0.12);
+  border-radius: 29px;
+  padding: 26px;
+  background: rgba(255, 253, 247, 0.95);
+  box-shadow: 0 17px 45px rgba(35, 46, 68, 0.1);
+}
+
+.moonlight-find__prompt {
+  margin-bottom: 16px;
+}
+
+.moonlight-find__prompt h2 {
+  margin-bottom: 5px;
+  font-size: clamp(23px, 3vw, 34px);
+}
+
+.moonlight-find__prompt > p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.moonlight-find__picture {
+  position: relative;
+  width: min(100%, 1050px);
+  margin: 0 auto;
+  border: 5px solid #efe7d6;
+  border-radius: 21px;
+  overflow: hidden;
+  background: #efe9dc;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.moonlight-find__picture img {
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.moonlight-find__hotspot {
+  position: absolute;
+  min-width: 44px;
+  min-height: 44px;
+  border: 4px dashed transparent;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  cursor: pointer;
+}
+
+.moonlight-find__hotspot > span {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--moonlight-gold);
+  box-shadow: 0 0 0 7px rgba(243, 189, 73, 0.25);
+  color: #45340c;
+  font-size: 15px;
+  font-weight: 950;
+  opacity: 0;
+}
+
+.moonlight-find__picture.is-hinting .moonlight-find__hotspot {
+  border-color: #ffd35c;
+  background: rgba(255, 211, 92, 0.13);
+  animation: moonlight-clue-pulse 1.1s ease-in-out infinite alternate;
+}
+
+.moonlight-find__picture.is-hinting .moonlight-find__hotspot > span,
+.moonlight-find__picture.is-solved .moonlight-find__hotspot > span {
+  opacity: 1;
+}
+
+.moonlight-find__picture.is-solved .moonlight-find__hotspot {
+  border-color: #72b47d;
+  background: rgba(114, 180, 125, 0.18);
+}
+
+@keyframes moonlight-clue-pulse {
+  to { box-shadow: 0 0 0 8px rgba(255, 211, 92, 0.32); }
+}
+
+.moonlight-find__feedback {
+  min-height: 78px;
+  margin-top: 14px;
+  border-radius: 18px;
+  padding: 14px 17px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: #f2f4ee;
+}
+
+.moonlight-find__feedback > span {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: white;
+  font-size: 22px;
+}
+
+.moonlight-find__feedback small,
+.moonlight-find__feedback strong {
+  display: block;
+}
+
+.moonlight-find__feedback small { color: #718077; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.moonlight-find__feedback strong { font-size: 15px; }
+.moonlight-find__feedback p { margin: 3px 0 0; color: var(--muted); font-size: 11px; font-weight: 750; }
+
+.moonlight-find__actions,
+.moonlight-finish-actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.moonlight-find__clue {
+  margin: 15px 0 0;
+  border: 2px dashed #e4bd58;
+  border-radius: 17px;
+  padding: 13px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  background: #fff8df;
+  color: #5e4f27;
+}
+
+.moonlight-find__clue > span:first-child { grid-row: 1 / 3; font-size: 23px; }
+.moonlight-find__clue strong { font-size: 13px; }
+.moonlight-find__clue > span:last-child { font-size: 11px; font-weight: 750; }
+
+.moonlight-find--celebration {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.5fr);
+  gap: 16px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 222, 130, 0.22), transparent 16rem),
+    white;
+}
+
+.moonlight-found-card {
+  border-radius: 24px;
+  padding: 32px;
+  background: #fff7df;
+  text-align: center;
+}
+
+.moonlight-found-card > span:first-child { display: block; margin-bottom: 12px; font-size: 41px; }
+.moonlight-found-card h2 { margin-bottom: 17px; font-size: 33px; }
+.moonlight-found-card > p:not(.eyebrow) { color: var(--muted); font-weight: 750; }
+.moonlight-found-card blockquote { margin: 23px 0 0; border-left: 6px solid var(--moonlight-red); border-radius: 15px; padding: 17px; background: white; text-align: left; }
+.moonlight-found-card blockquote strong,
+.moonlight-found-card blockquote span { display: block; }
+.moonlight-found-card blockquote strong { font-size: 17px; }
+.moonlight-found-card blockquote span { margin-top: 7px; color: var(--muted); font-size: 12px; font-weight: 750; }
+
+.moonlight-speech-line {
+  width: 100%;
+  min-height: 70px;
+  border: 2px solid #dfb64c;
+  border-radius: 18px;
+  padding: 14px 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #fff5cd;
+  color: #44350f;
+  cursor: pointer;
+}
+
+.moonlight-speech-line > span {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: white;
+}
+
+.moonlight-speech-line strong { font-size: clamp(17px, 2.3vw, 23px); line-height: 1.25; }
+.moonlight-speech-line.is-speaking { border-color: var(--moonlight-red); background: #fff0e7; }
+
+.moonlight-market__scene {
+  min-height: 86px;
+  border-radius: 20px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background:
+    linear-gradient(rgba(16, 29, 61, 0.18), rgba(16, 29, 61, 0.5)),
+    var(--moonlight-night);
+  font-size: 43px;
+}
+
+.moonlight-market__turn {
+  margin: 18px 0;
+  display: grid;
+  grid-template-columns: 105px minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+
+.moonlight-market__speaker {
+  border-radius: 20px;
+  padding: 14px 8px;
+  background: #edf3ee;
+  text-align: center;
+}
+
+.moonlight-market__speaker span,
+.moonlight-market__speaker strong { display: block; }
+.moonlight-market__speaker span { font-size: 42px; }
+.moonlight-market__speaker strong { margin-top: 4px; font-size: 10px; }
+.moonlight-market__turn h2 { margin-bottom: 5px; font-size: clamp(27px, 3.5vw, 40px); }
+.moonlight-market__turn h2 span { color: var(--moonlight-red); font-size: 0.52em; }
+.moonlight-market__turn p:last-child { margin: 0; color: var(--muted); font-weight: 750; }
+
+.moonlight-market__items {
+  margin: 8px 0 18px;
+  border: 2px dashed #dec880;
+  border-radius: 21px;
+  padding: 14px;
+  background: #fff9e8;
+}
+
+.moonlight-market__items legend {
+  padding: 0 8px;
+  color: #715d30;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.moonlight-market__items > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.moonlight-market__items button,
+.moonlight-lantern__choice button,
+.moonlight-lantern__colours button {
+  min-height: 74px;
+  border: 2px solid rgba(23, 40, 79, 0.12);
+  border-radius: 16px;
+  padding: 9px;
+  background: white;
+  cursor: pointer;
+}
+
+.moonlight-market__items button span,
+.moonlight-market__items button strong,
+.moonlight-market__items button small,
+.moonlight-lantern__choice button span,
+.moonlight-lantern__choice button strong,
+.moonlight-lantern__choice button small,
+.moonlight-lantern__colours button span,
+.moonlight-lantern__colours button strong,
+.moonlight-lantern__colours button small {
+  display: block;
+}
+
+.moonlight-market__items button span { font-size: 27px; }
+.moonlight-market__items button strong { font-size: 11px; }
+.moonlight-market__items button small,
+.moonlight-lantern__choice button small,
+.moonlight-lantern__colours button small { color: var(--muted); font-size: 9px; font-weight: 800; }
+.moonlight-market__items button.is-selected,
+.moonlight-lantern__choice button.is-selected,
+.moonlight-lantern__colours button.is-selected { border-color: var(--moonlight-red); background: #fff1ea; box-shadow: 0 4px 0 #e8b6aa; }
+
+.moonlight-market__speech {
+  position: relative;
+  border-radius: 25px;
+  padding: 28px 210px 25px 27px;
+  background: var(--moonlight-night);
+  color: white;
+}
+
+.moonlight-market__speech > small {
+  color: #ffd982;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.moonlight-market__speech blockquote {
+  margin: 8px 0;
+  font-size: clamp(24px, 4.2vw, 42px);
+  font-weight: 950;
+  line-height: 1.14;
+}
+
+.moonlight-market__speech > p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.moonlight-market__speech > button {
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  width: 155px;
+  min-height: 70px;
+  border: 0;
+  border-radius: 18px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 8px;
+  align-items: center;
+  background: var(--moonlight-gold);
+  color: #3c2e0b;
+  text-align: left;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.moonlight-market__speech > button > span { grid-row: 1 / 3; font-size: 25px; }
+.moonlight-market__speech > button strong { font-size: 14px; }
+.moonlight-market__speech > button small { font-size: 8px; font-weight: 850; }
+.moonlight-market__speech > button.is-speaking { background: #f3a388; }
+
+.moonlight-market__say-check {
+  margin-top: 16px;
+  border-radius: 21px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr) auto;
+  gap: 13px;
+  align-items: center;
+  background: #eef5ef;
+}
+
+.moonlight-market__say-check > span {
+  width: 50px;
+  height: 50px;
+  border-radius: 17px;
+  display: grid;
+  place-items: center;
+  background: white;
+  font-size: 25px;
+}
+
+.moonlight-market__say-check strong { font-size: 14px; }
+.moonlight-market__say-check p { margin: 3px 0 0; color: var(--muted); font-size: 10px; font-weight: 750; }
+
+.moonlight-lantern {
+  --lantern-colour: #b85f3f;
+}
+
+.moonlight-lantern__choice {
+  margin-bottom: 15px;
+  border-radius: 20px;
+  padding: 17px;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.5fr);
+  gap: 15px;
+  align-items: center;
+  background: #f2f4ee;
+}
+
+.moonlight-lantern__choice h2 { margin: 0; font-size: 23px; }
+.moonlight-lantern__choice > div:last-child { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.moonlight-lantern__choice button { min-height: 72px; display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; text-align: left; }
+.moonlight-lantern__choice button > span { grid-row: 1 / 3; font-size: 27px; text-align: center; }
+.moonlight-lantern__choice button strong { font-size: 11px; }
+
+.moonlight-lantern > .art-drawing-guide { border-color: color-mix(in srgb, var(--lantern-colour), white 55%); }
+.moonlight-lantern > .art-drawing-guide .art-drawing-guide__focus { border-color: var(--lantern-colour); background: color-mix(in srgb, var(--lantern-colour), transparent 90%); }
+.moonlight-lantern > .art-drawing-guide .art-drawing-guide__track button.is-current { border-color: var(--lantern-colour); background: color-mix(in srgb, var(--lantern-colour), white 88%); box-shadow: 0 4px 0 color-mix(in srgb, var(--lantern-colour), white 60%); }
+.moonlight-lantern > .art-drawing-guide .art-drawing-guide__track button.is-current > span { background: var(--lantern-colour); }
+.moonlight-lantern > .art-drawing-guide .art-drawing-guide__instruction { border-left-color: var(--lantern-colour); background: color-mix(in srgb, var(--lantern-colour), white 91%); }
+
+.moonlight-lantern__finish {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  gap: 13px;
+}
+
+.moonlight-lantern__colours,
+.moonlight-lantern__english {
+  border-radius: 20px;
+  padding: 19px;
+  background: #f4f4ee;
+}
+
+.moonlight-lantern__colours h2,
+.moonlight-lantern__english h2 { font-size: 21px; }
+.moonlight-lantern__colours > div { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+.moonlight-lantern__colours button { min-height: 61px; display: grid; grid-template-columns: 30px 1fr; grid-template-rows: auto auto; column-gap: 7px; align-items: center; text-align: left; }
+.moonlight-lantern__colours button > span { grid-row: 1 / 3; width: 28px; height: 28px; border-radius: 50%; box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.58); }
+.moonlight-lantern__colours button strong { font-size: 11px; }
+.moonlight-lantern__english { background: var(--moonlight-night); color: white; }
+.moonlight-lantern__english .eyebrow { color: #ffd982; }
+.moonlight-lantern__english > p { margin: 11px 0 0; color: rgba(255, 255, 255, 0.66); font-size: 11px; font-weight: 750; }
+.moonlight-lantern__finish > .moonlight-discovery { grid-column: 1 / -1; }
+
+.moonlight-reader-invite,
+.moonlight-finish-invite {
+  border: 1px solid #e5c770;
+  border-radius: 20px;
+  padding: 13px;
+  display: grid;
+  grid-template-columns: 45px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  background:
+    radial-gradient(circle at 8% 15%, rgba(255, 224, 139, 0.38), transparent 7rem),
+    #fff9e8;
+  box-shadow: 0 7px 20px rgba(80, 60, 20, 0.08);
+}
+
+.moonlight-reader-invite { margin-top: 10px; }
+.moonlight-reader-invite > span,
+.moonlight-finish-invite > span { font-size: 30px; text-align: center; }
+.moonlight-reader-invite small,
+.moonlight-reader-invite strong,
+.moonlight-finish-invite small,
+.moonlight-finish-invite strong { display: block; }
+.moonlight-reader-invite small,
+.moonlight-finish-invite small { color: #9a7440; font-size: 8px; font-weight: 950; letter-spacing: 0.05em; text-transform: uppercase; }
+.moonlight-reader-invite strong,
+.moonlight-finish-invite strong { font-size: 13px; }
+.moonlight-reader-invite p,
+.moonlight-finish-invite p { margin: 2px 0 0; color: #78694f; font-size: 9px; font-weight: 750; }
+.moonlight-reader-invite > button {
+  min-height: 43px;
+  border: 0;
+  border-radius: 13px;
+  padding: 8px 10px;
+  background: var(--moonlight-night);
+  color: white;
+  font-size: 10px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.moonlight-finish-invite {
+  margin-top: 13px;
+  padding: 17px;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+}
+
+.moonlight-finish-invite > span { font-size: 40px; }
+.moonlight-finish-invite strong { font-size: 18px; }
+.moonlight-finish-invite .button { background: var(--moonlight-night); color: white; }
+
+@media (max-width: 900px) {
+  .moonlight-hero { padding-right: 190px; }
+  .moonlight-hero__moon { right: 40px; width: 115px; height: 115px; }
+  .moonlight-hero__moon > span { font-size: 80px; }
+  .moonlight-hero__progress { right: 20px; }
+  .moonlight-mission-grid__cards { grid-template-columns: 1fr; }
+  .moonlight-mission-card > button { min-height: 0; grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-rows: auto; align-items: center; }
+  .moonlight-mission-card__icon { grid-column: 2; grid-row: 1; }
+  .moonlight-mission-card__copy { grid-column: 3; grid-row: 1; }
+  .moonlight-mission-card__open { grid-column: 4; grid-row: 1; }
+  .moonlight-discoveries__grid { grid-template-columns: 1fr; }
+  .moonlight-find--celebration { grid-template-columns: 1fr; }
+  .moonlight-lantern__choice { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+  .moonlight-adventure { padding: 12px 10px 34px; }
+  .moonlight-adventure__header { min-height: 56px; }
+  .moonlight-adventure__header > span:last-child { display: none; }
+  .moonlight-adventure__header > div > span:first-child { width: 37px; height: 37px; }
+  .moonlight-hero { min-height: 400px; margin-top: 12px; border-radius: 25px; padding: 28px 20px 140px; align-items: flex-start; }
+  .moonlight-hero h1 { font-size: 43px; }
+  .moonlight-hero__copy > p:not(.eyebrow) { font-size: 13px; }
+  .moonlight-hero__moon { right: 24px; bottom: 27px; top: auto; width: 92px; height: 92px; }
+  .moonlight-hero__moon > span { font-size: 65px; }
+  .moonlight-hero__moon i { right: -10px; bottom: -34px; font-size: 48px; }
+  .moonlight-hero__progress { right: auto; left: 20px; bottom: 26px; min-width: 110px; }
+  .moonlight-mission-grid,
+  .moonlight-discoveries { margin-top: 31px; }
+  .moonlight-mission-grid__heading,
+  .moonlight-discoveries > .section-heading { display: block; }
+  .moonlight-mission-grid__heading > p,
+  .moonlight-discoveries > .section-heading > p { margin-top: 5px; text-align: left; }
+  .moonlight-mission-card > button { border-radius: 20px; padding: 16px 13px; grid-template-columns: 31px 38px minmax(0, 1fr) 22px; gap: 8px; }
+  .moonlight-mission-card__number { width: 31px; height: 31px; }
+  .moonlight-mission-card__icon { font-size: 31px; }
+  .moonlight-mission-card__copy strong { font-size: 19px; }
+  .moonlight-mission-card__copy > span { margin-top: 7px; font-size: 10px; }
+  .moonlight-mission-tabs { margin-top: 12px; gap: 5px; }
+  .moonlight-mission-tabs button { min-height: 56px; border-radius: 13px; padding: 5px; flex-direction: column; gap: 2px; }
+  .moonlight-mission-tabs button > span { width: 27px; height: 27px; }
+  .moonlight-mission-tabs button strong { font-size: 8px; }
+  .moonlight-mission-heading { min-height: 132px; margin-top: 10px; border-radius: 22px; padding: 20px; }
+  .moonlight-mission-heading h1 { font-size: 31px; }
+  .moonlight-mission-heading h1 span { margin: 6px 0 0; display: block; font-size: 0.5em; }
+  .moonlight-mission-heading p:last-child { font-size: 10px; }
+  .moonlight-mission-heading__icon { font-size: 50px; }
+  .moonlight-step-track { margin-top: 10px; gap: 5px; }
+  .moonlight-step-track button { min-height: 57px; border-radius: 12px; padding: 5px; flex-direction: column; justify-content: center; gap: 2px; text-align: center; }
+  .moonlight-step-track button > span { width: 25px; height: 25px; flex-basis: 25px; }
+  .moonlight-step-track button strong { font-size: 8px; }
+  .moonlight-find,
+  .moonlight-market,
+  .moonlight-lantern { margin-top: 10px; border-radius: 22px; padding: 14px; }
+  .moonlight-find__prompt h2 { font-size: 22px; }
+  .moonlight-find__prompt > p:last-child { font-size: 12px; }
+  .moonlight-find__picture { border-width: 3px; border-radius: 14px; }
+  .moonlight-find__feedback { min-height: 68px; border-radius: 15px; padding: 11px; }
+  .moonlight-find__actions,
+  .moonlight-finish-actions { align-items: stretch; flex-direction: column; }
+  .moonlight-find__actions .button,
+  .moonlight-finish-actions .button { width: 100%; }
+  .moonlight-found-card { border-radius: 18px; padding: 23px 14px; }
+  .moonlight-found-card h2 { font-size: 27px; }
+  .moonlight-market__scene { min-height: 65px; font-size: 30px; }
+  .moonlight-market__turn { grid-template-columns: 72px minmax(0, 1fr); gap: 11px; }
+  .moonlight-market__speaker { border-radius: 15px; padding: 10px 4px; }
+  .moonlight-market__speaker span { font-size: 31px; }
+  .moonlight-market__turn h2 { font-size: 24px; }
+  .moonlight-market__items { padding: 10px 8px; }
+  .moonlight-market__items > div { grid-template-columns: repeat(2, 1fr); }
+  .moonlight-market__items button { min-height: 69px; }
+  .moonlight-market__speech { border-radius: 19px; padding: 21px 14px 102px; }
+  .moonlight-market__speech blockquote { font-size: 25px; }
+  .moonlight-market__speech > button { top: auto; right: 13px; bottom: 13px; left: 13px; width: auto; min-height: 65px; transform: none; }
+  .moonlight-market__say-check { grid-template-columns: 44px minmax(0, 1fr); border-radius: 17px; padding: 12px; }
+  .moonlight-market__say-check > span { width: 44px; height: 44px; }
+  .moonlight-market__say-check .button { grid-column: 1 / -1; width: 100%; }
+  .moonlight-lantern__choice { border-radius: 16px; padding: 12px; }
+  .moonlight-lantern__choice h2 { font-size: 20px; }
+  .moonlight-lantern__choice > div:last-child { gap: 5px; }
+  .moonlight-lantern__choice button { min-height: 72px; padding: 6px 4px; display: flex; flex-direction: column; justify-content: center; text-align: center; }
+  .moonlight-lantern__choice button > span { font-size: 24px; }
+  .moonlight-lantern__choice button strong { font-size: 9px; }
+  .moonlight-lantern__finish { grid-template-columns: 1fr; }
+  .moonlight-lantern__finish > .moonlight-discovery { grid-column: auto; }
+  .moonlight-lantern__colours,
+  .moonlight-lantern__english { border-radius: 17px; padding: 15px; }
+  .moonlight-reader-invite { grid-template-columns: 38px minmax(0, 1fr) auto; padding: 10px; }
+  .moonlight-reader-invite > span { font-size: 25px; }
+  .moonlight-reader-invite p { display: none; }
+  .moonlight-finish-invite { grid-template-columns: 45px minmax(0, 1fr); padding: 14px; }
+  .moonlight-finish-invite .button { grid-column: 1 / -1; width: 100%; }
+}
+
+@media (max-width: 390px) {
+  .moonlight-hero h1 { font-size: 38px; }
+  .moonlight-mission-heading__icon { display: none; }
+  .moonlight-lantern__choice > div:last-child { grid-template-columns: 1fr; }
+  .moonlight-lantern__choice button { min-height: 58px; flex-direction: row; gap: 8px; }
+}
+
+/* Dinosaur Name Lab */
+
+.dino-pronunciation-lab {
+  --pronunciation-accent: #2f8166;
+  min-height: 100svh;
+  padding-bottom: 58px;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 3% 8%, rgba(255, 207, 89, 0.24), transparent 25rem),
+    radial-gradient(circle at 96% 22%, rgba(88, 169, 174, 0.19), transparent 29rem),
+    linear-gradient(180deg, #f7f1de, #eef3e8 70%, #f7f1de);
+}
+
+.dino-pronunciation-header {
+  width: min(1180px, calc(100% - 40px));
+  min-height: 78px;
+  margin: 0 auto;
+  border-bottom: 1px solid rgba(23, 60, 50, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.dino-pronunciation-header__brand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dino-pronunciation-header__brand > span:first-child {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  background: #dff0e6;
+  box-shadow: inset 0 -3px 0 rgba(23, 60, 50, 0.08);
+  font-size: 22px;
+}
+
+.dino-pronunciation-header__brand small,
+.dino-pronunciation-header__brand strong {
+  display: block;
+}
+
+.dino-pronunciation-header__brand small {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dino-pronunciation-header__brand strong {
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dino-pronunciation-header__score {
+  margin-left: auto;
+  border: 1px solid rgba(23, 60, 50, 0.1);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #60746c;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.dino-pronunciation-header__score b {
+  margin-right: 3px;
+  color: var(--green-dark);
+  font-size: 14px;
+}
+
+.dino-pronunciation-hero,
+.dino-pronunciation-how,
+.dino-pronunciation-picker,
+.dino-pronunciation-sources,
+.dino-pronunciation-lesson-hero,
+.dino-pronunciation-workspace {
+  width: min(1180px, calc(100% - 40px));
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.dino-pronunciation-hero {
+  position: relative;
+  min-height: 285px;
+  margin-top: 27px;
+  border: 1px solid rgba(23, 60, 50, 0.1);
+  border-radius: 33px;
+  padding: 42px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 34px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 76% 124%, rgba(255, 219, 102, 0.48), transparent 14rem),
+    linear-gradient(122deg, #fffdf5 0 60%, #d7eee8 100%);
+  box-shadow: 0 17px 45px rgba(23, 60, 50, 0.1);
+}
+
+.dino-pronunciation-hero::before,
+.dino-pronunciation-hero::after {
+  position: absolute;
+  border: 25px solid rgba(47, 129, 102, 0.07);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.dino-pronunciation-hero::before {
+  top: -82px;
+  right: 172px;
+  width: 175px;
+  height: 175px;
+}
+
+.dino-pronunciation-hero::after {
+  right: -70px;
+  bottom: -105px;
+  width: 245px;
+  height: 245px;
+}
+
+.dino-pronunciation-hero__copy {
+  position: relative;
+  z-index: 1;
+}
+
+.dino-pronunciation-hero__copy h1 {
+  margin: 2px 0 12px;
+  font-size: clamp(43px, 5.7vw, 70px);
+  line-height: 0.97;
+  letter-spacing: -0.055em;
+}
+
+.dino-pronunciation-hero__copy > p:not(.eyebrow) {
+  max-width: 665px;
+  margin-bottom: 23px;
+  color: #526a61;
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.dino-pronunciation-hero__meter {
+  position: relative;
+  z-index: 1;
+  width: 170px;
+  min-height: 170px;
+  border: 3px solid rgba(47, 129, 102, 0.18);
+  border-radius: 37px;
+  padding: 18px;
+  display: grid;
+  place-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 11px 25px rgba(23, 60, 50, 0.1);
+  text-align: center;
+}
+
+.dino-pronunciation-hero__meter > span {
+  font-size: 31px;
+  line-height: 1;
+}
+
+.dino-pronunciation-hero__meter strong {
+  margin-top: 6px;
+  color: #287259;
+  font-size: 45px;
+  line-height: 1;
+}
+
+.dino-pronunciation-hero__meter strong small {
+  color: #83a096;
+  font-size: 18px;
+}
+
+.dino-pronunciation-hero__meter p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dino-pronunciation-how {
+  position: relative;
+  z-index: 2;
+  margin-top: -18px;
+  margin-bottom: 43px;
+  border: 1px solid rgba(23, 60, 50, 0.1);
+  border-radius: 23px;
+  padding: 13px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  background: rgba(255, 254, 249, 0.95);
+  box-shadow: 0 10px 24px rgba(23, 60, 50, 0.08);
+}
+
+.dino-pronunciation-how > div {
+  min-width: 0;
+  min-height: 72px;
+  border-radius: 16px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  column-gap: 10px;
+  align-items: center;
+  background: #f3f5ec;
+}
+
+.dino-pronunciation-how > div > span {
+  grid-row: 1 / 4;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: white;
+  box-shadow: 0 3px 0 rgba(23, 60, 50, 0.08);
+  font-size: 20px;
+}
+
+.dino-pronunciation-how small {
+  color: #84938c;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dino-pronunciation-how strong {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dino-pronunciation-how p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.dino-pronunciation-picker {
+  margin-bottom: 25px;
+}
+
+.dino-pronunciation-picker__heading {
+  margin-bottom: 17px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.dino-pronunciation-picker__heading h2 {
+  margin: 0;
+  font-size: clamp(28px, 3.5vw, 39px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.dino-pronunciation-picker__heading > p {
+  max-width: 310px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  text-align: right;
+}
+
+.dino-pronunciation-level + .dino-pronunciation-level {
+  margin-top: 35px;
+}
+
+.dino-pronunciation-level__heading {
+  margin-bottom: 13px;
+  border-radius: 18px;
+  padding: 11px 15px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  background: color-mix(in srgb, var(--pronunciation-accent), white 91%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 15%);
+}
+
+.dino-pronunciation-level__heading > span {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: white;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--pronunciation-accent), white 67%);
+  font-size: 20px;
+}
+
+.dino-pronunciation-level__heading h3,
+.dino-pronunciation-level__heading p {
+  margin: 0;
+}
+
+.dino-pronunciation-level__heading h3 {
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.dino-pronunciation-level__heading p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.dino-pronunciation-level__heading > strong {
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: white;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.dino-pronunciation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 19px;
+}
+
+.dino-pronunciation-card {
+  min-width: 0;
+  border: 1px solid rgba(23, 60, 50, 0.12);
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fffdf8;
+  box-shadow: 0 10px 27px rgba(23, 60, 50, 0.08);
+  transition: box-shadow 170ms ease, transform 170ms ease;
+}
+
+.dino-pronunciation-card > button {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  padding: 0;
+  display: block;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dino-pronunciation-card__picture {
+  position: relative;
+  aspect-ratio: 16 / 8.8;
+  overflow: hidden;
+  background: #f7f2e6;
+}
+
+.dino-pronunciation-card__picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 220ms ease;
+}
+
+.dino-pronunciation-card__picture > span {
+  position: absolute;
+  top: 11px;
+  left: 11px;
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 3px 11px rgba(23, 60, 50, 0.12);
+  color: #536a61;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.dino-pronunciation-card__body {
+  min-height: 177px;
+  padding: 15px 16px 17px;
+}
+
+.dino-pronunciation-card__level {
+  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--pronunciation-accent);
+  font-size: 9px;
+}
+
+.dino-pronunciation-card__level strong {
+  font-size: 9px;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.dino-pronunciation-card__level small {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.dino-pronunciation-card__body h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(19px, 2.1vw, 24px);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+}
+
+.dino-pronunciation-card__body > p {
+  margin: 5px 0 12px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.dino-pronunciation-card__chunks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.dino-pronunciation-card__chunks span {
+  border: 1px solid color-mix(in srgb, var(--pronunciation-accent), white 67%);
+  border-radius: 9px;
+  padding: 5px 7px;
+  background: color-mix(in srgb, var(--pronunciation-accent), white 92%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 12%);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.dino-pronunciation-card__open {
+  min-height: 47px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--pronunciation-accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.dino-pronunciation-sources {
+  margin-top: 23px;
+  border-top: 1px dashed rgba(23, 60, 50, 0.16);
+  padding-top: 17px;
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  color: #697a73;
+  text-align: center;
+}
+
+.dino-pronunciation-sources p {
+  max-width: 850px;
+  margin: 0;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.dino-pronunciation-sources a {
+  color: #276c57;
+  font-weight: 900;
+}
+
+.dino-pronunciation-tabs {
+  width: min(1060px, calc(100% - 40px));
+  margin: 17px auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+  gap: 7px;
+}
+
+.dino-pronunciation-tabs button {
+  min-width: 0;
+  min-height: 61px;
+  border: 2px solid rgba(23, 60, 50, 0.11);
+  border-radius: 17px;
+  padding: 7px 5px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.71);
+  color: #677a72;
+  cursor: pointer;
+}
+
+.dino-pronunciation-tabs button > span {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(23, 60, 50, 0.06);
+  font-size: 14px;
+}
+
+.dino-pronunciation-tabs button strong {
+  width: 100%;
+  overflow: hidden;
+  font-size: 8px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dino-pronunciation-tabs button.is-current {
+  border-color: var(--pronunciation-accent);
+  background: color-mix(in srgb, var(--pronunciation-accent), white 89%);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--pronunciation-accent), white 58%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 18%);
+}
+
+.dino-pronunciation-tabs button.is-current > span,
+.dino-pronunciation-tabs button.is-done > span {
+  background: var(--pronunciation-accent);
+  color: white;
+}
+
+.dino-pronunciation-lesson-hero {
+  min-height: 154px;
+  margin-top: 18px;
+  margin-bottom: 16px;
+  border-left: 8px solid var(--pronunciation-accent);
+  border-radius: 26px;
+  padding: 26px 29px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 25px;
+  background:
+    radial-gradient(circle at 90% 130%, color-mix(in srgb, var(--pronunciation-accent), transparent 76%), transparent 16rem),
+    rgba(255, 253, 247, 0.92);
+  box-shadow: 0 13px 31px rgba(23, 60, 50, 0.08);
+}
+
+.dino-pronunciation-lesson-hero h1 {
+  margin: 2px 0 5px;
+  overflow-wrap: anywhere;
+  font-size: clamp(34px, 5.1vw, 61px);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+}
+
+.dino-pronunciation-lesson-hero > div:first-child > p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dino-pronunciation-pace {
+  min-width: 295px;
+  border: 1px solid rgba(23, 60, 50, 0.12);
+  border-radius: 18px;
+  padding: 11px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.dino-pronunciation-pace > small {
+  margin: 0 0 7px 3px;
+  display: block;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.dino-pronunciation-pace > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.dino-pronunciation-pace button {
+  min-height: 43px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 7px;
+  background: #eef2eb;
+  color: #60736b;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dino-pronunciation-pace button.is-current {
+  border-color: var(--pronunciation-accent);
+  background: color-mix(in srgb, var(--pronunciation-accent), white 90%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 18%);
+}
+
+.dino-pronunciation-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(340px, 0.82fr);
+  grid-template-areas:
+    "profile overview"
+    "practice overview";
+  gap: 18px;
+  align-items: start;
+}
+
+.dino-pronunciation-profile,
+.dino-pronunciation-practice {
+  border: 1px solid rgba(23, 60, 50, 0.11);
+  border-radius: 25px;
+  background: rgba(255, 253, 247, 0.94);
+  box-shadow: 0 13px 33px rgba(23, 60, 50, 0.08);
+}
+
+.dino-pronunciation-profile {
+  grid-area: profile;
+  padding: 13px;
+}
+
+.dino-pronunciation-overview {
+  grid-area: overview;
+  min-width: 0;
+}
+
+.dino-pronunciation-practice {
+  grid-area: practice;
+}
+
+.dino-pronunciation-profile__picture {
+  aspect-ratio: 16 / 9;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #f7f2e8;
+}
+
+.dino-pronunciation-profile__picture img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dino-pronunciation-profile__credit {
+  margin: 7px 3px 0;
+  color: #718078;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.dino-pronunciation-profile__credit a {
+  color: #276c57;
+  font-weight: 850;
+}
+
+.dino-pronunciation-profile__pronunciation {
+  margin-top: 11px;
+  border: 2px solid color-mix(in srgb, var(--pronunciation-accent), white 60%);
+  border-radius: 18px;
+  padding: 13px;
+  background: color-mix(in srgb, var(--pronunciation-accent), white 94%);
+}
+
+.dino-pronunciation-profile__pronunciation.is-done {
+  background: color-mix(in srgb, var(--pronunciation-accent), white 88%);
+}
+
+.dino-pronunciation-profile__pronunciation-heading {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+}
+
+.dino-pronunciation-profile__pronunciation-heading > span {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: var(--pronunciation-accent);
+  color: white;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.dino-pronunciation-profile__pronunciation-heading small {
+  display: block;
+  color: var(--pronunciation-accent);
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.dino-pronunciation-profile__pronunciation-heading h2 {
+  margin: 2px 0 0;
+  font-size: 17px;
+  line-height: 1.08;
+}
+
+.dino-pronunciation-profile__pronunciation .dino-pronunciation-play {
+  width: 100%;
+  min-width: 0;
+  margin-top: 10px;
+  grid-column: auto;
+}
+
+.dino-pronunciation-profile__pronunciation-guide {
+  margin: 9px 2px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 9px;
+  color: #677a72;
+}
+
+.dino-pronunciation-profile__pronunciation-guide strong {
+  color: color-mix(in srgb, var(--pronunciation-accent), black 22%);
+  font-size: 11px;
+}
+
+.dino-pronunciation-profile__pronunciation-guide span {
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.dino-pronunciation-profile__fact,
+.dino-pronunciation-profile__tip {
+  margin-top: 11px;
+  border-radius: 17px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 9px;
+  background: #eef4ed;
+}
+
+.dino-pronunciation-profile__fact > span,
+.dino-pronunciation-profile__tip > span {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: white;
+  font-size: 18px;
+}
+
+.dino-pronunciation-profile__fact small {
+  display: block;
+  color: var(--pronunciation-accent);
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.dino-pronunciation-profile__fact strong,
+.dino-pronunciation-profile__tip strong {
+  margin-top: 2px;
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.dino-pronunciation-profile__fact p,
+.dino-pronunciation-profile__tip p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.dino-pronunciation-profile__tip {
+  background: #fff2c8;
+}
+
+.dino-pronunciation-insights {
+  margin-top: 11px;
+  display: grid;
+  gap: 9px;
+}
+
+.dino-pronunciation-insights .dino-pronunciation-profile__fact,
+.dino-pronunciation-insights .dino-pronunciation-profile__tip {
+  margin-top: 0;
+}
+
+.dino-pronunciation-practice {
+  padding: 17px;
+}
+
+.dino-pronunciation-steps {
+  margin: 0 0 13px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  list-style: none;
+}
+
+.dino-pronunciation-steps li {
+  min-width: 0;
+  min-height: 58px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 7px;
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 6px;
+  align-items: center;
+  background: #f0f2eb;
+  color: #7b8a84;
+}
+
+.dino-pronunciation-steps li > span {
+  grid-row: 1 / 3;
+  width: 27px;
+  height: 27px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: white;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.dino-pronunciation-steps li strong {
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dino-pronunciation-steps li small {
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.dino-pronunciation-steps li.is-current {
+  border-color: var(--pronunciation-accent);
+  background: color-mix(in srgb, var(--pronunciation-accent), white 91%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 20%);
+}
+
+.dino-pronunciation-steps li.is-done > span {
+  background: var(--pronunciation-accent);
+  color: white;
+}
+
+.dino-pronunciation-task {
+  position: relative;
+  min-height: 115px;
+  margin-top: 9px;
+  border: 2px solid #e1e5dd;
+  border-radius: 19px;
+  padding: 15px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) minmax(150px, auto);
+  gap: 11px;
+  align-items: center;
+  background: #fffefa;
+}
+
+.dino-pronunciation-task.is-done {
+  border-color: color-mix(in srgb, var(--pronunciation-accent), white 60%);
+  background: color-mix(in srgb, var(--pronunciation-accent), white 96%);
+}
+
+.dino-pronunciation-task__number {
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: var(--pronunciation-accent);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--pronunciation-accent), black 18%);
+  color: white;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.dino-pronunciation-task__copy small {
+  color: var(--pronunciation-accent);
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.dino-pronunciation-task__copy h2 {
+  margin: 2px 0;
+  font-size: 18px;
+  line-height: 1.08;
+}
+
+.dino-pronunciation-task__copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.dino-pronunciation-play {
+  min-width: 160px;
+  min-height: 68px;
+  border: 0;
+  border-radius: 16px;
+  padding: 9px 12px;
+  display: grid;
+  grid-template-columns: 37px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  background: #e9f2ed;
+  color: var(--green-dark);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dino-pronunciation-play > span {
+  grid-row: 1 / 3;
+  width: 37px;
+  height: 37px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: white;
+  font-size: 18px;
+}
+
+.dino-pronunciation-play strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.05;
+}
+
+.dino-pronunciation-play small {
+  color: #667970;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.dino-pronunciation-play--primary {
+  background: var(--pronunciation-accent);
+  color: white;
+}
+
+.dino-pronunciation-play--primary small {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.dino-pronunciation-play.is-speaking {
+  background: #ef806c;
+  color: white;
+}
+
+.dino-pronunciation-play.is-speaking small {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.dino-pronunciation-play:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+  opacity: 0.42;
+}
+
+.dino-pronunciation-chunks {
+  grid-column: 1 / -1;
+  padding-left: 49px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dino-pronunciation-chunks button {
+  min-width: 74px;
+  min-height: 68px;
+  border: 2px solid #dce2da;
+  border-radius: 16px;
+  padding: 7px 13px;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 6px;
+  place-content: center;
+  align-items: center;
+  background: white;
+  color: #61746c;
+  cursor: pointer;
+}
+
+.dino-pronunciation-chunks button > span {
+  grid-row: 1 / 3;
+  font-size: 12px;
+}
+
+.dino-pronunciation-chunks button strong {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.dino-pronunciation-chunks button small {
+  color: #a05d33;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+}
+
+.dino-pronunciation-chunks button.is-stressed {
+  border-color: #edb56f;
+  background: #fff2d8;
+  color: #834817;
+  box-shadow: 0 4px 0 #e8c186;
+}
+
+.dino-pronunciation-chunks button.is-tapped:not(.is-stressed) {
+  border-color: color-mix(in srgb, var(--pronunciation-accent), white 54%);
+  background: color-mix(in srgb, var(--pronunciation-accent), white 92%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 15%);
+}
+
+.dino-pronunciation-chunks button.is-speaking {
+  border-color: #ef806c;
+  background: #fff0ed;
+  box-shadow: 0 4px 0 #f1b0a5;
+}
+
+.dino-pronunciation-chunks button:disabled {
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.38;
+}
+
+.dino-pronunciation-lock {
+  grid-column: 1 / -1;
+  margin: 0 0 0 49px;
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: #f1f2ed;
+  color: #78867f;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.dino-pronunciation-task--say {
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  padding-bottom: 18px;
+  background: linear-gradient(128deg, #fff8de, #f2f7ed);
+}
+
+.dino-pronunciation-say-line {
+  grid-column: 1 / -1;
+  padding-left: 49px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.dino-pronunciation-say-line span {
+  border-bottom: 3px solid color-mix(in srgb, var(--pronunciation-accent), white 48%);
+  padding: 4px 7px;
+  color: color-mix(in srgb, var(--pronunciation-accent), black 15%);
+  font-size: clamp(19px, 2.4vw, 28px);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.dino-pronunciation-say-line span.is-stressed {
+  border-bottom-color: #e09b48;
+  color: #8a4b13;
+  font-size: clamp(23px, 2.7vw, 32px);
+}
+
+.dino-pronunciation-task--say > .button {
+  min-width: 190px;
+}
+
+.dino-pronunciation-live {
+  margin: 11px 0 0;
+  border-radius: 14px;
+  padding: 9px 12px;
+  background: color-mix(in srgb, var(--pronunciation-accent), white 91%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 18%);
+  font-size: 9px;
+  font-weight: 850;
+  text-align: center;
+}
+
+.dino-pronunciation-lab button {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.dino-pronunciation-lab button:focus-visible,
+.dino-pronunciation-lab a:focus-visible {
+  outline: 4px solid rgba(239, 128, 108, 0.45);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .dino-pronunciation-card:hover {
+    box-shadow: 0 17px 36px rgba(23, 60, 50, 0.14);
+    transform: translateY(-3px);
+  }
+
+  .dino-pronunciation-card:hover .dino-pronunciation-card__picture img {
+    transform: scale(1.025);
+  }
+
+  .dino-pronunciation-tabs button:hover,
+  .dino-pronunciation-chunks button:hover:not(:disabled) {
+    border-color: var(--pronunciation-accent);
+  }
+}
+
+@media (max-width: 1000px) {
+  .dino-pronunciation-hero,
+  .dino-pronunciation-how,
+  .dino-pronunciation-picker,
+  .dino-pronunciation-sources,
+  .dino-pronunciation-lesson-hero,
+  .dino-pronunciation-workspace {
+    width: min(920px, calc(100% - 32px));
+  }
+
+  .dino-pronunciation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dino-pronunciation-tabs {
+    width: calc(100% - 32px);
+    padding-bottom: 5px;
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  .dino-pronunciation-tabs button {
+    min-width: 125px;
+    flex: 1 0 125px;
+    scroll-snap-align: start;
+  }
+
+  .dino-pronunciation-workspace {
+    grid-template-columns: minmax(420px, 1.12fr) minmax(330px, 0.88fr);
+  }
+
+  .dino-pronunciation-task {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .dino-pronunciation-play,
+  .dino-pronunciation-task--say > .button {
+    grid-column: 2;
+    width: 100%;
+  }
+
+  .dino-pronunciation-task--say {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .dino-pronunciation-lab {
+    padding-bottom: calc(31px + env(safe-area-inset-bottom));
+  }
+
+  .dino-pronunciation-header {
+    width: calc(100% - 24px);
+    min-height: 68px;
+    gap: 9px;
+  }
+
+  .dino-pronunciation-header__brand > span:first-child {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    flex-basis: 36px;
+    font-size: 19px;
+  }
+
+  .dino-pronunciation-header__brand strong {
+    max-width: 47vw;
+    font-size: 12px;
+  }
+
+  .dino-pronunciation-header__brand small {
+    font-size: 7px;
+  }
+
+  .dino-pronunciation-header__score {
+    padding: 6px 8px;
+    font-size: 7px;
+  }
+
+  .dino-pronunciation-header__score b {
+    font-size: 11px;
+  }
+
+  .dino-pronunciation-hero,
+  .dino-pronunciation-how,
+  .dino-pronunciation-picker,
+  .dino-pronunciation-sources,
+  .dino-pronunciation-lesson-hero,
+  .dino-pronunciation-workspace {
+    width: calc(100% - 20px);
+  }
+
+  .dino-pronunciation-hero {
+    min-height: 0;
+    margin-top: 12px;
+    border-radius: 25px;
+    padding: 27px 20px 48px;
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+
+  .dino-pronunciation-hero__copy h1 {
+    font-size: clamp(39px, 12vw, 53px);
+  }
+
+  .dino-pronunciation-hero__copy > p:not(.eyebrow) {
+    margin-bottom: 18px;
+    font-size: 13px;
+  }
+
+  .dino-pronunciation-hero__copy .button {
+    width: 100%;
+  }
+
+  .dino-pronunciation-hero__meter {
+    width: 100%;
+    min-height: 71px;
+    border-radius: 18px;
+    padding: 10px 14px;
+    grid-template-columns: auto auto 1fr;
+    place-content: center;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+  }
+
+  .dino-pronunciation-hero__meter > span {
+    font-size: 24px;
+  }
+
+  .dino-pronunciation-hero__meter strong {
+    margin: 0;
+    font-size: 30px;
+  }
+
+  .dino-pronunciation-hero__meter strong small {
+    font-size: 14px;
+  }
+
+  .dino-pronunciation-hero__meter p {
+    margin: 0;
+    font-size: 7px;
+  }
+
+  .dino-pronunciation-how {
+    margin-top: -27px;
+    margin-bottom: 31px;
+    border-radius: 19px;
+    padding: 9px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .dino-pronunciation-how > div {
+    min-height: 70px;
+    border-radius: 13px;
+    padding: 6px 3px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    text-align: center;
+  }
+
+  .dino-pronunciation-how > div > span {
+    width: 31px;
+    height: 31px;
+    border-radius: 10px;
+    font-size: 15px;
+  }
+
+  .dino-pronunciation-how small {
+    display: none;
+  }
+
+  .dino-pronunciation-how strong {
+    width: 100%;
+    font-size: 8px;
+  }
+
+  .dino-pronunciation-how p {
+    font-size: 7px;
+  }
+
+  .dino-pronunciation-picker__heading {
+    align-items: flex-start;
+  }
+
+  .dino-pronunciation-picker__heading h2 {
+    font-size: 29px;
+  }
+
+  .dino-pronunciation-picker__heading > p {
+    max-width: 120px;
+    font-size: 9px;
+  }
+
+  .dino-pronunciation-level + .dino-pronunciation-level {
+    margin-top: 27px;
+  }
+
+  .dino-pronunciation-level__heading {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    padding: 10px 11px;
+    gap: 8px;
+  }
+
+  .dino-pronunciation-level__heading > span {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+  }
+
+  .dino-pronunciation-level__heading h3 {
+    font-size: 14px;
+  }
+
+  .dino-pronunciation-level__heading p {
+    display: none;
+  }
+
+  .dino-pronunciation-level__heading > strong {
+    padding: 6px 8px;
+    font-size: 8px;
+  }
+
+  .dino-pronunciation-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .dino-pronunciation-card {
+    border-radius: 20px;
+  }
+
+  .dino-pronunciation-card__body {
+    min-height: 154px;
+    padding: 14px;
+  }
+
+  .dino-pronunciation-card__body h3 {
+    font-size: 23px;
+  }
+
+  .dino-pronunciation-tabs {
+    width: calc(100% - 20px);
+    margin: 11px auto;
+  }
+
+  .dino-pronunciation-tabs button {
+    min-width: 105px;
+    min-height: 57px;
+    flex-basis: 105px;
+    border-radius: 14px;
+  }
+
+  .dino-pronunciation-lesson-hero {
+    min-height: 0;
+    margin: 11px auto;
+    border-left-width: 6px;
+    border-radius: 22px;
+    padding: 20px 17px;
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .dino-pronunciation-lesson-hero h1 {
+    font-size: clamp(31px, 9.5vw, 43px);
+  }
+
+  .dino-pronunciation-pace {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .dino-pronunciation-workspace {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "profile"
+      "overview"
+      "practice";
+  }
+
+  .dino-pronunciation-profile {
+    padding: 11px;
+  }
+
+  .dino-pronunciation-profile__fact,
+  .dino-pronunciation-profile__tip {
+    padding: 12px;
+  }
+
+  .dino-pronunciation-practice {
+    border-radius: 21px;
+    padding: 11px;
+  }
+
+  .dino-pronunciation-steps {
+    gap: 4px;
+  }
+
+  .dino-pronunciation-steps li {
+    min-height: 59px;
+    border-radius: 12px;
+    padding: 5px 2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    text-align: center;
+  }
+
+  .dino-pronunciation-steps li > span {
+    width: 25px;
+    height: 25px;
+    border-radius: 8px;
+  }
+
+  .dino-pronunciation-steps li strong {
+    width: 100%;
+    font-size: 7px;
+  }
+
+  .dino-pronunciation-steps li small {
+    font-size: 6px;
+  }
+
+  .dino-pronunciation-task,
+  .dino-pronunciation-task--say {
+    min-height: 0;
+    border-radius: 17px;
+    padding: 13px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .dino-pronunciation-task__number {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+  }
+
+  .dino-pronunciation-task__copy h2 {
+    font-size: 16px;
+  }
+
+  .dino-pronunciation-task__copy p {
+    font-size: 8px;
+  }
+
+  .dino-pronunciation-play,
+  .dino-pronunciation-task--say > .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .dino-pronunciation-chunks,
+  .dino-pronunciation-say-line {
+    padding-left: 0;
+  }
+
+  .dino-pronunciation-chunks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .dino-pronunciation-chunks button {
+    min-width: 0;
+    min-height: 63px;
+    padding: 6px;
+  }
+
+  .dino-pronunciation-chunks button strong {
+    font-size: 18px;
+  }
+
+  .dino-pronunciation-lock {
+    margin-left: 0;
+  }
+
+  .dino-pronunciation-say-line {
+    justify-content: center;
+  }
+
+  .dino-pronunciation-say-line span {
+    font-size: clamp(18px, 6vw, 24px);
+  }
+
+  .dino-pronunciation-say-line span.is-stressed {
+    font-size: clamp(21px, 7vw, 28px);
+  }
+
+  .dino-pronunciation-sources {
+    margin-top: 18px;
+    padding: 14px 7px 0;
+  }
+
+  .dino-pronunciation-sources p {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 390px) {
+  .dino-pronunciation-header__score {
+    display: none;
+  }
+
+  .dino-pronunciation-header__brand strong {
+    max-width: 58vw;
+  }
+
+  .dino-pronunciation-hero__copy h1 {
+    font-size: 38px;
+  }
+
+  .dino-pronunciation-picker__heading > p {
+    display: none;
+  }
+
+  .dino-pronunciation-pace > div {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dino-pronunciation-description {
+  margin-top: 0;
+  border: 2px solid color-mix(in srgb, var(--pronunciation-accent), white 58%);
+  border-radius: 21px;
+  padding: 17px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--pronunciation-accent), transparent 87%), transparent 12rem),
+    #fffdf6;
+}
+
+.dino-pronunciation-description__heading {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 11px;
+  align-items: center;
+}
+
+.dino-pronunciation-description__heading > span {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--pronunciation-accent), white 88%);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--pronunciation-accent), white 62%);
+  font-size: 23px;
+}
+
+.dino-pronunciation-description__heading > div > small {
+  color: var(--pronunciation-accent);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dino-pronunciation-description__heading h2 {
+  margin: 2px 0 3px;
+  font-size: 21px;
+  line-height: 1.08;
+}
+
+.dino-pronunciation-description__heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.dino-pronunciation-description__heading > button {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 62px;
+  border: 0;
+  border-radius: 15px;
+  padding: 9px 12px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  background: var(--pronunciation-accent);
+  color: white;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dino-pronunciation-description__heading > button > span {
+  grid-row: 1 / 3;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 16px;
+}
+
+.dino-pronunciation-description__heading > button strong {
+  font-size: 10px;
+  line-height: 1.15;
+}
+
+.dino-pronunciation-description__heading > button small {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.dino-pronunciation-description__heading > button.is-speaking {
+  background: #ef806c;
+}
+
+.dino-pronunciation-description__heading > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.dino-pronunciation-description__sentences {
+  margin: 15px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+  list-style: none;
+}
+
+.dino-pronunciation-description__sentences li {
+  min-height: 65px;
+  border: 1px solid rgba(23, 60, 50, 0.1);
+  border-radius: 15px;
+  padding: 11px 13px;
+  display: grid;
+  grid-template-columns: 31px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.83);
+}
+
+.dino-pronunciation-description__sentences li > span {
+  width: 31px;
+  height: 31px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--pronunciation-accent), white 88%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 18%);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.dino-pronunciation-description__sentences strong {
+  display: block;
+  color: #173c32;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.dino-pronunciation-description__sentences p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dino-pronunciation-description__keywords {
+  margin-top: 11px;
+  border-radius: 16px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--pronunciation-accent), white 93%);
+}
+
+.dino-pronunciation-description__keywords > small {
+  display: block;
+  color: var(--pronunciation-accent);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.dino-pronunciation-description__keywords > div {
+  margin-top: 7px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.dino-pronunciation-description__keywords span {
+  border: 1px solid color-mix(in srgb, var(--pronunciation-accent), white 62%);
+  border-radius: 12px;
+  padding: 9px 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  background: white;
+  text-align: center;
+}
+
+.dino-pronunciation-description__keywords strong {
+  overflow-wrap: anywhere;
+  color: color-mix(in srgb, var(--pronunciation-accent), black 18%);
+  font-size: 12px;
+}
+
+.dino-pronunciation-description__keywords span small {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.dino-pronunciation-description__optional {
+  margin: 9px 0 0;
+  color: #75847d;
+  font-size: 8px;
+  font-weight: 750;
+  text-align: center;
+}
+
+@media (max-width: 1000px) {
+  .dino-pronunciation-description__heading {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .dino-pronunciation-description__heading > span {
+    width: 42px;
+    height: 42px;
+  }
+
+  .dino-pronunciation-description__heading > button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .dino-pronunciation-description {
+    margin-top: 0;
+    border-radius: 18px;
+    padding: 13px;
+  }
+
+  .dino-pronunciation-description__heading {
+    grid-template-columns: 39px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .dino-pronunciation-description__heading > span {
+    width: 39px;
+    height: 39px;
+    border-radius: 12px;
+    font-size: 19px;
+  }
+
+  .dino-pronunciation-description__heading h2 {
+    font-size: 18px;
+  }
+
+  .dino-pronunciation-description__heading p {
+    font-size: 8px;
+  }
+
+  .dino-pronunciation-description__heading > button {
+    min-height: 58px;
+  }
+
+  .dino-pronunciation-description__sentences {
+    margin-top: 11px;
+  }
+
+  .dino-pronunciation-description__sentences li {
+    min-height: 62px;
+    border-radius: 13px;
+    padding: 10px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .dino-pronunciation-description__sentences li > span {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+  }
+
+  .dino-pronunciation-description__sentences strong {
+    font-size: 14px;
+  }
+
+  .dino-pronunciation-description__sentences p {
+    font-size: 9px;
+  }
+
+  .dino-pronunciation-description__keywords > div {
+    grid-template-columns: 1fr;
+  }
+
+  .dino-pronunciation-description__keywords span {
+    min-height: 44px;
+  }
+
+  .dino-pronunciation-description__keywords strong {
+    font-size: 13px;
+  }
+}
+
+/* Everyday Discovery Lab -------------------------------------------------- */
+
+.everyday-discovery-shelf-invite {
+  margin-top: -18px;
+  background:
+    radial-gradient(circle at 88% -12%, rgba(255, 226, 131, 0.3), transparent 20rem),
+    linear-gradient(125deg, #563f78, #3f6d75 52%, #3f7653);
+}
+
+.everyday-discovery-shelf-invite .eyebrow {
+  color: #ffe18a;
+}
+
+.everyday-discovery-shelf-invite__picture {
+  aspect-ratio: 16 / 9;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: white;
+  transform: rotate(1deg);
+}
+
+.everyday-discovery-shelf-invite__picture img {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  aspect-ratio: auto;
+  object-fit: cover;
+}
+
+.everyday-discovery-lab {
+  --pronunciation-accent: #5d6fa7;
+}
+
+.everyday-discovery-hero {
+  background:
+    radial-gradient(circle at 89% 8%, rgba(255, 225, 124, 0.36), transparent 15rem),
+    radial-gradient(circle at 14% 115%, rgba(102, 167, 120, 0.3), transparent 17rem),
+    linear-gradient(132deg, #edf3ff, #fff7dc 53%, #e8f4e7);
+}
+
+.everyday-discovery-scene-hero {
+  border-left: 8px solid var(--pronunciation-accent);
+  background:
+    radial-gradient(circle at 88% 9%, color-mix(in srgb, var(--pronunciation-accent), transparent 80%), transparent 15rem),
+    linear-gradient(132deg, color-mix(in srgb, var(--pronunciation-accent), white 91%), #fff9e8);
+}
+
+.everyday-discovery-scene-hero .dino-pronunciation-hero__copy > p:not(.eyebrow) strong {
+  color: color-mix(in srgb, var(--pronunciation-accent), black 20%);
+}
+
+.everyday-discovery-scene-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.everyday-discovery-scene-card {
+  min-width: 0;
+  border: 2px solid color-mix(in srgb, var(--pronunciation-accent), white 62%);
+  border-radius: 27px;
+  overflow: hidden;
+  background: rgba(255, 253, 247, 0.94);
+  box-shadow: 0 12px 28px rgba(23, 60, 50, 0.09);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.everyday-discovery-scene-card > button {
+  width: 100%;
+  min-height: 100%;
+  border: 0;
+  padding: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.everyday-discovery-scene-card__pictures {
+  position: relative;
+  aspect-ratio: 16 / 8.5;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  background: #eef1e8;
+}
+
+.everyday-discovery-scene-card__pictures img {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  object-fit: cover;
+}
+
+.everyday-discovery-scene-card__pictures > span {
+  position: absolute;
+  left: 14px;
+  bottom: -1px;
+  width: 52px;
+  height: 52px;
+  border: 5px solid rgba(255, 255, 255, 0.92);
+  border-radius: 17px 17px 0 0;
+  display: grid;
+  place-items: center;
+  background: var(--pronunciation-accent);
+  font-size: 26px;
+}
+
+.everyday-discovery-scene-card__copy {
+  padding: 20px 20px 15px;
+}
+
+.everyday-discovery-scene-card__copy .eyebrow {
+  color: var(--pronunciation-accent);
+}
+
+.everyday-discovery-scene-card__copy h2 {
+  margin: 4px 0 2px;
+  font-size: 25px;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+.everyday-discovery-scene-card__copy > strong {
+  color: color-mix(in srgb, var(--pronunciation-accent), black 17%);
+  font-size: 11px;
+}
+
+.everyday-discovery-scene-card__copy > p:not(.eyebrow) {
+  min-height: 48px;
+  margin: 10px 0 13px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.everyday-discovery-scene-card__copy > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.everyday-discovery-scene-card__copy > div span {
+  border-radius: 999px;
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--pronunciation-accent), white 91%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 17%);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.everyday-discovery-scene-card__open {
+  min-height: 48px;
+  padding: 11px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: color-mix(in srgb, var(--pronunciation-accent), white 90%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 20%);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.everyday-discovery-word-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.everyday-discovery-word-card .dino-pronunciation-card__picture img {
+  object-fit: cover;
+}
+
+.everyday-discovery-word-card .dino-pronunciation-card__body h3 {
+  text-transform: lowercase;
+}
+
+.everyday-discovery-challenge {
+  width: min(1060px, calc(100% - 40px));
+  margin: 35px auto 0;
+  border: 2px solid color-mix(in srgb, var(--pronunciation-accent), white 58%);
+  border-radius: 27px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 95% 0, color-mix(in srgb, var(--pronunciation-accent), transparent 84%), transparent 14rem),
+    #fffdf7;
+  box-shadow: 0 12px 28px rgba(23, 60, 50, 0.08);
+}
+
+.everyday-discovery-challenge__heading {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.everyday-discovery-challenge__heading > span {
+  width: 58px;
+  height: 58px;
+  border-radius: 19px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--pronunciation-accent), white 86%);
+  font-size: 29px;
+}
+
+.everyday-discovery-challenge__heading .eyebrow {
+  color: var(--pronunciation-accent);
+}
+
+.everyday-discovery-challenge__heading h2 {
+  margin: 2px 0 7px;
+  font-size: 27px;
+}
+
+.everyday-discovery-challenge__heading strong {
+  display: block;
+  font-size: 15px;
+}
+
+.everyday-discovery-challenge__heading p:last-child {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.everyday-discovery-challenge__options {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.everyday-discovery-challenge__options button {
+  min-height: 91px;
+  border: 2px solid #dce2da;
+  border-radius: 18px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 43px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  background: white;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.everyday-discovery-challenge__options button > span {
+  grid-row: 1 / 3;
+  width: 43px;
+  height: 43px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #f2f3ed;
+  font-size: 22px;
+}
+
+.everyday-discovery-challenge__options button strong {
+  font-size: 14px;
+}
+
+.everyday-discovery-challenge__options button small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.everyday-discovery-challenge__options button.is-selected {
+  border-color: #e3a74f;
+  background: #fff6df;
+}
+
+.everyday-discovery-challenge__options button.is-correct {
+  border-color: var(--pronunciation-accent);
+  background: color-mix(in srgb, var(--pronunciation-accent), white 88%);
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--pronunciation-accent), white 56%);
+}
+
+.everyday-discovery-challenge__message {
+  margin: 14px 0 0;
+  border-radius: 14px;
+  padding: 11px 13px;
+  background: #fff2cf;
+  color: #745426;
+  font-size: 10px;
+  font-weight: 850;
+  text-align: center;
+}
+
+.everyday-discovery-challenge__message.is-correct {
+  background: color-mix(in srgb, var(--pronunciation-accent), white 89%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 23%);
+}
+
+.dino-pronunciation-profile__picture[data-image-fit="contain"] {
+  padding: 10px;
+  background: #f4f0e7;
+}
+
+.dino-pronunciation-profile__picture[data-image-fit="contain"] img {
+  object-fit: contain;
+}
+
+.everyday-discovery-steps {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.everyday-discovery-spelling {
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  background: linear-gradient(128deg, #f7f0ff, #fff8dc 58%, #eef8ed);
+}
+
+.everyday-discovery-spelling__hear {
+  min-width: 145px;
+  min-height: 55px;
+  border: 0;
+  border-radius: 15px;
+  padding: 9px 12px;
+  background: var(--pronunciation-accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.everyday-discovery-spelling__hear:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.everyday-discovery-spelling__answer {
+  grid-column: 1 / -1;
+  min-height: 57px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5px;
+}
+
+.everyday-discovery-spelling__answer > span {
+  width: clamp(29px, 4vw, 41px);
+  height: 44px;
+  border-bottom: 4px solid color-mix(in srgb, var(--pronunciation-accent), white 45%);
+  display: grid;
+  place-items: center;
+  color: color-mix(in srgb, var(--pronunciation-accent), black 18%);
+  font-size: 27px;
+  font-weight: 950;
+  text-transform: lowercase;
+}
+
+.everyday-discovery-spelling__answer > span.is-filled {
+  border-radius: 9px 9px 4px 4px;
+  background: white;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--pronunciation-accent), white 56%);
+}
+
+.everyday-discovery-spelling__word-gap {
+  grid-column: 1 / -1;
+  margin: -2px 0 2px;
+  color: #6f7e77;
+  font-size: 8px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.everyday-discovery-spelling__tiles {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+}
+
+.everyday-discovery-spelling__tiles button {
+  width: 48px;
+  height: 48px;
+  border: 2px solid color-mix(in srgb, var(--pronunciation-accent), white 57%);
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--pronunciation-accent), white 58%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 18%);
+  font-size: 24px;
+  font-weight: 950;
+  text-transform: lowercase;
+  cursor: pointer;
+}
+
+.everyday-discovery-spelling__tiles button.is-used {
+  box-shadow: none;
+  opacity: 0.2;
+  transform: translateY(3px);
+}
+
+.everyday-discovery-spelling__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+}
+
+.everyday-discovery-spelling__actions button {
+  min-height: 42px;
+  border: 1px solid #d7ddd5;
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: white;
+  color: #5f7169;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.everyday-discovery-spelling__actions button.is-check {
+  border-color: var(--pronunciation-accent);
+  background: var(--pronunciation-accent);
+  color: white;
+}
+
+.everyday-discovery-spelling__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.everyday-discovery-spelling__message {
+  grid-column: 1 / -1;
+  margin: 0;
+  border-radius: 13px;
+  padding: 10px 12px;
+  background: #fff1ce;
+  color: #765521;
+  font-size: 9px;
+  font-weight: 850;
+  text-align: center;
+}
+
+.everyday-discovery-spelling__message.is-success {
+  background: color-mix(in srgb, var(--pronunciation-accent), white 88%);
+  color: color-mix(in srgb, var(--pronunciation-accent), black 20%);
+}
+
+.everyday-discovery-spelling__next {
+  grid-column: 1 / -1;
+  width: min(360px, 100%);
+  margin: 0 auto;
+}
+
+.everyday-discovery-fact-link {
+  margin-top: 7px;
+  display: inline-block;
+  color: var(--pronunciation-accent);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+@media (hover: hover) {
+  .everyday-discovery-scene-card:hover {
+    box-shadow: 0 17px 36px rgba(23, 60, 50, 0.15);
+    transform: translateY(-3px);
+  }
+}
+
+@media (max-width: 1000px) {
+  .everyday-discovery-scene-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .everyday-discovery-word-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .everyday-discovery-spelling {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .everyday-discovery-spelling__hear {
+    grid-column: 2;
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .everyday-discovery-shelf-invite__picture {
+    transform: none;
+  }
+
+  .everyday-discovery-scene-grid,
+  .everyday-discovery-word-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .everyday-discovery-scene-card__copy > p:not(.eyebrow) {
+    min-height: 0;
+  }
+
+  .everyday-discovery-challenge {
+    width: calc(100% - 20px);
+    margin-top: 24px;
+    border-radius: 21px;
+    padding: 15px;
+  }
+
+  .everyday-discovery-challenge__heading {
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .everyday-discovery-challenge__heading > span {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+    font-size: 23px;
+  }
+
+  .everyday-discovery-challenge__heading h2 {
+    font-size: 22px;
+  }
+
+  .everyday-discovery-challenge__heading strong {
+    font-size: 13px;
+  }
+
+  .everyday-discovery-challenge__options {
+    grid-template-columns: 1fr;
+  }
+
+  .everyday-discovery-challenge__options button {
+    min-height: 70px;
+  }
+
+  .everyday-discovery-steps {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .everyday-discovery-steps li strong {
+    font-size: 6px;
+  }
+
+  .everyday-discovery-steps li small {
+    font-size: 5px;
+  }
+
+  .everyday-discovery-spelling {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .everyday-discovery-spelling__hear {
+    grid-column: 1 / -1;
+  }
+
+  .everyday-discovery-spelling__answer > span {
+    width: clamp(24px, 8vw, 34px);
+    height: 38px;
+    font-size: 22px;
+  }
+
+  .everyday-discovery-spelling__tiles button {
+    width: 43px;
+    height: 43px;
+    border-radius: 12px;
+    font-size: 21px;
+  }
+
+  .everyday-discovery-spelling__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .everyday-discovery-spelling__actions button.is-check {
+    grid-column: 1 / -1;
   }
 }

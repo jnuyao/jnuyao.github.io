@@ -26,6 +26,20 @@ const BOOK_SLUGS = [
   "magnetic-max",
   "the-feast",
   "willy-and-hugh",
+  "the-gruffalo",
+  "predators-and-prey",
+  "the-stars-of-chek-jawa",
+  "dinosaur-school",
+  "danny-dinosaur-goes-to-camp",
+  "danny-dinosaur-school-days",
+  "santas-moose",
+  "horse-in-harrys-room",
+  "danny-dinosaur-too-tall",
+  "danny-dinosaur-sand-castle-contest",
+  "danny-dinosaur-new-puppy",
+  "sammy-the-seal",
+  "danny-dinosaur-mind-manners",
+  "danny-dinosaur-ride-a-bike",
 ];
 
 function sha256(value) {
@@ -45,11 +59,21 @@ function normaliseText(value) {
 
 async function loadCourseModules() {
   const directory = await mkdtemp(join(tmpdir(), "story-garden-tests-"));
-  const files = ["book-data", "word-data", "word-progress", "progress"];
+  const files = [
+    "story-page-sides",
+    "book-data",
+    "art-studio-data",
+    "word-data",
+    "word-progress",
+    "progress",
+  ];
   try {
     for (const name of files) {
       let source = await readFile(new URL(`../app/${name}.ts`, import.meta.url), "utf8");
-      source = source.replace(/from\s+(["'])(\.\/[a-z0-9-]+)\1/g, "from $1$2.mjs$1");
+      source = source.replace(
+        /from\s+(["'])(\.\/[a-z0-9-]+)(?:\.ts)?\1/g,
+        "from $1$2.mjs$1",
+      );
       const transpiled = ts.transpileModule(source, {
         compilerOptions: {
           module: ts.ModuleKind.ESNext,
@@ -83,9 +107,9 @@ async function loadCourseModules() {
   }
 }
 
-test("eighteen books each expose five unique, story-grounded words", async () => {
+test("thirty-two books each expose five unique, story-grounded words", async () => {
   const { bookData, wordData } = await loadCourseModules();
-  assert.equal(bookData.BOOKS.length, 18);
+  assert.equal(bookData.BOOKS.length, 32);
   assert.equal(wordData.WORDS_PER_BOOK, 5);
   assert.deepEqual(Object.keys(wordData.WORD_SETS).sort(), [...BOOK_SLUGS].sort());
 
@@ -119,7 +143,7 @@ test("eighteen books each expose five unique, story-grounded words", async () =>
       total += 1;
     }
   }
-  assert.equal(total, 90);
+  assert.equal(total, 160);
 });
 
 test("v2 progress migrates to v3 without losing story or mission work", async () => {
@@ -254,15 +278,15 @@ test("the site wires Word Garden into reading, the shelf and dual-speed prepared
   assert.match(worker, /Permissions-Policy["'],\s*["']microphone=\(self\)/);
 });
 
-test("all 90 word clips have verified standard and child-slow files", async () => {
+test("all 160 word clips have verified standard and child-slow files", async () => {
   const manifest = JSON.parse(
     await readFile(new URL("../work/word-audio-production/manifest.json", import.meta.url), "utf8"),
   );
-  assert.equal(manifest.expectedJobs, 90);
+  assert.equal(manifest.expectedJobs, 160);
   assert.equal(manifest.model, "gemini-2.5-pro-preview-tts");
   assert.equal(manifest.voice, "Aoede");
-  assert.equal(manifest.jobs.length, 90);
-  assert.equal(new Set(manifest.jobs.map((job) => job.id)).size, 90);
+  assert.equal(manifest.jobs.length, 160);
+  assert.equal(new Set(manifest.jobs.map((job) => job.id)).size, 160);
 
   const expectedPaths = new Set();
   for (const job of manifest.jobs) {
@@ -281,7 +305,7 @@ test("all 90 word clips have verified standard and child-slow files", async () =
       expectedPaths.add(relativePath);
     }
   }
-  assert.equal(expectedPaths.size, 180);
+  assert.equal(expectedPaths.size, 320);
 
   for (const root of ["word-audio", "word-audio-standard"]) {
     const folders = (await readdir(new URL(`../public/${root}/`, import.meta.url), { withFileTypes: true }))
@@ -312,7 +336,7 @@ test("independent blind-transcription receipts remain valid for every verified w
     "mr-gumpys-outing/bleating",
   ]);
 
-  assert.ok([50, 90].includes(report.expectedJobs));
+  assert.ok([50, 90, 105, 110, 120, 160].includes(report.expectedJobs));
   assert.equal(report.records.length, report.expectedJobs);
   assert.equal(report.matches, report.expectedJobs);
   assert.deepEqual(report.mismatches, []);

@@ -1,5 +1,8 @@
 export const DEFAULT_NARRATION_RATE = 0.68;
-export const PREPARED_AUDIO_CACHE_VERSION = "pro-aoede-p1-p2-v1";
+export const PREPARED_AUDIO_CACHE_VERSION = "pro-aoede-p1-p2-sides-v2";
+export const STORY_GUIDE_AUDIO_CACHE_VERSION = "ride-bike-full-english-v2";
+export const DINOSAUR_PRONUNCIATION_AUDIO_CACHE_VERSION = "aoede-dino-names-v2";
+export const EVERYDAY_DISCOVERY_AUDIO_CACHE_VERSION = "aoede-everyday-discovery-v1";
 
 export type NarrationPace = "child" | "standard";
 export type NarrationPurpose = "story" | "practice";
@@ -45,6 +48,28 @@ export function normaliseNarrationPace(value: unknown): NarrationPace {
 
 export function preparedAudioSource(source: string, pace: NarrationPace): string {
   const path = source.split(/[?#]/, 1)[0];
+  const everydayDiscoveryMatch = path.match(
+    /^\/everyday-discovery-audio(?:-standard)?\/(.+\.mp3)$/,
+  );
+  if (everydayDiscoveryMatch) {
+    const root = pace === "standard"
+      ? "/everyday-discovery-audio-standard/"
+      : "/everyday-discovery-audio/";
+    return `${root}${everydayDiscoveryMatch[1]}?v=${EVERYDAY_DISCOVERY_AUDIO_CACHE_VERSION}`;
+  }
+  const dinosaurPronunciationMatch = path.match(
+    /^\/dinosaur-pronunciation-audio(?:-standard)?\/(.+\.mp3)$/,
+  );
+  if (dinosaurPronunciationMatch) {
+    const root = pace === "standard"
+      ? "/dinosaur-pronunciation-audio-standard/"
+      : "/dinosaur-pronunciation-audio/";
+    return `${root}${dinosaurPronunciationMatch[1]}?v=${DINOSAUR_PRONUNCIATION_AUDIO_CACHE_VERSION}`;
+  }
+  const guideMatch = path.match(/^\/story-guide-audio\/(.+\.mp3)$/);
+  if (guideMatch) {
+    return `/story-guide-audio/${guideMatch[1]}?v=${STORY_GUIDE_AUDIO_CACHE_VERSION}`;
+  }
   const storyMatch = path.match(/^\/audio(?:-standard)?\/(.+\.mp3)$/);
   if (storyMatch) {
     const root = pace === "standard" ? "/audio-standard/" : "/audio/";

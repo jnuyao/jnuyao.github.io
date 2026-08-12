@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Story Garden — Read, Say, Spell & Grow",
   description:
-    "A playful Primary 1 and Primary 2 storybook garden for reading, word pronunciation, voice practice, spelling and dictation.",
+    "A playful Primary 1, Primary 2 and Primary 3 storybook garden for reading, word pronunciation, voice practice, spelling and dictation.",
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",

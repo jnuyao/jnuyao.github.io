@@ -1,0 +1,660 @@
+import type {
+  EverydayDiscoveryImageCredit,
+  EverydayDiscoveryItem,
+  EverydayDiscoveryScene,
+} from "./everyday-discovery-data";
+
+const IMAGE_ROOT = "/everyday-discovery";
+const AUDIO_ROOT = "/everyday-discovery-audio";
+
+type TransportBodyId =
+  | "bicycle"
+  | "scooter"
+  | "bus"
+  | "train"
+  | "station"
+  | "passenger"
+  | "pedestrian"
+  | "traffic-light"
+  | "shoulder"
+  | "elbow"
+  | "wrist"
+  | "knee"
+  | "ankle"
+  | "lungs"
+  | "muscles"
+  | "skeleton";
+
+export const TRANSPORT_BODY_IMAGE_CREDITS = {
+  bicycle: {
+    author: "Javier Carro",
+    license: "CC BY-SA 4.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Sporting_bicycle_side_view.JPG",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    adaptation: "cropped and resized to 1600 × 900",
+  },
+  scooter: {
+    author: "David Shay",
+    license: "CC BY-SA 2.5",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Kick_scooter.JPG",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/2.5/",
+    adaptation: "resized over a blurred crop",
+  },
+  bus: {
+    author: "ProjectManhattan",
+    license: "CC BY-SA 3.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Public_bus_in_Singapore.jpg",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/",
+    adaptation: "cropped and resized to 1600 × 900",
+  },
+  train: {
+    author: "Mikko J. Putkonen (Methem)",
+    license: "CC BY 4.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Passenger_train_at_Oulu_railway_station_20210410_001.jpg",
+    licenseUrl: "https://creativecommons.org/licenses/by/4.0/",
+    adaptation: "cropped and resized to 1600 × 900",
+  },
+  station: {
+    author: "Siyuwj",
+    license: "CC BY-SA 3.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Fuding_Railway_Station_platform,_2014-06_03.jpg",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/",
+    adaptation: "cropped and resized to 1600 × 900",
+  },
+  passenger: {
+    author: "Pi.1415926535",
+    license: "CC BY-SA 3.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Passenger_boarding_3847_at_Riverside,_December_2017.JPG",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/",
+    adaptation: "cropped and resized to 1600 × 900",
+  },
+  pedestrian: {
+    author: "Timo Sippala",
+    license: "CC BY-SA 2.5",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Singapore_city_street_walkers_2002.jpg",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/2.5/",
+    adaptation: "cropped, resized and lightly upscaled",
+  },
+  "traffic-light": {
+    author: "Velela",
+    license: "Public domain",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Traffic_lights.jpg",
+    licenseUrl: "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+    adaptation: "resized over a blurred crop",
+  },
+  shoulder: {
+    author: "Conrad 7",
+    license: "CC0 1.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Shoulders_image_with_boy.jpg",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    adaptation: "cropped to the neck and shoulders, then resized over a blurred crop",
+  },
+  elbow: {
+    author: "אנדר-ויק (Ander-Wiki)",
+    license: "Public domain",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Elbow_(body).jpg",
+    licenseUrl: "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+    adaptation: "resized over a blurred crop",
+  },
+  wrist: {
+    author: "Anthony5429",
+    license: "Public domain",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Human_wrist.png",
+    licenseUrl: "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+    adaptation: "converted to JPEG and resized over a blurred crop",
+  },
+  knee: {
+    author: "Elements Of This World",
+    license: "CC BY 2.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Female_Knee.png",
+    licenseUrl: "https://creativecommons.org/licenses/by/2.0/",
+    adaptation: "converted to JPEG and resized over a blurred crop",
+  },
+  ankle: {
+    author: "Aleser; derivative by Andrzej 22",
+    license: "Public domain",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Ankle_(malleolus).jpg",
+    licenseUrl: "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+    adaptation: "resized over a blurred crop",
+  },
+  lungs: {
+    author: "Edeh Sophia",
+    license: "CC0 1.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:The_Human_Lungs.jpg",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    adaptation: "resized over a blurred crop",
+  },
+  muscles: {
+    author: "Tiia Monto",
+    license: "CC BY-SA 4.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Human_muscles.jpg",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    adaptation: "resized over a blurred crop",
+  },
+  skeleton: {
+    author: "Sklmsta",
+    license: "CC0 1.0",
+    sourceUrl: "https://commons.wikimedia.org/wiki/File:Human-Skeleton.jpg",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    adaptation: "resized over a blurred crop",
+  },
+} as const satisfies Record<TransportBodyId, EverydayDiscoveryImageCredit>;
+
+function audioSources(sceneId: EverydayDiscoveryItem["sceneId"], id: EverydayDiscoveryItem["id"]) {
+  const root = `${AUDIO_ROOT}/${sceneId}/${id}`;
+  return {
+    wordAudioSrc: `${root}/whole.mp3`,
+    coachAudioSrc: `${root}/coach.mp3`,
+    descriptionAudioSrc: `${root}/description.mp3`,
+  };
+}
+
+function item(
+  definition: Omit<
+    EverydayDiscoveryItem,
+    "imageSrc" | "wordAudioSrc" | "coachAudioSrc" | "descriptionAudioSrc" | "coachScript"
+  > & { coachScript?: string },
+): EverydayDiscoveryItem {
+  const chunkCues = definition.chunks.map((chunk) => chunk.cue).join(". ");
+  return {
+    ...definition,
+    imageSrc: `${IMAGE_ROOT}/${definition.sceneId}/${definition.id}.jpg`,
+    imageCredit: TRANSPORT_BODY_IMAGE_CREDITS[
+      definition.id as keyof typeof TRANSPORT_BODY_IMAGE_CREDITS
+    ],
+    coachScript: definition.coachScript
+      ?? `Listen, then say each part: ${chunkCues}. Now blend it: ${definition.pronunciation}. ${definition.word}.`,
+    ...audioSources(definition.sceneId, definition.id),
+  };
+}
+
+export const TRANSPORT_BODY_SCENES: readonly EverydayDiscoveryScene[] = [
+  {
+    id: "transport",
+    title: "Transport Trail",
+    titleZh: "交通探索线",
+    icon: "🚦",
+    accent: "#3f7f9e",
+    eyebrow: "Ride · Wait · Travel",
+    description: "Meet vehicles, travellers and road-safety words on a journey through town.",
+    descriptionZh: "在城市旅途中认识交通工具、出行的人和道路安全词汇。",
+    itemIds: ["bicycle", "scooter", "bus", "train", "station", "passenger", "pedestrian", "traffic-light"],
+    challenge: {
+      prompt: "Who travels inside the bus but does not drive it?",
+      promptZh: "谁坐在公交车里出行，但不是驾驶员？",
+      options: [
+        { id: "passenger", label: "Passenger", labelZh: "乘客", icon: "🧑‍🦱" },
+        { id: "pedestrian", label: "Pedestrian", labelZh: "行人", icon: "🚶" },
+        { id: "driver", label: "Driver", labelZh: "驾驶员", icon: "🧑‍✈️" },
+      ],
+      answerId: "passenger",
+      success: "Yes! A passenger rides in the vehicle, while the driver controls it.",
+      successZh: "答对了！乘客坐在交通工具里，驾驶员负责驾驶。",
+    },
+  },
+  {
+    id: "body",
+    title: "Body Motion Lab",
+    titleZh: "身体运动实验室",
+    icon: "🦴",
+    accent: "#b75f72",
+    eyebrow: "Bend · Breathe · Move",
+    description: "Discover joints, body parts and the hidden helpers that keep us moving.",
+    descriptionZh: "探索关节、身体部位，以及帮助我们活动的身体小帮手。",
+    itemIds: ["shoulder", "elbow", "wrist", "knee", "ankle", "lungs", "muscles", "skeleton"],
+    challenge: {
+      prompt: "Which body parts bring oxygen into your body when you breathe?",
+      promptZh: "呼吸时，哪些身体部位把氧气带进身体？",
+      options: [
+        { id: "lungs", label: "Lungs", labelZh: "肺", icon: "🫁" },
+        { id: "muscles", label: "Muscles", labelZh: "肌肉", icon: "💪" },
+        { id: "skeleton", label: "Skeleton", labelZh: "骨骼", icon: "🦴" },
+      ],
+      answerId: "lungs",
+      success: "Correct! Your lungs bring oxygen in and send carbon dioxide out.",
+      successZh: "答对了！肺吸入氧气，并把二氧化碳呼出去。",
+    },
+  },
+];
+
+export const TRANSPORT_BODY_ITEMS: readonly EverydayDiscoveryItem[] = [
+  item({
+    id: "bicycle",
+    sceneId: "transport",
+    word: "bicycle",
+    wordZh: "自行车",
+    chunks: [
+      { id: "bi", text: "bi", cue: "BYE", stressed: true },
+      { id: "cy", text: "cy", cue: "suh", stressed: false },
+      { id: "cle", text: "cle", cue: "kuhl", stressed: false },
+    ],
+    pronunciation: "BYE · suh · kuhl",
+    ipa: "/ˈbaɪsəkəl/",
+    description: [
+      "A bicycle has two wheels.",
+      "You push the bicycle pedals with your feet.",
+      "Hold the bicycle handlebars and wear a helmet.",
+    ],
+    descriptionZh: ["自行车有两个轮子。", "你用脚踩自行车的踏板。", "扶好自行车车把，并戴上头盔。"],
+    descriptionKeywords: [
+      { word: "wheels", zh: "轮子" },
+      { word: "pedals", zh: "踏板" },
+      { word: "handlebars", zh: "车把" },
+    ],
+    discovery: "Pedalling turns the wheels and moves a bicycle forward. A properly fitted helmet helps protect your head.",
+    discoveryZh: "踩踏板会带动轮子，让自行车向前走。合适的头盔能帮助保护头部。",
+    soundTip: "Say the first part like ‘bye.’ Let the last two parts stay light and quick.",
+    soundTipZh: "第一段读得像 bye；后两段轻轻、快速地读。",
+    factSourceUrl: "https://www.nhtsa.gov/road-safety/bicycle-safety",
+  }),
+  item({
+    id: "scooter",
+    sceneId: "transport",
+    word: "scooter",
+    wordZh: "滑板车",
+    chunks: [
+      { id: "scoot", text: "scoot", cue: "SKOOT", stressed: true },
+      { id: "er", text: "er", cue: "er", stressed: false },
+    ],
+    pronunciation: "SKOOT · er",
+    ipa: "/ˈskuːtər/",
+    description: [
+      "A scooter has a deck and handlebars.",
+      "Push the scooter with one foot.",
+      "Wear a helmet when you ride a scooter.",
+    ],
+    descriptionZh: ["滑板车有踏板和车把。", "用一只脚蹬地推动滑板车。", "骑滑板车时要戴头盔。"],
+    descriptionKeywords: [
+      { word: "deck", zh: "踏板" },
+      { word: "handlebars", zh: "车把" },
+      { word: "push", zh: "推动" },
+    ],
+    discovery: "A kick scooter has a low deck, two or more wheels and handlebars. Riders push against the ground with one foot.",
+    discoveryZh: "脚踏滑板车有低低的踏板、两个或更多轮子和车把。骑行者用一只脚蹬地前进。",
+    soundTip: "The letters sc make /sk/, and oo makes the long /uː/ sound.",
+    soundTipZh: "字母 sc 合起来发 /sk/，oo 发长音 /uː/。",
+    factSourceUrl: "https://www.britannica.com/technology/scooter-vehicle",
+  }),
+  item({
+    id: "bus",
+    sceneId: "transport",
+    word: "bus",
+    wordZh: "公交车",
+    chunks: [{ id: "bus", text: "bus", cue: "BUSS", stressed: true }],
+    pronunciation: "BUSS",
+    ipa: "/bʌs/",
+    description: [
+      "A bus carries many people.",
+      "The bus follows a route through town.",
+      "Wait for the bus at a bus stop.",
+    ],
+    descriptionZh: ["公交车运送许多人。", "公交车沿着路线穿过城市。", "在公交车站等公交车。"],
+    descriptionKeywords: [
+      { word: "carries", zh: "运送" },
+      { word: "route", zh: "路线" },
+      { word: "bus stop", zh: "公交车站" },
+    ],
+    discovery: "A bus is a large road vehicle that carries many passengers. Public buses usually follow a route and stop at marked places.",
+    discoveryZh: "公交车是在道路上运送许多乘客的大型车辆。公共汽车通常沿固定路线行驶，并在标记好的站点停车。",
+    soundTip: "The letter u uses the short /ʌ/ sound, like the u in sun.",
+    soundTipZh: "字母 u 发短音 /ʌ/，像 sun 里的 u。",
+    factSourceUrl: "https://dictionary.cambridge.org/dictionary/english/bus",
+  }),
+  item({
+    id: "train",
+    sceneId: "transport",
+    word: "train",
+    wordZh: "火车",
+    chunks: [{ id: "train", text: "train", cue: "TRAYN", stressed: true }],
+    pronunciation: "TRAYN",
+    ipa: "/treɪn/",
+    description: [
+      "A train runs on tracks.",
+      "A train can have many carriages.",
+      "People travel far by train.",
+    ],
+    descriptionZh: ["火车在铁轨上行驶。", "一列火车可以有许多节车厢。", "人们可以乘火车去很远的地方。"],
+    descriptionKeywords: [
+      { word: "tracks", zh: "铁轨" },
+      { word: "carriages", zh: "车厢" },
+      { word: "travel", zh: "旅行" },
+    ],
+    discovery: "A train is one or more connected railway vehicles. Trains can carry passengers or goods along tracks.",
+    discoveryZh: "火车由一节或多节相连的铁路车辆组成。火车能沿铁轨运送乘客或货物。",
+    soundTip: "Blend tr together, then let ai say /eɪ/.",
+    soundTipZh: "先把 tr 连起来读，再让 ai 发 /eɪ/。",
+    factSourceUrl: "https://dictionary.cambridge.org/dictionary/english/train",
+  }),
+  item({
+    id: "station",
+    sceneId: "transport",
+    word: "station",
+    wordZh: "车站",
+    chunks: [
+      { id: "sta", text: "sta", cue: "STAY", stressed: true },
+      { id: "tion", text: "tion", cue: "shun", stressed: false },
+    ],
+    pronunciation: "STAY · shun",
+    ipa: "/ˈsteɪʃən/",
+    description: [
+      "A station is a place where trains stop.",
+      "Wait for the train on the station platform.",
+      "You may buy a ticket at the station.",
+    ],
+    descriptionZh: ["车站是火车停靠的地方。", "在车站的站台上等火车。", "你可以在车站买车票。"],
+    descriptionKeywords: [
+      { word: "trains", zh: "火车" },
+      { word: "platform", zh: "站台" },
+      { word: "ticket", zh: "车票" },
+    ],
+    discovery: "A railway station is where trains stop so people can get on or off. Many stations have platforms and signs to guide travellers.",
+    discoveryZh: "火车在铁路车站停靠，让人们上下车。许多车站都有站台和引导旅客的标志。",
+    soundTip: "Stress STAY. The ending tion sounds like shun.",
+    soundTipZh: "重读 STAY；词尾 tion 读得像 shun。",
+    factSourceUrl: "https://www.transportation.gov/buildamerica/TOD/faqs",
+  }),
+  item({
+    id: "passenger",
+    sceneId: "transport",
+    word: "passenger",
+    wordZh: "乘客",
+    chunks: [
+      { id: "pas", text: "pas", cue: "PASS", stressed: true },
+      { id: "sen", text: "sen", cue: "uhn", stressed: false },
+      { id: "ger", text: "ger", cue: "jur", stressed: false },
+    ],
+    pronunciation: "PASS · uhn · jur",
+    ipa: "/ˈpæsəndʒər/",
+    description: [
+      "A passenger travels inside a vehicle.",
+      "The passenger may sit in a seat.",
+      "A passenger is not the driver.",
+    ],
+    descriptionZh: ["乘客坐在交通工具里出行。", "乘客可以坐在座位上。", "乘客不是驾驶员。"],
+    descriptionKeywords: [
+      { word: "vehicle", zh: "交通工具" },
+      { word: "seat", zh: "座位" },
+      { word: "driver", zh: "驾驶员" },
+    ],
+    discovery: "A passenger travels in a vehicle but does not operate it. A passenger might ride in a bus, train, car, ship or plane.",
+    discoveryZh: "乘客坐在交通工具里出行，但不负责驾驶。乘客可以乘公交车、火车、汽车、轮船或飞机。",
+    soundTip: "Stress PASS. The g before e sounds like /dʒ/ in jam.",
+    soundTipZh: "重读 PASS；e 前面的 g 发 /dʒ/，像 jam 的开头。",
+    factSourceUrl: "https://dictionary.cambridge.org/dictionary/english/passenger",
+  }),
+  item({
+    id: "pedestrian",
+    sceneId: "transport",
+    word: "pedestrian",
+    wordZh: "行人",
+    chunks: [
+      { id: "pe", text: "pe", cue: "puh", stressed: false },
+      { id: "des", text: "des", cue: "DES", stressed: true },
+      { id: "tri", text: "tri", cue: "tree", stressed: false },
+      { id: "an", text: "an", cue: "uhn", stressed: false },
+    ],
+    pronunciation: "puh · DES · tree · uhn",
+    ipa: "/pəˈdɛstriən/",
+    description: [
+      "A pedestrian travels by walking.",
+      "A pedestrian should use the sidewalk.",
+      "A pedestrian crosses at a safe crossing.",
+    ],
+    descriptionZh: ["行人通过步行出行。", "行人应该走人行道。", "行人应在安全的过街处过马路。"],
+    descriptionKeywords: [
+      { word: "walking", zh: "步行" },
+      { word: "sidewalk", zh: "人行道" },
+      { word: "crossing", zh: "过街处" },
+    ],
+    discovery: "A pedestrian is a person who is walking, especially near roads. Safe pedestrians use sidewalks and marked crossings when they can.",
+    discoveryZh: "行人是步行的人，尤其指在道路附近步行的人。注意安全的行人会尽量走人行道和有标记的过街处。",
+    soundTip: "Keep the first pe soft. Stress DES, then blend str quickly.",
+    soundTipZh: "开头 pe 轻读，重读 DES，再把 str 快速连起来。",
+    factSourceUrl: "https://www.nhtsa.gov/road-safety/pedestrian-safety",
+  }),
+  item({
+    id: "traffic-light",
+    sceneId: "transport",
+    word: "traffic light",
+    wordZh: "交通信号灯",
+    chunks: [
+      { id: "traf", text: "traf", cue: "TRAF", stressed: true },
+      { id: "fic", text: "fic", cue: "ik", stressed: false },
+      { id: "light", text: "light", cue: "LYTE", stressed: false },
+    ],
+    pronunciation: "TRAF · ik · LYTE",
+    ipa: "/ˈtræfɪk ˌlaɪt/",
+    description: [
+      "A traffic light uses red, yellow and green.",
+      "A red traffic light means stop.",
+      "A green traffic light means go when it is safe.",
+    ],
+    descriptionZh: ["交通信号灯使用红、黄、绿三种颜色。", "红色交通信号灯表示停。", "绿色交通信号灯表示安全时可以通行。"],
+    descriptionKeywords: [
+      { word: "red", zh: "红色" },
+      { word: "yellow", zh: "黄色" },
+      { word: "green", zh: "绿色" },
+    ],
+    discovery: "Traffic signals tell road users when movements are allowed. Red means stop, while green allows movement when the way is clear.",
+    discoveryZh: "交通信号告诉道路使用者什么时候可以通行。红灯表示停，绿灯表示道路安全时可以通行。",
+    soundTip: "Use the short /æ/ in traffic, then make light rhyme with kite.",
+    soundTipZh: "traffic 里的 a 发短音 /æ/；light 和 kite 押韵。",
+    factSourceUrl: "https://mutcd.fhwa.dot.gov/kno_11th_Edition.htm",
+  }),
+  item({
+    id: "shoulder",
+    sceneId: "body",
+    word: "shoulder",
+    wordZh: "肩膀",
+    chunks: [
+      { id: "shoul", text: "shoul", cue: "SHOHL", stressed: true },
+      { id: "der", text: "der", cue: "der", stressed: false },
+    ],
+    pronunciation: "SHOHL · der",
+    ipa: "/ˈʃoʊldər/",
+    description: [
+      "Your shoulder connects your arm to your body.",
+      "The shoulder is a very movable joint.",
+      "You lift your shoulder when you shrug.",
+    ],
+    descriptionZh: ["肩膀把手臂和身体连接起来。", "肩膀是一个非常灵活的关节。", "耸肩时，你会抬起肩膀。"],
+    descriptionKeywords: [
+      { word: "arm", zh: "手臂" },
+      { word: "joint", zh: "关节" },
+      { word: "shrug", zh: "耸肩" },
+    ],
+    discovery: "Your shoulder is a ball-and-socket joint. It can move your arm in more directions than any other joint.",
+    discoveryZh: "肩膀是球窝关节。它能让手臂向许多方向活动，比其他关节都灵活。",
+    soundTip: "Start with sh /ʃ/. The ou sounds like the o in go.",
+    soundTipZh: "开头用 sh 的 /ʃ/ 音；ou 听起来像 go 里的 o。",
+    factSourceUrl: "https://my.clevelandclinic.org/health/body/24780-shoulder-joint",
+  }),
+  item({
+    id: "elbow",
+    sceneId: "body",
+    word: "elbow",
+    wordZh: "手肘",
+    chunks: [
+      { id: "el", text: "el", cue: "EL", stressed: true },
+      { id: "bow", text: "bow", cue: "boh", stressed: false },
+    ],
+    pronunciation: "EL · boh",
+    ipa: "/ˈɛlboʊ/",
+    description: [
+      "Your elbow bends in the middle of your arm.",
+      "The elbow joins your upper arm and forearm.",
+      "Straighten your elbow to reach forward.",
+    ],
+    descriptionZh: ["手肘让手臂中间弯曲。", "手肘连接上臂和前臂。", "伸直手肘可以向前够东西。"],
+    descriptionKeywords: [
+      { word: "bends", zh: "弯曲" },
+      { word: "forearm", zh: "前臂" },
+      { word: "straighten", zh: "伸直" },
+    ],
+    discovery: "Your elbow works like both a hinge and a pivot. It bends your arm and helps turn your palm.",
+    discoveryZh: "手肘既像铰链，也能旋转。它让手臂弯曲，还帮助手掌翻转。",
+    soundTip: "Stress EL. The ending bow rhymes with go.",
+    soundTipZh: "重读 EL；词尾 bow 和 go 押韵。",
+    factSourceUrl: "https://my.clevelandclinic.org/health/body/elbow-joint",
+  }),
+  item({
+    id: "wrist",
+    sceneId: "body",
+    word: "wrist",
+    wordZh: "手腕",
+    chunks: [{ id: "wrist", text: "wrist", cue: "RIST", stressed: true }],
+    pronunciation: "RIST",
+    ipa: "/rɪst/",
+    description: [
+      "Your wrist connects your hand and forearm.",
+      "The wrist can bend and turn.",
+      "Move your wrist to wave your hand.",
+    ],
+    descriptionZh: ["手腕连接手和前臂。", "手腕可以弯曲和转动。", "活动手腕来挥动你的手。"],
+    descriptionKeywords: [
+      { word: "hand", zh: "手" },
+      { word: "forearm", zh: "前臂" },
+      { word: "wave", zh: "挥手" },
+    ],
+    discovery: "Your wrist is a group of small bones and soft tissues. It lets your hand bend, turn and reach.",
+    discoveryZh: "手腕由一组小骨头和软组织组成。它让你的手能够弯曲、转动和伸出去。",
+    soundTip: "The w is silent. Start with /r/ and finish with a crisp /st/.",
+    soundTipZh: "w 不发音；从 /r/ 开始，最后清楚地发出 /st/。",
+    factSourceUrl: "https://my.clevelandclinic.org/health/body/25060-anatomy-of-the-hand-and-wrist",
+  }),
+  item({
+    id: "knee",
+    sceneId: "body",
+    word: "knee",
+    wordZh: "膝盖",
+    chunks: [{ id: "knee", text: "knee", cue: "NEE", stressed: true }],
+    pronunciation: "NEE",
+    ipa: "/niː/",
+    description: [
+      "Your knee is a joint in your leg.",
+      "The kneecap protects the front of your knee.",
+      "Bend your knee to jump.",
+    ],
+    descriptionZh: ["膝盖是腿上的关节。", "膝盖骨保护膝盖的前面。", "弯曲膝盖就能跳起来。"],
+    descriptionKeywords: [
+      { word: "leg", zh: "腿" },
+      { word: "kneecap", zh: "膝盖骨" },
+      { word: "bend", zh: "弯曲" },
+    ],
+    discovery: "Your knee helps your leg bend and straighten. The kneecap protects the front of this busy joint.",
+    discoveryZh: "膝盖帮助腿弯曲和伸直。膝盖骨保护这个忙碌关节的前面。",
+    soundTip: "The k is silent. Say one long /niː/ sound.",
+    soundTipZh: "k 不发音；只读一个长长的 /niː/。",
+    factSourceUrl: "https://my.clevelandclinic.org/health/body/24777-knee-joint",
+  }),
+  item({
+    id: "ankle",
+    sceneId: "body",
+    word: "ankle",
+    wordZh: "脚踝",
+    chunks: [
+      { id: "an", text: "an", cue: "ANGK", stressed: true },
+      { id: "kle", text: "kle", cue: "uhl", stressed: false },
+    ],
+    pronunciation: "ANGK · uhl",
+    ipa: "/ˈæŋkəl/",
+    description: [
+      "Your ankle connects your foot and lower leg.",
+      "The ankle helps your foot move up and down.",
+      "A strong ankle helps you balance.",
+    ],
+    descriptionZh: ["脚踝连接脚和小腿。", "脚踝帮助脚上下活动。", "强壮的脚踝帮助你保持平衡。"],
+    descriptionKeywords: [
+      { word: "foot", zh: "脚" },
+      { word: "lower leg", zh: "小腿" },
+      { word: "balance", zh: "平衡" },
+    ],
+    discovery: "Your ankle joins three bones where your foot meets your lower leg. It helps you walk, jump and balance.",
+    discoveryZh: "脚踝在脚和小腿相接的地方连接三块骨头。它帮助你走路、跳跃和保持平衡。",
+    soundTip: "The n and k join into /ŋk/, like the end of bank.",
+    soundTipZh: "n 和 k 连成 /ŋk/，像 bank 的结尾。",
+    factSourceUrl: "https://my.clevelandclinic.org/health/body/24909-ankle-joint",
+  }),
+  item({
+    id: "lungs",
+    sceneId: "body",
+    word: "lungs",
+    wordZh: "肺",
+    chunks: [{ id: "lungs", text: "lungs", cue: "LUNGZ", stressed: true }],
+    pronunciation: "LUNGZ",
+    ipa: "/lʌŋz/",
+    description: [
+      "Your lungs sit inside your chest.",
+      "The lungs bring oxygen into your body.",
+      "Your lungs work whenever you breathe.",
+    ],
+    descriptionZh: ["肺位于胸腔里面。", "肺把氧气带进身体。", "每次呼吸时，肺都在工作。"],
+    descriptionKeywords: [
+      { word: "chest", zh: "胸腔" },
+      { word: "oxygen", zh: "氧气" },
+      { word: "breathe", zh: "呼吸" },
+    ],
+    discovery: "Your lungs take oxygen from the air and send it into your blood. They also help your body breathe out carbon dioxide.",
+    discoveryZh: "肺从空气中取得氧气，并把它送进血液。肺也帮助身体呼出二氧化碳。",
+    soundTip: "Finish with /z/, not /s/: lungz.",
+    soundTipZh: "结尾是 /z/，不是 /s/：读成 lungz。",
+    factSourceUrl: "https://kidshealth.org/en/kids/lungs.html",
+  }),
+  item({
+    id: "muscles",
+    sceneId: "body",
+    word: "muscles",
+    wordZh: "肌肉",
+    chunks: [
+      { id: "mus", text: "mus", cue: "MUSS", stressed: true },
+      { id: "cles", text: "cles", cue: "uhlz", stressed: false },
+    ],
+    pronunciation: "MUSS · uhlz",
+    ipa: "/ˈmʌsəlz/",
+    description: [
+      "Your muscles pull to move your body.",
+      "Muscles work with bones at your joints.",
+      "Playing and climbing help muscles grow strong.",
+    ],
+    descriptionZh: ["肌肉通过拉动让身体活动。", "肌肉和骨头在关节处一起工作。", "玩耍和攀爬帮助肌肉变得强壮。"],
+    descriptionKeywords: [
+      { word: "move", zh: "移动" },
+      { word: "bones", zh: "骨头" },
+      { word: "strong", zh: "强壮的" },
+    ],
+    discovery: "Muscles can pull but they cannot push. Many muscles work in pairs to bend and straighten your joints.",
+    discoveryZh: "肌肉能拉动，却不能推动。许多肌肉成对工作，让关节弯曲和伸直。",
+    soundTip: "The c is silent. Say MUS · uhlz.",
+    soundTipZh: "c 不发音；读成 MUS · uhlz。",
+    factSourceUrl: "https://kidshealth.org/en/kids/muscles.html",
+  }),
+  item({
+    id: "skeleton",
+    sceneId: "body",
+    word: "skeleton",
+    wordZh: "骨骼",
+    chunks: [
+      { id: "skel", text: "skel", cue: "SKEL", stressed: true },
+      { id: "e", text: "e", cue: "uh", stressed: false },
+      { id: "ton", text: "ton", cue: "tun", stressed: false },
+    ],
+    pronunciation: "SKEL · uh · tun",
+    ipa: "/ˈskɛlətən/",
+    description: [
+      "Your skeleton is made of bones.",
+      "The skeleton helps support your body.",
+      "Your skeleton helps protect your brain and heart.",
+    ],
+    descriptionZh: ["骨骼由骨头组成。", "骨骼帮助支撑身体。", "骨骼帮助保护大脑和心脏。"],
+    descriptionKeywords: [
+      { word: "bones", zh: "骨头" },
+      { word: "support", zh: "支撑" },
+      { word: "protect", zh: "保护" },
+    ],
+    discovery: "Your skeleton gives your body shape and support. It also protects soft organs and works with muscles to help you move.",
+    discoveryZh: "骨骼给身体形状和支撑。它还保护柔软的器官，并和肌肉一起帮助你活动。",
+    soundTip: "Blend sk at the start. Keep the middle e soft: uh.",
+    soundTipZh: "开头把 sk 连起来；中间的 e 轻轻读成 uh。",
+    factSourceUrl: "https://kidshealth.org/en/kids/bones.html",
+  }),
+];

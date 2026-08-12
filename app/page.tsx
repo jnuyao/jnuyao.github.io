@@ -12,11 +12,75 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { BOOKS, type Book } from "./book-data";
+import { ArtStudio } from "./art-studio";
+import {
+  ART_MISSION_IDS,
+  ART_STEPS,
+  artStudioForBook,
+  type ArtMissionId,
+  type ArtStep,
+} from "./art-studio-data";
+import { clearArtPhotos } from "./art-photo-store";
+import { DinosaurArtLab } from "./dinosaur-art-lab";
+import {
+  DINOSAUR_ART_LESSON_IDS,
+  dinosaurArtLessonById,
+  isDinosaurArtBook,
+  type DinosaurArtLessonId,
+  type DinosaurArtStep,
+} from "./dinosaur-art-data";
+import {
+  DINOSAUR_ART_PROGRESS_KEY,
+  emptyDinosaurArtProgress,
+  normaliseDinosaurArtProgress,
+  type DinosaurArtProgress,
+} from "./dinosaur-art-progress";
+import { DinosaurPronunciationLab } from "./dinosaur-pronunciation-lab";
+import {
+  DINOSAUR_PRONUNCIATION_IDS,
+  type DinosaurPronunciationId,
+} from "./dinosaur-pronunciation-data";
+import {
+  DINOSAUR_PRONUNCIATION_PROGRESS_KEY,
+  emptyDinosaurPronunciationProgress,
+  normaliseDinosaurPronunciationProgress,
+  type DinosaurPronunciationProgress,
+} from "./dinosaur-pronunciation-progress";
+import { EverydayDiscoveryLab } from "./everyday-discovery-lab";
+import {
+  EVERYDAY_DISCOVERY_IDS,
+  EVERYDAY_DISCOVERY_SCENE_IDS,
+  everydayDiscoveryItemById,
+  type EverydayDiscoveryId,
+  type EverydayDiscoverySceneId,
+} from "./everyday-discovery-data";
+import {
+  EVERYDAY_DISCOVERY_PROGRESS_KEY,
+  emptyEverydayDiscoveryProgress,
+  normaliseEverydayDiscoveryProgress,
+  type EverydayDiscoveryProgress,
+} from "./everyday-discovery-progress";
+import {
+  MID_AUTUMN_ADVENTURE_BOOK_SLUG,
+  MID_AUTUMN_MISSION_IDS,
+  isMidAutumnAdventureBook,
+  type MidAutumnAdventureStep,
+  type MidAutumnMissionId,
+} from "./mid-autumn-adventure-data";
+import {
+  MID_AUTUMN_ADVENTURE_PROGRESS_KEY,
+  emptyMidAutumnAdventureProgress,
+  normaliseMidAutumnAdventureProgress,
+  type MidAutumnAdventureProgress,
+} from "./mid-autumn-adventure-progress";
+import { MoonlightMarketAdventure } from "./moonlight-market-adventure";
+import { storyGuideForBook } from "./story-guide-data";
 import { wordsForBook } from "./word-data";
 import { WordGarden } from "./word-garden";
 import {
   LEGACY_PROGRESS_KEY,
   PROGRESS_KEY,
+  emptyArtStudioProgress,
   emptyBookProgress,
   normaliseProgress,
   type BookProgress,
@@ -38,7 +102,17 @@ import {
 
 type View =
   | { kind: "shelf" }
+  | { kind: "dinosaur-art-lab"; lessonId: DinosaurArtLessonId | null; step: DinosaurArtStep; fromBookSlug?: string }
+  | { kind: "dinosaur-pronunciation-lab"; dinosaurId: DinosaurPronunciationId | null }
+  | { kind: "everyday-discovery-lab"; sceneId: EverydayDiscoverySceneId | null; itemId: EverydayDiscoveryId | null }
+  | {
+      kind: "mid-autumn-adventure";
+      bookSlug: typeof MID_AUTUMN_ADVENTURE_BOOK_SLUG;
+      missionId: MidAutumnMissionId | null;
+      step: MidAutumnAdventureStep;
+    }
   | { kind: "reader"; bookSlug: string; page: number }
+  | { kind: "art-studio"; bookSlug: string; step: ArtStep; missionId: ArtMissionId }
   | { kind: "word-garden"; bookSlug: string }
   | { kind: "quest"; bookSlug: string; step: QuestStep }
   | { kind: "celebration"; bookSlug: string };
@@ -90,11 +164,72 @@ function bookIsComplete(book: Book, progress: BookProgress): boolean {
 function parseViewFromUrl(): View {
   if (typeof window === "undefined") return { kind: "shelf" };
   const params = new URLSearchParams(window.location.search);
+  if (params.get("lab") === "everyday-discovery") {
+    const rawScene = params.get("scene");
+    const rawItem = params.get("word");
+    const itemId = rawItem && EVERYDAY_DISCOVERY_IDS.includes(rawItem as EverydayDiscoveryId)
+      ? rawItem as EverydayDiscoveryId
+      : null;
+    const item = itemId ? everydayDiscoveryItemById(itemId) : undefined;
+    const sceneId = item?.sceneId
+      ?? (rawScene && EVERYDAY_DISCOVERY_SCENE_IDS.includes(rawScene as EverydayDiscoverySceneId)
+        ? rawScene as EverydayDiscoverySceneId
+        : null);
+    return { kind: "everyday-discovery-lab", sceneId, itemId };
+  }
+  if (params.get("lab") === "dinosaur-pronunciation") {
+    const rawDinosaur = params.get("dino");
+    return {
+      kind: "dinosaur-pronunciation-lab",
+      dinosaurId: rawDinosaur
+        && DINOSAUR_PRONUNCIATION_IDS.includes(rawDinosaur as DinosaurPronunciationId)
+        ? rawDinosaur as DinosaurPronunciationId
+        : null,
+    };
+  }
+  if (params.get("lab") === "dinosaur-art") {
+    const rawLesson = params.get("lesson");
+    const rawStep = Number(params.get("step") ?? "1");
+    const rawFrom = params.get("from") ?? "";
+    return {
+      kind: "dinosaur-art-lab",
+      lessonId: rawLesson && DINOSAUR_ART_LESSON_IDS.includes(rawLesson as DinosaurArtLessonId)
+        ? rawLesson as DinosaurArtLessonId
+        : null,
+      step: Math.max(0, Math.min(3, Number.isFinite(rawStep) ? Math.floor(rawStep) - 1 : 0)) as DinosaurArtStep,
+      fromBookSlug: isDinosaurArtBook(rawFrom) ? rawFrom : undefined,
+    };
+  }
   const bookSlug = params.get("book") ?? "";
   const book = BOOKS.find((item) => item.slug === bookSlug);
   if (!book) return { kind: "shelf" };
 
   const stage = params.get("stage");
+  if (stage === "moonlight-market" && isMidAutumnAdventureBook(bookSlug)) {
+    const rawMission = params.get("mission");
+    const missionId = rawMission && MID_AUTUMN_MISSION_IDS.includes(rawMission as MidAutumnMissionId)
+      ? rawMission as MidAutumnMissionId
+      : null;
+    const rawStep = Number(params.get("step") ?? "1");
+    return {
+      kind: "mid-autumn-adventure",
+      bookSlug: MID_AUTUMN_ADVENTURE_BOOK_SLUG,
+      missionId,
+      step: Math.max(0, Math.min(3, Number.isFinite(rawStep) ? Math.floor(rawStep) - 1 : 0)) as MidAutumnAdventureStep,
+    };
+  }
+  if (stage === "art" && artStudioForBook(bookSlug)) {
+    const rawStep = params.get("step");
+    const rawMission = params.get("mission");
+    return {
+      kind: "art-studio",
+      bookSlug,
+      step: rawStep && ART_STEPS.includes(rawStep as ArtStep) ? rawStep as ArtStep : "observe",
+      missionId: rawMission && ART_MISSION_IDS.includes(rawMission as ArtMissionId)
+        ? rawMission as ArtMissionId
+        : "story-artist",
+    };
+  }
   if (stage === "words") return { kind: "word-garden", bookSlug };
   if (stage === "quest") {
     const step = params.get("step") as QuestStep | null;
@@ -115,8 +250,38 @@ function parseViewFromUrl(): View {
 
 function urlForView(view: View): string {
   const params = new URLSearchParams();
+  if (view.kind === "everyday-discovery-lab") {
+    params.set("lab", "everyday-discovery");
+    if (view.sceneId) params.set("scene", view.sceneId);
+    if (view.itemId) params.set("word", view.itemId);
+    return `${window.location.pathname}?${params.toString()}`;
+  }
+  if (view.kind === "dinosaur-pronunciation-lab") {
+    params.set("lab", "dinosaur-pronunciation");
+    if (view.dinosaurId) params.set("dino", view.dinosaurId);
+    return `${window.location.pathname}?${params.toString()}`;
+  }
+  if (view.kind === "dinosaur-art-lab") {
+    params.set("lab", "dinosaur-art");
+    if (view.lessonId) params.set("lesson", view.lessonId);
+    if (view.lessonId) params.set("step", String(view.step + 1));
+    if (view.fromBookSlug) params.set("from", view.fromBookSlug);
+    return `${window.location.pathname}?${params.toString()}`;
+  }
   if (view.kind !== "shelf") params.set("book", view.bookSlug);
   if (view.kind === "reader") params.set("page", String(view.page + 1));
+  if (view.kind === "mid-autumn-adventure") {
+    params.set("stage", "moonlight-market");
+    if (view.missionId) {
+      params.set("mission", view.missionId);
+      params.set("step", String(view.step + 1));
+    }
+  }
+  if (view.kind === "art-studio") {
+    params.set("stage", "art");
+    params.set("step", view.step);
+    params.set("mission", view.missionId);
+  }
   if (view.kind === "word-garden") params.set("stage", "words");
   if (view.kind === "quest") {
     params.set("stage", "quest");
@@ -131,6 +296,7 @@ type SpeakOptions = {
   purpose?: NarrationPurpose;
   activeKey?: string;
   audioSrc?: string;
+  preparedOnly?: boolean;
 };
 
 function readNarrationSettings(): { pace: NarrationPace } {
@@ -289,8 +455,13 @@ function useNarrator() {
       audio.playbackRate = 1;
       audio.preservesPitch = true;
       audio.onended = finish;
-      audio.onerror = playSpeechFallback;
-      audio.play().catch(playSpeechFallback);
+      if (options.preparedOnly) {
+        audio.onerror = finish;
+        audio.play().catch(finish);
+      } else {
+        audio.onerror = playSpeechFallback;
+        audio.play().catch(playSpeechFallback);
+      }
       return;
     }
 
@@ -318,8 +489,30 @@ function useNarrator() {
 export default function StoryGarden() {
   const [view, setView] = useState<View>({ kind: "shelf" });
   const [progress, setProgress] = useState<ProgressStore>({ version: 3, books: {} });
+  const [dinosaurArtProgress, setDinosaurArtProgress] = useState<DinosaurArtProgress>(() => emptyDinosaurArtProgress());
+  const [dinosaurPronunciationProgress, setDinosaurPronunciationProgress] =
+    useState<DinosaurPronunciationProgress>(() => emptyDinosaurPronunciationProgress());
+  const [everydayDiscoveryProgress, setEverydayDiscoveryProgress] =
+    useState<EverydayDiscoveryProgress>(() => emptyEverydayDiscoveryProgress());
+  const [midAutumnAdventureProgress, setMidAutumnAdventureProgress] =
+    useState<MidAutumnAdventureProgress>(() => emptyMidAutumnAdventureProgress());
   const [progressReady, setProgressReady] = useState(false);
-  const [saveWarning, setSaveWarning] = useState(false);
+  const [dinosaurArtProgressReady, setDinosaurArtProgressReady] = useState(false);
+  const [dinosaurPronunciationProgressReady, setDinosaurPronunciationProgressReady] = useState(false);
+  const [everydayDiscoveryProgressReady, setEverydayDiscoveryProgressReady] = useState(false);
+  const [midAutumnAdventureProgressReady, setMidAutumnAdventureProgressReady] = useState(false);
+  const [progressSaveWarning, setProgressSaveWarning] = useState(false);
+  const [dinosaurArtSaveWarning, setDinosaurArtSaveWarning] = useState(false);
+  const [dinosaurPronunciationSaveWarning, setDinosaurPronunciationSaveWarning] = useState(false);
+  const [everydayDiscoverySaveWarning, setEverydayDiscoverySaveWarning] = useState(false);
+  const [midAutumnAdventureSaveWarning, setMidAutumnAdventureSaveWarning] = useState(false);
+  const [otherSaveWarning, setOtherSaveWarning] = useState(false);
+  const saveWarning = progressSaveWarning
+    || dinosaurArtSaveWarning
+    || dinosaurPronunciationSaveWarning
+    || everydayDiscoverySaveWarning
+    || midAutumnAdventureSaveWarning
+    || otherSaveWarning;
   const narrator = useNarrator();
   const stopNarration = narrator.stop;
 
@@ -340,7 +533,7 @@ export default function StoryGarden() {
           ?? window.localStorage.getItem(LEGACY_PROGRESS_KEY);
         setProgress(raw ? normaliseProgress(JSON.parse(raw)) : { version: 3, books: {} });
       } catch {
-        setSaveWarning(true);
+        setProgressSaveWarning(true);
       } finally {
         setProgressReady(true);
       }
@@ -353,13 +546,138 @@ export default function StoryGarden() {
     const saveTimer = window.setTimeout(() => {
       try {
         window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-        setSaveWarning(false);
+        setProgressSaveWarning(false);
       } catch {
-        setSaveWarning(true);
+        setProgressSaveWarning(true);
       }
     }, 0);
     return () => window.clearTimeout(saveTimer);
   }, [progress, progressReady]);
+
+  useEffect(() => {
+    const loadTimer = window.setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(DINOSAUR_ART_PROGRESS_KEY);
+        setDinosaurArtProgress(raw
+          ? normaliseDinosaurArtProgress(JSON.parse(raw))
+          : emptyDinosaurArtProgress());
+      } catch {
+        setDinosaurArtSaveWarning(true);
+      } finally {
+        setDinosaurArtProgressReady(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(loadTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!dinosaurArtProgressReady) return;
+    const saveTimer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(DINOSAUR_ART_PROGRESS_KEY, JSON.stringify(dinosaurArtProgress));
+        setDinosaurArtSaveWarning(false);
+      } catch {
+        setDinosaurArtSaveWarning(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(saveTimer);
+  }, [dinosaurArtProgress, dinosaurArtProgressReady]);
+
+  useEffect(() => {
+    const loadTimer = window.setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(DINOSAUR_PRONUNCIATION_PROGRESS_KEY);
+        setDinosaurPronunciationProgress(raw
+          ? normaliseDinosaurPronunciationProgress(JSON.parse(raw))
+          : emptyDinosaurPronunciationProgress());
+      } catch {
+        setDinosaurPronunciationSaveWarning(true);
+      } finally {
+        setDinosaurPronunciationProgressReady(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(loadTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!dinosaurPronunciationProgressReady) return;
+    const saveTimer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          DINOSAUR_PRONUNCIATION_PROGRESS_KEY,
+          JSON.stringify(dinosaurPronunciationProgress),
+        );
+        setDinosaurPronunciationSaveWarning(false);
+      } catch {
+        setDinosaurPronunciationSaveWarning(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(saveTimer);
+  }, [dinosaurPronunciationProgress, dinosaurPronunciationProgressReady]);
+
+  useEffect(() => {
+    const loadTimer = window.setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(EVERYDAY_DISCOVERY_PROGRESS_KEY);
+        setEverydayDiscoveryProgress(raw
+          ? normaliseEverydayDiscoveryProgress(JSON.parse(raw))
+          : emptyEverydayDiscoveryProgress());
+      } catch {
+        setEverydayDiscoverySaveWarning(true);
+      } finally {
+        setEverydayDiscoveryProgressReady(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(loadTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!everydayDiscoveryProgressReady) return;
+    const saveTimer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          EVERYDAY_DISCOVERY_PROGRESS_KEY,
+          JSON.stringify(everydayDiscoveryProgress),
+        );
+        setEverydayDiscoverySaveWarning(false);
+      } catch {
+        setEverydayDiscoverySaveWarning(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(saveTimer);
+  }, [everydayDiscoveryProgress, everydayDiscoveryProgressReady]);
+
+  useEffect(() => {
+    const loadTimer = window.setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(MID_AUTUMN_ADVENTURE_PROGRESS_KEY);
+        setMidAutumnAdventureProgress(raw
+          ? normaliseMidAutumnAdventureProgress(JSON.parse(raw))
+          : emptyMidAutumnAdventureProgress());
+      } catch {
+        setMidAutumnAdventureSaveWarning(true);
+      } finally {
+        setMidAutumnAdventureProgressReady(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(loadTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!midAutumnAdventureProgressReady) return;
+    const saveTimer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          MID_AUTUMN_ADVENTURE_PROGRESS_KEY,
+          JSON.stringify(midAutumnAdventureProgress),
+        );
+        setMidAutumnAdventureSaveWarning(false);
+      } catch {
+        setMidAutumnAdventureSaveWarning(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(saveTimer);
+  }, [midAutumnAdventureProgress, midAutumnAdventureProgressReady]);
 
   const navigate = useCallback((next: View, replace = false) => {
     stopNarration();
@@ -384,13 +702,28 @@ export default function StoryGarden() {
   );
 
   const resetProgress = useCallback(() => {
+    setProgressSaveWarning(false);
+    setDinosaurArtSaveWarning(false);
+    setDinosaurPronunciationSaveWarning(false);
+    setEverydayDiscoverySaveWarning(false);
+    setMidAutumnAdventureSaveWarning(false);
+    setOtherSaveWarning(false);
     try {
       window.localStorage.removeItem(PROGRESS_KEY);
       window.localStorage.removeItem(LEGACY_PROGRESS_KEY);
+      window.localStorage.removeItem(DINOSAUR_ART_PROGRESS_KEY);
+      window.localStorage.removeItem(DINOSAUR_PRONUNCIATION_PROGRESS_KEY);
+      window.localStorage.removeItem(EVERYDAY_DISCOVERY_PROGRESS_KEY);
+      window.localStorage.removeItem(MID_AUTUMN_ADVENTURE_PROGRESS_KEY);
     } catch {
-      setSaveWarning(true);
+      setOtherSaveWarning(true);
     }
+    void clearArtPhotos().catch(() => setOtherSaveWarning(true));
     setProgress({ version: 3, books: {} });
+    setDinosaurArtProgress(emptyDinosaurArtProgress());
+    setDinosaurPronunciationProgress(emptyDinosaurPronunciationProgress());
+    setEverydayDiscoveryProgress(emptyEverydayDiscoveryProgress());
+    setMidAutumnAdventureProgress(emptyMidAutumnAdventureProgress());
   }, []);
 
   const openBook = useCallback((book: Book) => {
@@ -402,11 +735,273 @@ export default function StoryGarden() {
   }, [navigate, progress.books, updateBookProgress]);
 
   const book = view.kind === "shelf"
+    || view.kind === "dinosaur-art-lab"
+    || view.kind === "dinosaur-pronunciation-lab"
+    || view.kind === "everyday-discovery-lab"
     ? undefined
     : BOOKS.find((item) => item.slug === view.bookSlug);
 
+  if (view.kind === "everyday-discovery-lab") {
+    const openScene = (sceneId: EverydayDiscoverySceneId) => {
+      setEverydayDiscoveryProgress((current) => ({
+        ...current,
+        lastSceneId: sceneId,
+      }));
+      navigate({ kind: "everyday-discovery-lab", sceneId, itemId: null });
+    };
+    const openItem = (itemId: EverydayDiscoveryId) => {
+      const item = everydayDiscoveryItemById(itemId);
+      if (!item) return;
+      setEverydayDiscoveryProgress((current) => ({
+        ...current,
+        lastSceneId: item.sceneId,
+        lastItemId: itemId,
+      }));
+      navigate({ kind: "everyday-discovery-lab", sceneId: item.sceneId, itemId });
+    };
+    const completeItem = (itemId: EverydayDiscoveryId, spellingAttempts: number) => {
+      const item = everydayDiscoveryItemById(itemId);
+      if (!item) return;
+      setEverydayDiscoveryProgress((current) => {
+        const existing = current.items[itemId];
+        return {
+          ...current,
+          lastSceneId: item.sceneId,
+          lastItemId: itemId,
+          exploredIds: current.exploredIds.includes(itemId)
+            ? current.exploredIds
+            : [...current.exploredIds, itemId],
+          items: {
+            ...current.items,
+            [itemId]: {
+              heardWhole: true,
+              heardCoach: true,
+              saidIt: true,
+              spelledIt: true,
+              spellingAttempts: Math.min(99, (existing?.spellingAttempts ?? 0) + spellingAttempts),
+              completedAt: existing?.completedAt ?? new Date().toISOString(),
+              updatedAt: Date.now(),
+            },
+          },
+        };
+      });
+    };
+    const completeChallenge = (sceneId: EverydayDiscoverySceneId) => {
+      setEverydayDiscoveryProgress((current) => ({
+        ...current,
+        lastSceneId: sceneId,
+        completedChallengeIds: current.completedChallengeIds.includes(sceneId)
+          ? current.completedChallengeIds
+          : [...current.completedChallengeIds, sceneId],
+      }));
+    };
+    return (
+      <EverydayDiscoveryLab
+        sceneId={view.sceneId}
+        itemId={view.itemId}
+        exploredIds={everydayDiscoveryProgress.exploredIds}
+        completedChallengeIds={everydayDiscoveryProgress.completedChallengeIds}
+        lastSceneId={everydayDiscoveryProgress.lastSceneId}
+        lastItemId={everydayDiscoveryProgress.lastItemId}
+        narrator={narrator}
+        onBack={() => navigate({ kind: "shelf" })}
+        onHome={() => navigate({ kind: "everyday-discovery-lab", sceneId: null, itemId: null })}
+        onOpenScene={openScene}
+        onOpenItem={openItem}
+        onCompleteItem={completeItem}
+        onCompleteChallenge={completeChallenge}
+      />
+    );
+  }
+
+  if (view.kind === "dinosaur-pronunciation-lab") {
+    const openDinosaur = (dinosaurId: DinosaurPronunciationId) => {
+      setDinosaurPronunciationProgress((current) => ({
+        ...current,
+        lastDinosaurId: dinosaurId,
+      }));
+      navigate({ kind: "dinosaur-pronunciation-lab", dinosaurId });
+    };
+    const markDinosaurExplored = (dinosaurId: DinosaurPronunciationId) => {
+      setDinosaurPronunciationProgress((current) => {
+        const existing = current.dinosaurs[dinosaurId];
+        return {
+          ...current,
+          lastDinosaurId: dinosaurId,
+          exploredIds: current.exploredIds.includes(dinosaurId)
+            ? current.exploredIds
+            : [...current.exploredIds, dinosaurId],
+          dinosaurs: {
+            ...current.dinosaurs,
+            [dinosaurId]: {
+              heardWhole: true,
+              heardCoach: true,
+              saidIt: true,
+              repeatCount: Math.min(99, (existing?.repeatCount ?? 0) + 1),
+              completedAt: existing?.completedAt ?? new Date().toISOString(),
+              updatedAt: Date.now(),
+            },
+          },
+        };
+      });
+    };
+    return (
+      <DinosaurPronunciationLab
+        dinosaurId={view.dinosaurId}
+        exploredIds={dinosaurPronunciationProgress.exploredIds}
+        lastDinosaurId={dinosaurPronunciationProgress.lastDinosaurId}
+        narrator={narrator}
+        onBack={() => navigate({ kind: "shelf" })}
+        onHome={() => navigate({ kind: "dinosaur-pronunciation-lab", dinosaurId: null })}
+        onOpenDinosaur={openDinosaur}
+        onMarkExplored={markDinosaurExplored}
+      />
+    );
+  }
+
+  if (view.kind === "dinosaur-art-lab") {
+    const fromBook = view.fromBookSlug
+      ? BOOKS.find((candidate) => candidate.slug === view.fromBookSlug)
+      : undefined;
+    const backToOrigin = () => {
+      if (fromBook) {
+        navigate({
+          kind: "reader",
+          bookSlug: fromBook.slug,
+          page: progress.books[fromBook.slug]?.lastPage ?? 0,
+        });
+      } else {
+        navigate({ kind: "shelf" });
+      }
+    };
+    const openDinosaurLesson = (lessonId: DinosaurArtLessonId) => {
+      const savedStep = dinosaurArtProgress.lessons[lessonId]?.lastStep ?? 0;
+      setDinosaurArtProgress((current) => ({ ...current, lastLessonId: lessonId }));
+      navigate({ ...view, lessonId, step: savedStep });
+    };
+    const changeDinosaurStep = (step: DinosaurArtStep) => {
+      const lessonId = view.lessonId;
+      if (!lessonId) return;
+      setDinosaurArtProgress((current) => ({
+        ...current,
+        lastLessonId: lessonId,
+        lessons: {
+          ...current.lessons,
+          [lessonId]: {
+            ...current.lessons[lessonId],
+            lastStep: step,
+            updatedAt: Date.now(),
+          },
+        },
+      }));
+      navigate({ ...view, step }, true);
+    };
+    const completeDinosaurLesson = (lessonId: DinosaurArtLessonId) => {
+      setDinosaurArtProgress((current) => ({
+        ...current,
+        lastLessonId: lessonId,
+        lessons: {
+          ...current.lessons,
+          [lessonId]: {
+            ...current.lessons[lessonId],
+            lastStep: 3,
+            completedAt: current.lessons[lessonId]?.completedAt ?? new Date().toISOString(),
+            updatedAt: Date.now(),
+          },
+        },
+      }));
+    };
+    return (
+      <DinosaurArtLab
+        lessonId={view.lessonId}
+        step={view.step}
+        progress={dinosaurArtProgress}
+        fromBookTitle={fromBook?.title}
+        activeSpeechKey={narrator.activeKey}
+        onBack={backToOrigin}
+        onHome={() => navigate({ ...view, lessonId: null, step: 0 })}
+        onOpenLesson={openDinosaurLesson}
+        onStepChange={changeDinosaurStep}
+        onCompleteLesson={completeDinosaurLesson}
+        onSpeak={(text, key) => {
+          if (narrator.activeKey === key) narrator.stop();
+          else narrator.speak(text, { purpose: "practice", activeKey: key });
+        }}
+      />
+    );
+  }
+
   if (view.kind !== "shelf" && !book) {
-    return <Shelf progress={progress} narrator={narrator} onOpenBook={openBook} onOpenWords={(selected) => navigate({ kind: "word-garden", bookSlug: selected.slug })} onReset={resetProgress} saveWarning={saveWarning} />;
+    return <Shelf progress={progress} dinosaurArtProgress={dinosaurArtProgress} dinosaurPronunciationProgress={dinosaurPronunciationProgress} everydayDiscoveryProgress={everydayDiscoveryProgress} narrator={narrator} onOpenBook={openBook} onOpenWords={(selected) => navigate({ kind: "word-garden", bookSlug: selected.slug })} onOpenDinosaurArt={() => navigate({ kind: "dinosaur-art-lab", lessonId: null, step: 0 })} onOpenDinosaurPronunciation={() => navigate({ kind: "dinosaur-pronunciation-lab", dinosaurId: null })} onOpenEverydayDiscovery={() => navigate({ kind: "everyday-discovery-lab", sceneId: null, itemId: null })} onReset={resetProgress} saveWarning={saveWarning} />;
+  }
+
+  if (view.kind === "mid-autumn-adventure" && book) {
+    const openMission = (missionId: MidAutumnMissionId) => {
+      const savedStep = midAutumnAdventureProgress.missions[missionId]?.lastStep ?? 0;
+      setMidAutumnAdventureProgress((current) => ({ ...current, lastMissionId: missionId }));
+      navigate({ ...view, missionId, step: savedStep });
+    };
+    const changeMissionStep = (step: MidAutumnAdventureStep) => {
+      const missionId = view.missionId;
+      if (!missionId) return;
+      setMidAutumnAdventureProgress((current) => ({
+        ...current,
+        lastMissionId: missionId,
+        missions: {
+          ...current.missions,
+          [missionId]: {
+            ...current.missions[missionId],
+            lastStep: step,
+            updatedAt: Date.now(),
+          },
+        },
+      }));
+      navigate({ ...view, step }, true);
+    };
+    const completeMission = (missionId: MidAutumnMissionId) => {
+      setMidAutumnAdventureProgress((current) => ({
+        ...current,
+        lastMissionId: missionId,
+        missions: {
+          ...current.missions,
+          [missionId]: {
+            ...current.missions[missionId],
+            lastStep: 3,
+            completedAt: current.missions[missionId]?.completedAt ?? new Date().toISOString(),
+            updatedAt: Date.now(),
+          },
+        },
+      }));
+    };
+    return (
+      <MoonlightMarketAdventure
+        key={view.missionId ?? "home"}
+        book={book}
+        missionId={view.missionId}
+        step={view.step}
+        progress={midAutumnAdventureProgress}
+        activeSpeechKey={narrator.activeKey}
+        onBack={() => navigate({
+          kind: "reader",
+          bookSlug: book.slug,
+          page: progress.books[book.slug]?.lastPage ?? 0,
+        })}
+        onHome={() => navigate({ ...view, missionId: null, step: 0 })}
+        onOpenMission={openMission}
+        onStepChange={changeMissionStep}
+        onLanternChange={(selectedLanternId) => {
+          setMidAutumnAdventureProgress((current) => ({
+            ...current,
+            selectedLanternId,
+          }));
+        }}
+        onCompleteMission={completeMission}
+        onSpeak={(text, key) => {
+          if (narrator.activeKey === key) narrator.stop();
+          else narrator.speak(text, { purpose: "practice", activeKey: key });
+        }}
+      />
+    );
   }
 
   if (view.kind === "reader" && book) {
@@ -432,8 +1027,67 @@ export default function StoryGarden() {
         onPageChange={changePage}
         onBack={() => navigate({ kind: "shelf" })}
         onWords={() => navigate({ kind: "word-garden", bookSlug: book.slug })}
+        onArtStudio={artStudioForBook(book.slug)
+          ? () => navigate({
+              kind: "art-studio",
+              bookSlug: book.slug,
+              step: bookProgress.artStudio?.lastStep ?? "observe",
+              missionId: bookProgress.artStudio?.selectedMission ?? "story-artist",
+            })
+          : undefined}
+        onDinosaurArt={isDinosaurArtBook(book.slug)
+          ? () => navigate({
+              kind: "dinosaur-art-lab",
+              lessonId: null,
+              step: 0,
+              fromBookSlug: book.slug,
+            })
+          : undefined}
+        onMoonlightMarket={isMidAutumnAdventureBook(book.slug)
+          ? (missionId) => {
+              const savedStep = missionId
+                ? midAutumnAdventureProgress.missions[missionId]?.lastStep ?? 0
+                : 0;
+              navigate({
+                kind: "mid-autumn-adventure",
+                bookSlug: MID_AUTUMN_ADVENTURE_BOOK_SLUG,
+                missionId,
+                step: savedStep,
+              });
+            }
+          : undefined}
       />
     );
+  }
+
+  if (view.kind === "art-studio" && book) {
+    const studio = artStudioForBook(book.slug);
+    if (studio) {
+      const bookProgress = progress.books[book.slug] ?? emptyBookProgress();
+      const artProgress = bookProgress.artStudio ?? emptyArtStudioProgress();
+      const updateArtProgress = (updater: (current: typeof artProgress) => typeof artProgress) => {
+        updateBookProgress(book.slug, (current) => ({
+          ...current,
+          artStudio: updater(current.artStudio ?? emptyArtStudioProgress()),
+          lastOpened: Date.now(),
+        }));
+      };
+      return (
+        <ArtStudio
+          key={`${book.slug}-${view.step}-${view.missionId}`}
+          book={book}
+          studio={studio}
+          step={view.step}
+          missionId={view.missionId}
+          progress={artProgress}
+          onBack={() => navigate({ kind: "reader", bookSlug: book.slug, page: bookProgress.lastPage })}
+          onOpenPage={(page) => navigate({ kind: "reader", bookSlug: book.slug, page })}
+          onStepChange={(step) => navigate({ ...view, step }, true)}
+          onMissionChange={(missionId) => navigate({ ...view, missionId }, true)}
+          onProgressChange={updateArtProgress}
+        />
+      );
+    }
   }
 
   if (view.kind === "word-garden" && book) {
@@ -606,9 +1260,15 @@ export default function StoryGarden() {
   return (
     <Shelf
       progress={progress}
+      dinosaurArtProgress={dinosaurArtProgress}
+      dinosaurPronunciationProgress={dinosaurPronunciationProgress}
+      everydayDiscoveryProgress={everydayDiscoveryProgress}
       narrator={narrator}
       onOpenBook={openBook}
       onOpenWords={(selected) => navigate({ kind: "word-garden", bookSlug: selected.slug })}
+      onOpenDinosaurArt={() => navigate({ kind: "dinosaur-art-lab", lessonId: null, step: 0 })}
+      onOpenDinosaurPronunciation={() => navigate({ kind: "dinosaur-pronunciation-lab", dinosaurId: null })}
+      onOpenEverydayDiscovery={() => navigate({ kind: "everyday-discovery-lab", sceneId: null, itemId: null })}
       onReset={resetProgress}
       saveWarning={saveWarning}
     />
@@ -627,14 +1287,14 @@ function Brand({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function NarrationSettings({ narrator }: { narrator: Narrator }) {
+function NarrationSettings({ narrator, brief = false }: { narrator: Narrator; brief?: boolean }) {
   const paceDetails = NARRATION_PACES[narrator.pace] ?? NARRATION_PACES.child;
 
   return (
-    <details className="narration-settings narration-settings--compact">
+    <details className={`narration-settings narration-settings--compact ${brief ? "narration-settings--brief" : ""}`}>
       <summary>
         <span aria-hidden="true">🎧</span>
-        <span><strong>Story voice</strong><small>{paceDetails.shortLabel} · {narrator.currentVoiceLabel}</small></span>
+        <span><strong>Story voice</strong><small>{brief ? paceDetails.shortLabel : `${paceDetails.shortLabel} · ${narrator.currentVoiceLabel}`}</small></span>
         <span aria-hidden="true">⌄</span>
       </summary>
       <div className="narration-settings__panel">
@@ -652,11 +1312,14 @@ function NarrationSettings({ narrator }: { narrator: Narrator }) {
                   narrator.setPace(value as NarrationPace);
                 }}
               />
-              <span><strong>{option.label}</strong><small>{option.description}</small></span>
+              <span>
+                <strong>{brief ? option.shortLabel : option.label}</strong>
+                {!brief && <small>{option.description}</small>}
+              </span>
             </label>
           ))}
         </fieldset>
-        <p>Both choices use the same prepared Aoede picture-book teacher. The child version is a separately prepared recording, never a mechanically slowed browser voice.</p>
+        {!brief && <p>Both choices use the same prepared Aoede picture-book teacher. The child version is a separately prepared recording, never a mechanically slowed browser voice.</p>}
       </div>
     </details>
   );
@@ -664,22 +1327,39 @@ function NarrationSettings({ narrator }: { narrator: Narrator }) {
 
 function Shelf({
   progress,
+  dinosaurArtProgress,
+  dinosaurPronunciationProgress,
+  everydayDiscoveryProgress,
   narrator,
   onOpenBook,
   onOpenWords,
+  onOpenDinosaurArt,
+  onOpenDinosaurPronunciation,
+  onOpenEverydayDiscovery,
   onReset,
   saveWarning,
 }: {
   progress: ProgressStore;
+  dinosaurArtProgress: DinosaurArtProgress;
+  dinosaurPronunciationProgress: DinosaurPronunciationProgress;
+  everydayDiscoveryProgress: EverydayDiscoveryProgress;
   narrator: Narrator;
   onOpenBook: (book: Book) => void;
   onOpenWords: (book: Book) => void;
+  onOpenDinosaurArt: () => void;
+  onOpenDinosaurPronunciation: () => void;
+  onOpenEverydayDiscovery: () => void;
   onReset: () => void;
   saveWarning: boolean;
 }) {
   const completedBooks = BOOKS.filter((book) =>
     bookIsComplete(book, progress.books[book.slug] ?? emptyBookProgress()),
   ).length;
+  const completedDinosaurLessons = DINOSAUR_ART_LESSON_IDS.filter((lessonId) =>
+    dinosaurArtProgress.lessons[lessonId]?.completedAt,
+  ).length;
+  const exploredDinosaurNames = dinosaurPronunciationProgress.exploredIds.length;
+  const exploredEverydayWords = everydayDiscoveryProgress.exploredIds.length;
   const latestBook = useMemo(() => {
     return [...BOOKS]
       .filter((book) => progress.books[book.slug]?.lastOpened)
@@ -747,6 +1427,62 @@ function Shelf({
         ))}
       </section>
 
+      <section className="dino-shelf-invite" aria-labelledby="dino-shelf-title">
+        <div className="dino-shelf-invite__copy">
+          <p className="eyebrow"><span aria-hidden="true">🦴</span> New creative lab</p>
+          <h2 id="dino-shelf-title">Dinosaur Art Lab</h2>
+          <p>从动态线和身体体块开始，画棘龙、霸王龙、三角龙、腕龙、甲龙和长羽毛的伶盗龙。</p>
+          <div><span>6 dinosaurs</span><span>4 drawing steps each</span><span>Dino English</span></div>
+          <button className="button button--green" type="button" onClick={onOpenDinosaurArt}>
+            Explore the Dinosaur Art Lab <span aria-hidden="true">→</span>
+          </button>
+        </div>
+        <div className="dino-shelf-invite__picture" aria-hidden="true">
+          <img src={dinosaurArtLessonById("spinosaurus").guideSrc} alt="" />
+          <span><strong>{completedDinosaurLessons}</strong> / 6 explored</span>
+        </div>
+      </section>
+
+      <section
+        className="dino-shelf-invite dino-pronunciation-shelf-invite"
+        aria-labelledby="dino-pronunciation-shelf-title"
+      >
+        <div className="dino-shelf-invite__copy">
+          <p className="eyebrow"><span aria-hidden="true">🔊</span> New sound lab</p>
+          <h2 id="dino-pronunciation-shelf-title">Dinosaur Name Lab</h2>
+          <p>听整词、点音节、连起来读，把长长的恐龙英文名字变成会拼的声音积木。</p>
+          <div><span>{DINOSAUR_PRONUNCIATION_IDS.length} names</span><span>2 voice speeds</span><span>No scoring</span></div>
+          <button className="button button--sun" type="button" onClick={onOpenDinosaurPronunciation}>
+            Start the pronunciation lab <span aria-hidden="true">→</span>
+          </button>
+        </div>
+        <div className="dino-shelf-invite__picture" aria-hidden="true">
+          <img src="/dinosaur-pronunciation/allosaurus.jpg" alt="" />
+          <span><strong>{exploredDinosaurNames}</strong> / {DINOSAUR_PRONUNCIATION_IDS.length} names</span>
+        </div>
+      </section>
+
+      <section
+        className="dino-shelf-invite everyday-discovery-shelf-invite"
+        aria-labelledby="everyday-discovery-shelf-title"
+      >
+        <div className="dino-shelf-invite__copy">
+          <p className="eyebrow"><span aria-hidden="true">🔎</span> New everyday lab</p>
+          <h2 id="everyday-discovery-shelf-title">Everyday Discovery Lab</h2>
+          <p>从厨房走到超市、学校和游乐场：看真实图片、听双速发音、读三句英文，再把单词拼出来。</p>
+          <div><span>{EVERYDAY_DISCOVERY_SCENE_IDS.length} scenes</span><span>{EVERYDAY_DISCOVERY_IDS.length} words</span><span>{EVERYDAY_DISCOVERY_SCENE_IDS.length} mini missions</span></div>
+          <button className="button button--green" type="button" onClick={onOpenEverydayDiscovery}>
+            Explore everyday English <span aria-hidden="true">→</span>
+          </button>
+        </div>
+        <div className="dino-shelf-invite__picture everyday-discovery-shelf-invite__picture" aria-hidden="true">
+          <img src="/everyday-discovery/kitchen/onion.jpg" alt="" />
+          <img src="/everyday-discovery/animals/octopus.jpg" alt="" />
+          <img src="/everyday-discovery/plants/sunflower.jpg" alt="" />
+          <span><strong>{exploredEverydayWords}</strong> / {EVERYDAY_DISCOVERY_IDS.length} words</span>
+        </div>
+      </section>
+
       <section className="bookshelf" aria-labelledby="bookshelf-title">
         <div className="section-heading">
           <div>
@@ -755,7 +1491,7 @@ function Shelf({
           </div>
           <p>{BOOKS.length} stories ready to read</p>
         </div>
-        {([1, 2] as const).map((level) => {
+        {([1, 2, 3] as const).map((level) => {
           const levelBooks = BOOKS.filter((book) => book.level === level);
           if (!levelBooks.length) return null;
           return (
@@ -800,8 +1536,8 @@ function Shelf({
             <NarrationSettings narrator={narrator} />
           </div>
           <div>
-            <h3>P1 与 P2 绘本课程</h3>
-            <p>书架按 Primary 1 和 Primary 2 分组。每本书都配有标准版、儿童慢速版朗读，以及五个核心单词和听、说、读、写练习。</p>
+            <h3>P1、P2 与 P3 绘本课程</h3>
+            <p>书架按 Primary 1、Primary 2 和 Primary 3 分组。每本书都配有标准版、儿童慢速版朗读，以及五个核心单词和听、说、读、写练习。</p>
             <button className="text-button" type="button" onClick={resetProgress}>清除这台设备上的学习进度</button>
           </div>
         </div>
@@ -883,6 +1619,9 @@ function StoryReader({
   onPageChange,
   onBack,
   onWords,
+  onArtStudio,
+  onDinosaurArt,
+  onMoonlightMarket,
 }: {
   book: Book;
   page: number;
@@ -891,12 +1630,56 @@ function StoryReader({
   onPageChange: (page: number) => void;
   onBack: () => void;
   onWords: () => void;
+  onArtStudio?: () => void;
+  onDinosaurArt?: () => void;
+  onMoonlightMarket?: (missionId: MidAutumnMissionId | null) => void;
 }) {
   const [zoomed, setZoomed] = useState(false);
+  const [storyMode, setStoryMode] = useState<"english" | "guide-zh">("english");
   const startX = useRef<number | null>(null);
   const current = book.pages[page];
+  const currentSides = current.sides;
+  const currentIsSpread = current.layout === "spread";
+  const storyGuide = storyGuideForBook(book.slug);
+  const artStudio = artStudioForBook(book.slug);
+  const artObservation = artStudio?.observations.find((item) => item.pageIndex === page) ?? null;
+  const currentGuide = storyGuide?.pages[page] ?? null;
+  const guideMode = storyMode === "guide-zh" && Boolean(currentGuide);
   const isLast = page === book.pages.length - 1;
   const pageHasBeenRead = bookProgress.readPages.includes(page);
+  const moonlightInvite = onMoonlightMarket
+    ? page === 1 || page === 2
+      ? {
+          missionId: "dinosaur-lantern" as const,
+          eyebrow: "Festival art",
+          title: "Design a dinosaur lantern",
+          copy: "看完老虎和兔子灯笼，再画一盏会发光的恐龙灯笼。",
+          icon: "🦖",
+        }
+      : page === 4 || page === 5 || page === 7
+        ? {
+            missionId: "find-lee-ling" as const,
+            eyebrow: "Picture detective",
+            title: "Find Lee Ling",
+            copy: "记住兔子灯笼，沿着故事里的线索去找她。",
+            icon: "🔎",
+          }
+        : page === 6
+          ? {
+              missionId: "market-roleplay" as const,
+              eyebrow: "Speak at the market",
+              title: "Ask in English",
+              copy: "用礼貌英语买灯笼，再向摊主询问 Lee Ling。",
+              icon: "🗣️",
+            }
+          : {
+              missionId: null,
+              eyebrow: "Optional story adventure",
+              title: "Moonlight Market",
+              copy: "找线索、说英语、画恐龙灯笼。",
+              icon: "🏮",
+            }
+    : null;
   const stopNarration = narrator.stop;
   const audioSourceFor = narrator.audioSourceFor;
 
@@ -906,15 +1689,17 @@ function StoryReader({
 
   useEffect(() => {
     const next = book.pages[page + 1];
+    const nextGuide = storyGuide?.pages[page + 1];
     if (next) {
       const image = new Image();
       image.src = next.src;
-      if (next.audioSrc) {
-        const audio = new Audio(audioSourceFor(next.audioSrc));
+      const nextAudioSrc = storyMode === "guide-zh" ? nextGuide?.audioSrc : next.audioSrc;
+      if (nextAudioSrc) {
+        const audio = new Audio(audioSourceFor(nextAudioSrc));
         audio.preload = "metadata";
       }
     }
-  }, [audioSourceFor, book.pages, page]);
+  }, [audioSourceFor, book.pages, page, storyGuide?.pages, storyMode]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -933,12 +1718,70 @@ function StoryReader({
 
   useEffect(() => () => stopNarration(), [stopNarration]);
 
-  const movePage = (next: number) => {
-    stopNarration();
-    onPageChange(Math.max(0, Math.min(next, book.pages.length - 1)));
-  };
-  const pageVoiceKey = `story-${book.slug}-${page}`;
+  const pageVoiceKey = `${guideMode ? "guide-zh" : "english"}-${book.slug}-${page}`;
   const pageIsSpeaking = narrator.activeKey === pageVoiceKey;
+  const sideVoiceKey = (side: "left" | "right") => `english-${book.slug}-${page}-${side}`;
+  const leftPageIsSpeaking = narrator.activeKey === sideVoiceKey("left");
+  const rightPageIsSpeaking = narrator.activeKey === sideVoiceKey("right");
+  const showSideReadAlong = storyMode === "english" && Boolean(currentSides);
+
+  const chooseStoryMode = (mode: "english" | "guide-zh") => {
+    narrator.stop();
+    setStoryMode(mode);
+  };
+
+  const playPage = (targetPage: number) => {
+    const target = book.pages[targetPage];
+    const targetGuide = storyGuide?.pages[targetPage];
+    const targetUsesGuide = storyMode === "guide-zh" && Boolean(targetGuide);
+    const targetVoiceKey = `${targetUsesGuide ? "guide-zh" : "english"}-${book.slug}-${targetPage}`;
+    if (targetUsesGuide && targetGuide) {
+      narrator.speak(targetGuide.narration, {
+        purpose: "story",
+        activeKey: targetVoiceKey,
+        audioSrc: targetGuide.audioSrc,
+        preparedOnly: true,
+      });
+      return;
+    }
+    if (target?.audioSrc) {
+      narrator.speak(target.transcript, {
+        purpose: "story",
+        activeKey: targetVoiceKey,
+        audioSrc: target.audioSrc,
+      });
+    }
+  };
+
+  const playCurrentPage = () => {
+    if (pageIsSpeaking) {
+      narrator.stop();
+      return;
+    }
+    playPage(page);
+  };
+
+  const playPageSide = (side: "left" | "right") => {
+    const pageSide = currentSides?.[side];
+    const key = sideVoiceKey(side);
+    if (narrator.activeKey === key) {
+      narrator.stop();
+      return;
+    }
+    if (!pageSide?.transcript.trim() || !pageSide.audioSrc) return;
+    narrator.speak(pageSide.transcript, {
+      purpose: "story",
+      activeKey: key,
+      audioSrc: pageSide.audioSrc,
+    });
+  };
+
+  const movePage = (next: number) => {
+    const targetPage = Math.max(0, Math.min(next, book.pages.length - 1));
+    stopNarration();
+    if (targetPage === page) return;
+    onPageChange(targetPage);
+  };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.isPrimary) startX.current = event.clientX;
@@ -961,6 +1804,9 @@ function StoryReader({
           <h1>{book.title}</h1>
         </div>
         <div className="reader__mission-dots" aria-label="Learning missions">
+          {artStudio && (
+            <span className={bookProgress.artStudio?.steps.tell ? "is-done" : ""} title="Art Studio">🎨</span>
+          )}
           <span
             className={wordsForBook(book.slug).every((word) => wordIsMastered(bookProgress.wordPractice.words[word.id])) ? "is-done" : ""}
             title="Word Garden"
@@ -987,46 +1833,175 @@ function StoryReader({
         </button>
 
         <section className="story-page" aria-label={`Page ${page + 1} of ${book.pages.length}`}>
-          <div className="story-page__paper">
-            <button className="story-page__image-button" type="button" onClick={() => setZoomed(true)} aria-label="Open a larger view of this page">
-              <img
-                key={current.src}
-                src={current.src}
-                alt={`Page ${page + 1} of ${book.title}`}
-                draggable={false}
-                decoding="async"
-              />
-              <span className="story-page__zoom" aria-hidden="true">↗</span>
-            </button>
-          </div>
-
-          <div className="reader__tools">
-            <button
-              className={`listen-button ${pageIsSpeaking ? "is-speaking" : ""}`}
-              type="button"
-              onClick={() => pageIsSpeaking
-                ? narrator.stop()
-                : current.audioSrc && narrator.speak(current.transcript, {
-                    purpose: "story",
-                    activeKey: pageVoiceKey,
-                    audioSrc: current.audioSrc,
+          <div className="story-page__layout">
+            <div className="story-page__paper">
+              <button className="story-page__image-button" type="button" onClick={() => setZoomed(true)} aria-label="Open a larger view of this page">
+                <img
+                  key={current.src}
+                  src={current.src}
+                  alt={`Page ${page + 1} of ${book.title}`}
+                  draggable={false}
+                  decoding="async"
+                />
+                <span className="story-page__zoom" aria-hidden="true">↗</span>
+              </button>
+              {showSideReadAlong && currentSides && (
+                <div className="story-page__side-listeners" role="group" aria-label={`Choose a side to hear on page ${page + 1}`}>
+                  {(["left", "right"] as const).map((side) => {
+                    const pageSide = currentSides[side];
+                    const playable = Boolean(pageSide.transcript.trim() && pageSide.audioSrc);
+                    const active = side === "left" ? leftPageIsSpeaking : rightPageIsSpeaking;
+                    const sideLabel = side === "left" ? "left" : "right";
+                    return (
+                      <button
+                        key={side}
+                        className={active ? "is-speaking" : ""}
+                        type="button"
+                        onClick={() => playPageSide(side)}
+                        disabled={!narrator.supported || !playable}
+                        aria-label={playable
+                          ? `${active ? "Stop reading" : "Hear"} ${sideLabel} page of ${book.title}`
+                          : `${side === "left" ? "Left" : "Right"} page is picture only`}
+                        aria-pressed={playable ? active : undefined}
+                      >
+                        <span className="story-page__side-listener-icon" aria-hidden="true">
+                          {active ? "■" : playable ? "🔊" : "🖼️"}
+                        </span>
+                        <span>
+                          <strong>{active ? `Stop ${sideLabel} page` : playable ? `Hear ${sideLabel} page` : "Picture only"}</strong>
+                          <small>{playable ? (active ? "Tap again to stop" : "Listen and point") : `${side === "left" ? "Left" : "Right"} page`}</small>
+                        </span>
+                      </button>
+                    );
                   })}
-              disabled={!narrator.supported || !current.audioSrc}
-            >
-              <span className="listen-button__icon" aria-hidden="true">{pageIsSpeaking ? "■" : "🔊"}</span>
-              <span>
-                <strong>{pageIsSpeaking ? "Stop" : current.audioSrc ? "Hear this page" : "Picture page"}</strong>
-                <small>{current.audioSrc ? `${narrator.currentVoiceLabel} · listen, then point to the words` : "Pause and tell the story from the picture"}</small>
-              </span>
-            </button>
+                </div>
+              )}
+            </div>
+
+            <aside className="reader__controls" aria-label="Page listening controls">
+              {storyGuide && (
+                <div className="story-mode-toggle" role="group" aria-label="Choose story mode">
+                  <button
+                    type="button"
+                    className={storyMode === "english" ? "is-selected" : ""}
+                    aria-pressed={storyMode === "english"}
+                    onClick={() => chooseStoryMode("english")}
+                  >
+                    <span aria-hidden="true">🎧</span>
+                    <span><strong>English</strong><small>朗读原文</small></span>
+                  </button>
+                  <button
+                    type="button"
+                    className={storyMode === "guide-zh" ? "is-selected" : ""}
+                    aria-pressed={storyMode === "guide-zh"}
+                    onClick={() => chooseStoryMode("guide-zh")}
+                  >
+                    <span aria-hidden="true">🧭</span>
+                    <span><strong>中文讲绘本</strong><small>边讲边学</small></span>
+                  </button>
+                </div>
+              )}
+              <div className="reader__tools">
+                <button
+                  className={`listen-button ${pageIsSpeaking ? "is-speaking" : ""}`}
+                  type="button"
+                  onClick={playCurrentPage}
+                  disabled={!narrator.supported || (guideMode ? !currentGuide?.audioSrc : !current.audioSrc)}
+                >
+                  <span className="listen-button__icon" aria-hidden="true">{pageIsSpeaking ? "■" : "🔊"}</span>
+                  <span>
+                    <strong>{pageIsSpeaking ? (guideMode ? "停止讲解" : "Stop") : guideMode ? "听中文讲绘本" : current.audioSrc ? (currentIsSpread ? "Hear both pages" : "Hear this page") : "Picture page"}</strong>
+                    {guideMode && !pageIsSpeaking && <small>中文理解 · 完整 English · 跟读</small>}
+                  </span>
+                </button>
+              </div>
+              {guideMode && currentGuide ? (
+                <section className="story-guide-cue" aria-label={`Chinese story guide for page ${page + 1}`}>
+                  <span className="story-guide-cue__coverage">✓ 本页英文完整朗读</span>
+                  <span className="story-guide-cue__eyebrow">Repeat after me</span>
+                  <strong>{currentGuide.keyEnglish}</strong>
+                  {currentGuide.prompt && <p><span aria-hidden="true">💭</span>{currentGuide.prompt}</p>}
+                  <details>
+                    <summary>查看双语讲读内容</summary>
+                    <div>
+                      <small>先看图</small>
+                      <p>{currentGuide.introZh}</p>
+                      <small>English on this page</small>
+                      <p lang="en">{currentGuide.englishPassage}</p>
+                      <small>中文重点</small>
+                      <p>{currentGuide.explanationZh}</p>
+                    </div>
+                  </details>
+                </section>
+              ) : (
+                <NarrationSettings narrator={narrator} brief />
+              )}
+              {onArtStudio && (
+                <section className={`art-reader-invite ${artObservation ? "is-observation" : ""}`}>
+                  <span className="art-reader-invite__icon" aria-hidden="true">🎨</span>
+                  <div>
+                    <small>{artObservation ? `${artObservation.label} · Art eye` : "Optional creative mission"}</small>
+                    <strong>{artObservation ? artObservation.title : "Art Studio"}</strong>
+                    <p>{artObservation ? artObservation.question : "动作、构图和英文表达"}</p>
+                  </div>
+                  <button type="button" onClick={onArtStudio}>{artObservation ? "Look closer" : "Open"} <span aria-hidden="true">→</span></button>
+                </section>
+              )}
+              {onDinosaurArt && (
+                <section className="dino-reader-invite">
+                  <span aria-hidden="true">🦕</span>
+                  <div><small>Optional art lab</small><strong>Draw more dinosaurs</strong><p>六种身体结构 · 四步跟画 · Dino English</p></div>
+                  <button type="button" onClick={onDinosaurArt}>Explore <span aria-hidden="true">→</span></button>
+                </section>
+              )}
+              {moonlightInvite && (
+                <section className="moonlight-reader-invite">
+                  <span aria-hidden="true">{moonlightInvite.icon}</span>
+                  <div>
+                    <small>{moonlightInvite.eyebrow}</small>
+                    <strong>{moonlightInvite.title}</strong>
+                    <p>{moonlightInvite.copy}</p>
+                  </div>
+                  <button type="button" onClick={() => onMoonlightMarket?.(moonlightInvite.missionId)}>
+                    Start <span aria-hidden="true">→</span>
+                  </button>
+                </section>
+              )}
+            </aside>
           </div>
-          <NarrationSettings narrator={narrator} />
 
           {isLast && (
             <div className="quest-invite">
               <span className="quest-invite__plant" aria-hidden="true">🌱</span>
               <div><small>You finished the story!</small><strong>Ready to grow five word flowers?</strong></div>
               <button className="button button--green" type="button" onClick={onWords}>Grow my Word Garden <span aria-hidden="true">→</span></button>
+            </div>
+          )}
+          {isLast && onArtStudio && (
+            <div className="art-finish-invite">
+              <span aria-hidden="true">🎨</span>
+              <div><small>Make the story move</small><strong>Ready for an Art Studio adventure?</strong><p>观察动作，画三格故事，或者为恐龙设计自行车。</p></div>
+              <button className="button" type="button" onClick={onArtStudio}>Start Art Studio <span aria-hidden="true">→</span></button>
+            </div>
+          )}
+          {isLast && onDinosaurArt && (
+            <div className="dino-finish-invite">
+              <span aria-hidden="true">🦖</span>
+              <div><small>Dinosaur Art Lab</small><strong>Want to draw six different dinosaurs?</strong><p>从骨架线到身体结构，再加入你自己的动作和场景。</p></div>
+              <button className="button" type="button" onClick={onDinosaurArt}>Choose a dinosaur <span aria-hidden="true">→</span></button>
+            </div>
+          )}
+          {isLast && onMoonlightMarket && (
+            <div className="moonlight-finish-invite">
+              <span aria-hidden="true">🏮</span>
+              <div>
+                <small>The story continues</small>
+                <strong>Enter the Moonlight Market</strong>
+                <p>寻找 Lee Ling、开口说夜市英语，再设计自己的恐龙灯笼。</p>
+              </div>
+              <button className="button" type="button" onClick={() => onMoonlightMarket(null)}>
+                Start adventure <span aria-hidden="true">→</span>
+              </button>
             </div>
           )}
         </section>

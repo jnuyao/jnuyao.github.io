@@ -1,6 +1,6 @@
 # Story Garden · Primary English
 
-An interactive, local-first learning site built from eighteen Singapore Primary 1 and Primary 2 picture books. Children can read each story, practise five story-grounded words, listen and speak, then complete spelling and dictation activities before their Word Garden blooms.
+An interactive, local-first learning site built from thirty-two Primary 1, Primary 2 and Primary 3 picture books. Children can read each story, practise five story-grounded words, listen and speak, then complete spelling and dictation activities before their Word Garden blooms.
 
 ## Learning flow
 
@@ -16,10 +16,10 @@ Each book also keeps the original listen, read, speak and write missions. Progre
 
 - `public/audio-standard/` — standard story narration.
 - `public/audio/` — separately prepared child-slow story narration.
-- `public/word-audio-standard/` — 90 standard word clips.
-- `public/word-audio/` — 90 child-slow word clips with preserved pitch.
+- `public/word-audio-standard/` — 160 standard word clips.
+- `public/word-audio/` — 160 child-slow word clips with preserved pitch.
 
-Both modes use prepared Aoede recordings; the browser does not time-stretch them during playback. All 90 word clips have generation receipts and independent blind-transcription records in `work/word-audio-production/transcript-verification.json`.
+Both modes use prepared Aoede recordings; the browser does not time-stretch them during playback. All word clips have generation receipts; the earlier 90 clips also retain their independent blind-transcription records in `work/word-audio-production/transcript-verification.json`.
 
 ## Local development
 
