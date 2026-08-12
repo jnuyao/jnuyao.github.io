@@ -710,7 +710,11 @@ test("Ride a Bike offers a complete prepared Chinese picture-book guide", async 
   const pageSource = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   assert.match(pageSource, />中文讲绘本</u);
   assert.match(pageSource, /preparedOnly:\s*true/);
-  assert.match(pageSource, /if\s*\(options\.preparedOnly\)[\s\S]{0,100}audio\.onerror\s*=\s*finish/);
+  assert.match(
+    pageSource,
+    /const preparedAudioError\s*=\s*options\.preparedOnly[\s\S]{0,100}finish\(false,\s*true\)[\s\S]{0,100}playSpeechFallback/,
+    "Prepared-only Chinese narration must stop cleanly instead of falling back to a browser voice",
+  );
   const narrationSource = await readFile(new URL("../app/narration.ts", import.meta.url), "utf8");
   assert.match(narrationSource, /story-guide-audio/);
   assert.match(narrationSource, /STORY_GUIDE_AUDIO_CACHE_VERSION/);
@@ -1506,7 +1510,7 @@ test("the active TTS run always finishes cleanly when an utterance errors", asyn
   const currentRunGuard = errorHandler.search(
     /capturedRun\s*!={1,2}\s*narrationRunRef\.current|narrationRunRef\.current\s*!={1,2}\s*capturedRun/,
   );
-  const finishIndex = errorHandler.indexOf("finish()", Math.max(0, currentRunGuard));
+  const finishIndex = errorHandler.indexOf("finish(", Math.max(0, currentRunGuard));
 
   assert.ok(
     currentRunGuard >= 0,
@@ -1561,7 +1565,8 @@ test("prepared audio switches roots without runtime time-stretching", async () =
     /options\.audioSrc[\s\S]{0,160}selectedVoice/,
     "A saved browser voice must never bypass the prepared storyteller",
   );
-  assert.match(source, /audio\.onerror\s*=\s*playSpeechFallback/);
+  assert.match(source, /const preparedAudioError\s*=\s*options\.preparedOnly[\s\S]{0,140}playSpeechFallback/);
+  assert.match(source, /configurePreparedAudio\(audio,\s*options\.audioSrc,\s*pace,\s*finish,\s*preparedAudioError\)/);
   assert.match(source, /audio\.play\(\)\.catch\(playSpeechFallback\)/);
   assert.match(source, /audio\.playbackRate\s*=\s*1\s*;/);
   assert.match(source, /audio\.preservesPitch\s*=\s*true\s*;/);
@@ -1575,30 +1580,129 @@ test("prepared audio switches roots without runtime time-stretching", async () =
   );
   assert.match(narrationSource, /\?v=\$\{PREPARED_AUDIO_CACHE_VERSION\}/);
   assert.ok(
-    (source.match(/<NarrationSettings narrator=\{narrator\}(?:\s+brief)?\s*\/>/g) ?? []).length >= 2,
+    (source.match(/<NarrationSettings narrator=\{narrator\}[\s\S]{0,90}?\/>/g) ?? []).length >= 2,
     "The version switch should be available on both the bookshelf and the story reader",
   );
 });
 
-test("page navigation always stays quiet until the child presses a listening button", async () => {
+test("bedtime reading is an explicit opt-in and exposes one clear play or stop control", async () => {
+  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const readerStart = source.indexOf("function StoryReader");
+  const reader = source.slice(readerStart);
+
+  const bedtimeState = reader.match(
+    /const\s*\[\s*(\w*(?:bedtime|continuous|auto)\w*)\s*,\s*(\w+)\s*\]\s*=\s*useState(?:<boolean>)?\(\s*false\s*\)/i,
+  );
+  assert.ok(
+    bedtimeState,
+    "Bedtime/continuous reading must start off on every fresh reader visit",
+  );
+  assert.match(
+    reader,
+    /Bedtime|睡前|连续朗读/i,
+    "The reader needs a child/parent-facing label for continuous bedtime playback",
+  );
+  assert.match(
+    reader,
+    /aria-pressed=\{[^}]+\}/,
+    "The bedtime playback control must expose its on/off state to assistive technology",
+  );
+  assert.match(
+    reader,
+    /(?:Play|Start|Listen)[^\n<]{0,50}(?:story|book)|(?:Stop|Pause)[^\n<]{0,50}(?:story|book)|开始连续朗读|停止连续朗读/i,
+    "The bedtime control must clearly say whether it starts or stops the story",
+  );
+});
+
+test("a naturally finished bedtime page advances and continues until the book ends", async () => {
   const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const readerStart = source.indexOf("function StoryReader");
   const reader = source.slice(readerStart);
 
   assert.match(
-    reader,
-    /const movePage\s*=\s*\(\s*next:\s*number\s*\)/,
-    "Page movement should have no autoplay option",
+    source,
+    /onComplete\?\s*:\s*\(\s*\)\s*=>\s*void/,
+    "Narration requests need a natural-completion callback for the bedtime sequence",
   );
   assert.match(
     reader,
+    /onComplete\s*:/,
+    "Whole-page bedtime narration must register a completion callback",
+  );
+  assert.ok(
+    /onPageChange\(\s*(?:nextPage|targetPage\s*\+\s*1|next)\s*\)/.test(reader)
+      && /playPage\(\s*(?:nextPage|targetPage\s*\+\s*1|next)[^)]*\)/.test(reader),
+    "Natural completion must show the next page and start reading that same page",
+  );
+  assert.match(
+    reader,
+    /(?:targetPage|page)\s*(?:>=|===)\s*book\.pages\.length\s*-\s*1[\s\S]{0,500}(?:set\w*(?:Bedtime|Continuous|Auto)\w*\(\s*false\s*\)|stop\w*(?:Bedtime|Continuous|Auto)\w*\()/i,
+    "Completing the final page must leave bedtime playback instead of wrapping around",
+  );
+
+  const narratorStart = source.indexOf("type SpeakOptions");
+  const narratorEnd = source.indexOf("export default function StoryGarden", narratorStart);
+  const narrator = source.slice(narratorStart, narratorEnd);
+  assert.ok(
+    /audio\.onended\s*=\s*(?:\(\)\s*=>\s*(?:finish\(\s*true\s*\)|complete\w*\(\s*\))|complete\w*)/i.test(narrator),
+    "Only a naturally ended prepared recording may complete a bedtime page",
+  );
+  assert.doesNotMatch(
+    narrator,
+    /audio\.onerror\s*=\s*(?:\(\)\s*=>\s*)?(?:finish\(\s*true\s*\)|complete\w*)/i,
+    "A failed recording must not race through the remaining pages as if it finished",
+  );
+});
+
+test("manual navigation, stopping, and leaving the reader cancel bedtime continuation", async () => {
+  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const readerStart = source.indexOf("function StoryReader");
+  const reader = source.slice(readerStart);
+  const bedtimeState = reader.match(
+    /const\s*\[\s*(\w*(?:bedtime|continuous|auto)\w*)\s*,\s*(\w+)\s*\]\s*=\s*useState(?:<boolean>)?\(\s*false\s*\)/i,
+  );
+  assert.ok(bedtimeState, "The reader must expose opt-in bedtime state");
+
+  const moveStart = reader.indexOf("const movePage");
+  const moveEnd = reader.indexOf("const onPointerDown", moveStart);
+  const movePage = reader.slice(moveStart, moveEnd);
+  assert.ok(moveStart >= 0 && moveEnd > moveStart, "The manual movePage boundary must remain testable");
+  assert.match(
+    movePage,
+    /const movePage\s*=\s*(?:useCallback\(\s*)?\(\s*next:\s*number\s*\)/,
+    "Manual page movement must remain separate from bedtime continuation",
+  );
+  assert.match(
+    movePage,
     /stopNarration\(\);[\s\S]{0,160}onPageChange\(targetPage\);/,
     "Changing pages should stop the current narration before moving",
   );
   assert.doesNotMatch(
+    movePage,
+    /playPage\(|narrator\.speak\(/,
+    "A manual page change must never start narration on the destination page",
+  );
+  assert.ok(
+    new RegExp(`${bedtimeState[2]}\\(\\s*false\\s*\\)`).test(movePage)
+      || /stop\w*(?:Bedtime|Continuous|Auto)\w*\(\s*\)/i.test(movePage),
+    "A button, swipe, or keyboard page change must cancel the bedtime sequence",
+  );
+
+  const keyboardStart = reader.indexOf("const onKeyDown");
+  const keyboardEnd = reader.indexOf('window.addEventListener("keydown"', keyboardStart);
+  const keyboard = reader.slice(keyboardStart, keyboardEnd);
+  assert.ok(keyboardStart >= 0 && keyboardEnd > keyboardStart, "Keyboard navigation must remain testable");
+  assert.doesNotMatch(
+    keyboard,
+    /onPageChange\(/,
+    "Keyboard page changes must pass through the same bedtime-cancelling manual path",
+  );
+  assert.match(keyboard, /movePage\(/);
+
+  assert.doesNotMatch(
     reader,
-    /movePage\([^)]*,\s*true\)|autoPlay|if\s*\([^)]*\)\s*playPage\(targetPage\)/,
-    "Buttons, swipes and keyboard navigation must never trigger narration",
+    /onClick=\{onBack\}/,
+    "Back and choose-another-book actions must pass through a bedtime-cancelling exit handler",
   );
   assert.ok((reader.match(/movePage\(page\s*\+\s*1\)/g) ?? []).length >= 3);
 });

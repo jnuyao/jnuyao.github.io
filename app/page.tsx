@@ -254,6 +254,8 @@ type SpeakOptions = {
   activeKey?: string;
   audioSrc?: string;
   preparedOnly?: boolean;
+  onComplete?: () => void;
+  onError?: () => void;
 };
 
 function readNarrationSettings(): { pace: NarrationPace } {
@@ -263,6 +265,21 @@ function readNarrationSettings(): { pace: NarrationPace } {
   } catch {
     return { pace: "child" };
   }
+}
+
+function configurePreparedAudio(
+  audio: HTMLAudioElement,
+  source: string,
+  pace: NarrationPace,
+  finish: (completed?: boolean, failed?: boolean) => void,
+  onError: () => void,
+) {
+  audio.onended = () => finish(true);
+  audio.onerror = onError;
+  audio.src = preparedAudioSource(source, pace);
+  audio.preload = "auto";
+  audio.playbackRate = 1;
+  audio.preservesPitch = true;
 }
 
 function useNarrator() {
@@ -321,8 +338,11 @@ function useNarrator() {
       window.clearTimeout(segmentTimerRef.current);
       segmentTimerRef.current = null;
     }
-    currentAudioRef.current?.pause();
-    currentAudioRef.current = null;
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.onended = null;
+      currentAudioRef.current.onerror = null;
+    }
     currentUtteranceRef.current = null;
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -337,7 +357,11 @@ function useNarrator() {
     const purpose = options.purpose ?? "story";
     const key = options.activeKey ?? `speech-${capturedRun}`;
     if (segmentTimerRef.current !== null) window.clearTimeout(segmentTimerRef.current);
-    currentAudioRef.current?.pause();
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.onended = null;
+      currentAudioRef.current.onerror = null;
+    }
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       window.speechSynthesis.resume();
@@ -345,12 +369,15 @@ function useNarrator() {
     setSpeaking(true);
     setActiveKey(key);
 
-    const finish = () => {
-      if (capturedRun !== narrationRunRef.current) return;
-      currentAudioRef.current = null;
+    let settled = false;
+    const finish = (completed = false, failed = false) => {
+      if (settled || capturedRun !== narrationRunRef.current) return;
+      settled = true;
       currentUtteranceRef.current = null;
       setSpeaking(false);
       setActiveKey(null);
+      if (completed) options.onComplete?.();
+      if (failed) options.onError?.();
     };
 
     let fallbackStarted = false;
@@ -359,10 +386,9 @@ function useNarrator() {
       fallbackStarted = true;
       if (capturedRun !== narrationRunRef.current) return;
       currentAudioRef.current?.pause();
-      currentAudioRef.current = null;
       if (!("speechSynthesis" in window)) {
         setSupported(false);
-        finish();
+        finish(false, true);
         return;
       }
       const refreshed = rankEnglishVoices(Array.from(window.speechSynthesis.getVoices()))
@@ -375,7 +401,7 @@ function useNarrator() {
         if (capturedRun !== narrationRunRef.current) return;
         const segment = segments[index];
         if (!segment) {
-          finish();
+          finish(true);
           return;
         }
         const utterance = new SpeechSynthesisUtterance(segment.text);
@@ -396,27 +422,27 @@ function useNarrator() {
         };
         utterance.onerror = () => {
           if (capturedRun !== narrationRunRef.current) return;
-          finish();
+          finish(false, true);
         };
         window.speechSynthesis.speak(utterance);
       };
 
       if (segments.length) playSegment(0);
-      else finish();
+      else finish(false, true);
     };
 
     if (options.audioSrc && "Audio" in window) {
-      const audio = new Audio(preparedAudioSource(options.audioSrc, pace));
+      // Reusing one media element makes a user-started bedtime playlist much
+      // more reliable on mobile browsers than creating a new element per page.
+      const audio = currentAudioRef.current ?? new Audio();
       currentAudioRef.current = audio;
-      audio.preload = "auto";
-      audio.playbackRate = 1;
-      audio.preservesPitch = true;
-      audio.onended = finish;
+      const preparedAudioError = options.preparedOnly
+        ? () => finish(false, true)
+        : playSpeechFallback;
+      configurePreparedAudio(audio, options.audioSrc, pace, finish, preparedAudioError);
       if (options.preparedOnly) {
-        audio.onerror = finish;
-        audio.play().catch(finish);
+        audio.play().catch(() => finish(false, true));
       } else {
-        audio.onerror = playSpeechFallback;
         audio.play().catch(playSpeechFallback);
       }
       return;
@@ -1103,7 +1129,15 @@ function Brand({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function NarrationSettings({ narrator, brief = false }: { narrator: Narrator; brief?: boolean }) {
+function NarrationSettings({
+  narrator,
+  brief = false,
+  onPaceChange,
+}: {
+  narrator: Narrator;
+  brief?: boolean;
+  onPaceChange?: () => void;
+}) {
   const paceDetails = NARRATION_PACES[narrator.pace] ?? NARRATION_PACES.child;
 
   return (
@@ -1124,6 +1158,7 @@ function NarrationSettings({ narrator, brief = false }: { narrator: Narrator; br
                 value={value}
                 checked={narrator.pace === value}
                 onChange={() => {
+                  onPaceChange?.();
                   narrator.stop();
                   narrator.setPace(value as NarrationPace);
                 }}
@@ -1337,7 +1372,7 @@ function Shelf({
         <div className="parent-corner__body">
           <div>
             <h3>本网站怎样使用</h3>
-            <p>建议每次 8–12 分钟：孩子先选一本绘本，再逐页看图、听故事。需要时可以分别听左页或右页，翻页不会自动播放。</p>
+            <p>建议每次 8–12 分钟：孩子先选一本绘本，再逐页看图、听故事。需要跟读时可以分别听左页或右页；睡前可点击 Play whole story，网站会读完一页后自动翻页。</p>
             <p>阅读进度只保存在当前设备。</p>
             <NarrationSettings narrator={narrator} />
           </div>
@@ -1424,7 +1459,12 @@ function StoryReader({
 }) {
   const [zoomed, setZoomed] = useState(false);
   const [storyMode, setStoryMode] = useState<"english" | "guide-zh">("english");
+  const [bedtimeAutoReading, setBedtimeAutoReading] = useState(false);
+  const [bedtimeFinished, setBedtimeFinished] = useState(false);
+  const [bedtimeError, setBedtimeError] = useState(false);
   const startX = useRef<number | null>(null);
+  const bedtimeRunRef = useRef(0);
+  const bedtimeTimerRef = useRef<number | null>(null);
   const current = book.pages[page];
   const currentSides = current.sides;
   const currentIsSpread = current.layout === "spread";
@@ -1471,6 +1511,22 @@ function StoryReader({
   const stopNarration = narrator.stop;
   const audioSourceFor = narrator.audioSourceFor;
 
+  const clearBedtimeTimer = useCallback(() => {
+    if (bedtimeTimerRef.current !== null) {
+      window.clearTimeout(bedtimeTimerRef.current);
+      bedtimeTimerRef.current = null;
+    }
+  }, []);
+
+  const stopBedtimeAutoReading = useCallback(() => {
+    bedtimeRunRef.current += 1;
+    clearBedtimeTimer();
+    setBedtimeAutoReading(false);
+    setBedtimeFinished(false);
+    setBedtimeError(false);
+    stopNarration();
+  }, [clearBedtimeTimer, stopNarration]);
+
   useEffect(() => {
     if (!pageHasBeenRead) onPageChange(page);
   }, [onPageChange, page, pageHasBeenRead]);
@@ -1484,27 +1540,22 @@ function StoryReader({
       const nextAudioSrc = storyMode === "guide-zh" ? nextGuide?.audioSrc : next.audioSrc;
       if (nextAudioSrc) {
         const audio = new Audio(audioSourceFor(nextAudioSrc));
-        audio.preload = "metadata";
+        audio.preload = bedtimeAutoReading ? "auto" : "metadata";
       }
     }
-  }, [audioSourceFor, book.pages, page, storyGuide?.pages, storyMode]);
+  }, [audioSourceFor, bedtimeAutoReading, book.pages, page, storyGuide?.pages, storyMode]);
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (zoomed && event.key === "Escape") {
-        setZoomed(false);
-        return;
-      }
-      if (event.key === "ArrowLeft" && page > 0) onPageChange(page - 1);
-      if (event.key === "ArrowRight" && page < book.pages.length - 1) onPageChange(page + 1);
-      if (event.key === "Home") onPageChange(0);
-      if (event.key === "End") onPageChange(book.pages.length - 1);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [book.pages.length, onPageChange, page, zoomed]);
+    const stopForBrowserNavigation = () => stopBedtimeAutoReading();
+    window.addEventListener("popstate", stopForBrowserNavigation);
+    return () => window.removeEventListener("popstate", stopForBrowserNavigation);
+  }, [stopBedtimeAutoReading]);
 
-  useEffect(() => () => stopNarration(), [stopNarration]);
+  useEffect(() => () => {
+    bedtimeRunRef.current += 1;
+    clearBedtimeTimer();
+    stopNarration();
+  }, [clearBedtimeTimer, stopNarration]);
 
   const pageVoiceKey = `${guideMode ? "guide-zh" : "english"}-${book.slug}-${page}`;
   const pageIsSpeaking = narrator.activeKey === pageVoiceKey;
@@ -1514,11 +1565,51 @@ function StoryReader({
   const showSideReadAlong = storyMode === "english" && Boolean(currentSides);
 
   const chooseStoryMode = (mode: "english" | "guide-zh") => {
-    narrator.stop();
+    stopBedtimeAutoReading();
     setStoryMode(mode);
   };
 
-  const playPage = (targetPage: number) => {
+  function finishBedtimeStory(targetPage: number, bedtimeRun: number) {
+    if (bedtimeRun !== bedtimeRunRef.current) return;
+    if (targetPage >= book.pages.length - 1) {
+      bedtimeRunRef.current += 1;
+      clearBedtimeTimer();
+      setBedtimeAutoReading(false);
+      setBedtimeFinished(true);
+      setBedtimeError(false);
+    }
+  }
+
+  function failBedtimeStory(bedtimeRun: number) {
+    if (bedtimeRun !== bedtimeRunRef.current) return;
+    bedtimeRunRef.current += 1;
+    clearBedtimeTimer();
+    setBedtimeAutoReading(false);
+    setBedtimeFinished(false);
+    setBedtimeError(true);
+  }
+
+  function continueBedtimeStory(targetPage: number, bedtimeRun: number) {
+    if (bedtimeRun !== bedtimeRunRef.current) return;
+    if (targetPage >= book.pages.length - 1) {
+      finishBedtimeStory(targetPage, bedtimeRun);
+      return;
+    }
+
+    const nextPage = targetPage + 1;
+    clearBedtimeTimer();
+    bedtimeTimerRef.current = window.setTimeout(() => {
+      if (bedtimeRun !== bedtimeRunRef.current) return;
+      onPageChange(nextPage);
+      // Let the new picture appear before the narrator begins the next page.
+      bedtimeTimerRef.current = window.setTimeout(() => {
+        if (bedtimeRun !== bedtimeRunRef.current) return;
+        playPage(nextPage, bedtimeRun);
+      }, 260);
+    }, 700);
+  }
+
+  function playPage(targetPage: number, bedtimeRun?: number) {
     const target = book.pages[targetPage];
     const targetGuide = storyGuide?.pages[targetPage];
     const targetUsesGuide = storyMode === "guide-zh" && Boolean(targetGuide);
@@ -1529,6 +1620,12 @@ function StoryReader({
         activeKey: targetVoiceKey,
         audioSrc: targetGuide.audioSrc,
         preparedOnly: true,
+        onComplete: bedtimeRun === undefined
+          ? undefined
+          : () => continueBedtimeStory(targetPage, bedtimeRun),
+        onError: bedtimeRun === undefined
+          ? undefined
+          : () => failBedtimeStory(bedtimeRun),
       });
       return;
     }
@@ -1537,11 +1634,47 @@ function StoryReader({
         purpose: "story",
         activeKey: targetVoiceKey,
         audioSrc: target.audioSrc,
+        onComplete: bedtimeRun === undefined
+          ? undefined
+          : () => continueBedtimeStory(targetPage, bedtimeRun),
+        onError: bedtimeRun === undefined
+          ? undefined
+          : () => failBedtimeStory(bedtimeRun),
       });
+      return;
     }
+    if (bedtimeRun !== undefined) {
+      // Picture-only pages stay on screen briefly, then the story continues.
+      clearBedtimeTimer();
+      bedtimeTimerRef.current = window.setTimeout(
+        () => continueBedtimeStory(targetPage, bedtimeRun),
+        1400,
+      );
+    }
+  }
+
+  const startBedtimeStory = () => {
+    clearBedtimeTimer();
+    stopNarration();
+    const bedtimeRun = ++bedtimeRunRef.current;
+    const startPage = bedtimeFinished ? 0 : page;
+    setBedtimeAutoReading(true);
+    setBedtimeFinished(false);
+    setBedtimeError(false);
+    if (startPage !== page) onPageChange(startPage);
+    playPage(startPage, bedtimeRun);
+  };
+
+  const toggleBedtimeStory = () => {
+    if (bedtimeAutoReading) stopBedtimeAutoReading();
+    else startBedtimeStory();
   };
 
   const playCurrentPage = () => {
+    if (bedtimeAutoReading) {
+      stopBedtimeAutoReading();
+      return;
+    }
     if (pageIsSpeaking) {
       narrator.stop();
       return;
@@ -1552,6 +1685,7 @@ function StoryReader({
   const playPageSide = (side: "left" | "right") => {
     const pageSide = currentSides?.[side];
     const key = sideVoiceKey(side);
+    if (bedtimeAutoReading) stopBedtimeAutoReading();
     if (narrator.activeKey === key) {
       narrator.stop();
       return;
@@ -1564,11 +1698,32 @@ function StoryReader({
     });
   };
 
-  const movePage = (next: number) => {
+  const movePage = useCallback((next: number) => {
     const targetPage = Math.max(0, Math.min(next, book.pages.length - 1));
+    stopBedtimeAutoReading();
     stopNarration();
     if (targetPage === page) return;
     onPageChange(targetPage);
+  }, [book.pages.length, onPageChange, page, stopBedtimeAutoReading, stopNarration]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (zoomed && event.key === "Escape") {
+        setZoomed(false);
+        return;
+      }
+      if (event.key === "ArrowLeft" && page > 0) movePage(page - 1);
+      if (event.key === "ArrowRight" && page < book.pages.length - 1) movePage(page + 1);
+      if (event.key === "Home") movePage(0);
+      if (event.key === "End") movePage(book.pages.length - 1);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [book.pages.length, movePage, page, zoomed]);
+
+  const exitReader = () => {
+    stopBedtimeAutoReading();
+    onBack();
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -1586,7 +1741,7 @@ function StoryReader({
   return (
     <main className="reader" style={{ "--book-colour": book.colour } as CSSProperties}>
       <header className="reader__header">
-        <button className="round-button" type="button" onClick={onBack} aria-label="Back to my bookshelf">←</button>
+        <button className="round-button" type="button" onClick={exitReader} aria-label="Back to my bookshelf">←</button>
         <div className="reader__title">
           <span>Now reading</span>
           <h1>{book.title}</h1>
@@ -1690,7 +1845,33 @@ function StoryReader({
                     {guideMode && !pageIsSpeaking && <small>中文理解 · 完整 English · 跟读</small>}
                   </span>
                 </button>
+                <button
+                  className={`listen-button bedtime-button ${bedtimeAutoReading ? "is-speaking" : ""}`}
+                  type="button"
+                  onClick={toggleBedtimeStory}
+                  disabled={!narrator.supported}
+                  aria-pressed={bedtimeAutoReading}
+                  aria-label={bedtimeAutoReading ? "Stop bedtime story" : "Play whole story with automatic page turns"}
+                >
+                  <span className="listen-button__icon" aria-hidden="true">{bedtimeAutoReading ? "■" : "🌙"}</span>
+                  <span>
+                    <strong>{bedtimeAutoReading ? "Stop bedtime story" : bedtimeFinished ? "Play story again" : "Play whole story"}</strong>
+                    <small>{bedtimeAutoReading
+                      ? `Auto-reading · Page ${page + 1} / ${book.pages.length}`
+                      : bedtimeFinished
+                        ? "Story finished · 从头再听"
+                        : bedtimeError
+                          ? "Audio paused · Tap to try again"
+                          : `自动翻页朗读 · From page ${page + 1}`}</small>
+                  </span>
+                </button>
               </div>
+              {(bedtimeFinished || bedtimeError) && (
+                <p className={`bedtime-status ${bedtimeError ? "is-error" : ""}`} role="status">
+                  <span aria-hidden="true">{bedtimeError ? "☁️" : "🌙"}</span>
+                  {bedtimeError ? "朗读暂时中断了，可以点按钮重试。" : "Story finished · 故事讲完了"}
+                </p>
+              )}
               {guideMode && currentGuide ? (
                 <section className="story-guide-cue" aria-label={`Chinese story guide for page ${page + 1}`}>
                   <span className="story-guide-cue__coverage">✓ 本页英文完整朗读</span>
@@ -1710,7 +1891,7 @@ function StoryReader({
                   </details>
                 </section>
               ) : (
-                <NarrationSettings narrator={narrator} brief />
+                <NarrationSettings narrator={narrator} brief onPaceChange={stopBedtimeAutoReading} />
               )}
               {onArtStudio && (
                 <section className={`art-reader-invite ${artObservation ? "is-observation" : ""}`}>
@@ -1751,7 +1932,7 @@ function StoryReader({
               <div><small>You finished the story!</small><strong>Would you like to read it again?</strong></div>
               <div>
                 <button className="button button--light" type="button" onClick={() => movePage(0)}>↻ Read again</button>
-                <button className="button button--green" type="button" onClick={onBack}>Choose another book <span aria-hidden="true">→</span></button>
+                <button className="button button--green" type="button" onClick={exitReader}>Choose another book <span aria-hidden="true">→</span></button>
               </div>
             </div>
           )}
@@ -1797,13 +1978,26 @@ function StoryReader({
 
       <footer className="reader__footer">
         <button type="button" onClick={() => movePage(page - 1)} disabled={page === 0} aria-label="Previous page">←</button>
-        <div className="page-progress">
-          <div><span style={{ width: `${((page + 1) / book.pages.length) * 100}%` }} /></div>
-          <strong>Page {page + 1} <span>of {book.pages.length}</span></strong>
-        </div>
+        {bedtimeAutoReading ? (
+          <button className="bedtime-footer-status" type="button" onClick={stopBedtimeAutoReading} aria-label="Stop bedtime story">
+            <span aria-hidden="true">■</span>
+            <strong>Auto-reading {page + 1} / {book.pages.length}</strong>
+          </button>
+        ) : (
+          <div className="page-progress">
+            <div><span style={{ width: `${((page + 1) / book.pages.length) * 100}%` }} /></div>
+            <strong>Page {page + 1} <span>of {book.pages.length}</span></strong>
+          </div>
+        )}
         <button type="button" onClick={() => movePage(page + 1)} disabled={isLast} aria-label="Next page">→</button>
       </footer>
-      <p className="sr-only" aria-live="polite">Page {page + 1} of {book.pages.length}</p>
+      <p className="sr-only" aria-live="polite">
+        {bedtimeAutoReading
+          ? `Auto-reading page ${page + 1} of ${book.pages.length}`
+          : bedtimeFinished
+            ? "Story finished"
+            : `Page ${page + 1} of ${book.pages.length}`}
+      </p>
 
       {zoomed && (
         <div className="page-zoom" role="dialog" aria-modal="true" aria-label={`Large view of page ${page + 1}`}>
