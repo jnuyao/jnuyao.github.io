@@ -16,7 +16,7 @@ const MAX_PAGE_BYTES = 500 * 1024;
 const BOOKS = [
   { directory: "Magnetic Max", slug: "magnetic-max" },
   { directory: "Willy and Hugh", slug: "willy-and-hugh", include: [1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] },
-  { directory: "Mr Gumpy's Outing", slug: "mr-gumpys-outing" },
+  { directory: "Mr Gumpy's Outing", slug: "mr-gumpys-outing", rePairFacingPages: true },
   { directory: "A Day in the Kitchen with Grandma", slug: "a-day-in-the-kitchen-with-grandma", include: [1, 3, 4, 5, 6, 7, 8, 9, 10] },
   { directory: "Life in a Shell", slug: "life-in-a-shell", include: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17] },
   { directory: "The Feast", slug: "the-feast", include: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] },
@@ -52,18 +52,20 @@ function numericPageNumber(filename) {
 }
 
 async function renderPage(input, output) {
-  let quality = 84;
   let buffer;
-  do {
-    buffer = await sharp(input)
-      .rotate()
-      .resize({ width: 2200, height: 2200, fit: "inside", withoutEnlargement: true })
-      .webp({ quality, effort: 4, smartSubsample: true })
-      .toBuffer();
-    quality -= 4;
-  } while (buffer.byteLength > MAX_PAGE_BYTES && quality >= 48);
+  for (const width of [2200, 2100, 2000, 1900, 1800, 1700, 1600]) {
+    for (let quality = 84; quality >= 48; quality -= 4) {
+      buffer = await sharp(input)
+        .rotate()
+        .resize({ width, height: 2200, fit: "inside", withoutEnlargement: true })
+        .webp({ quality, effort: 4, smartSubsample: true })
+        .toBuffer();
+      if (buffer.byteLength <= MAX_PAGE_BYTES) break;
+    }
+    if (buffer.byteLength <= MAX_PAGE_BYTES) break;
+  }
   if (buffer.byteLength > MAX_PAGE_BYTES) {
-    throw new Error(`Could not compress ${input} below ${MAX_PAGE_BYTES} bytes.`);
+    throw new Error(`Could not compress ${output} below ${MAX_PAGE_BYTES} bytes.`);
   }
   await writeFile(output, buffer);
   return buffer.byteLength;
@@ -81,7 +83,68 @@ async function renderCover(input, output) {
     .toFile(output);
 }
 
-for (const { directory, slug, include } of selectedBooks) {
+async function extractHalf(input, side) {
+  const metadata = await sharp(input).metadata();
+  if (!metadata.width || !metadata.height || metadata.width < metadata.height * 1.3) {
+    throw new Error(`Expected a photographed two-page spread: ${input}`);
+  }
+  const midpoint = Math.floor(metadata.width / 2);
+  const left = side === "left" ? 0 : midpoint;
+  const width = side === "left" ? midpoint : metadata.width - midpoint;
+  return sharp(input)
+    .extract({ left, top: 0, width, height: metadata.height })
+    .png()
+    .toBuffer();
+}
+
+async function composeFacingPages(leftPage, rightPage) {
+  const [leftMetadata, rightMetadata] = await Promise.all([
+    sharp(leftPage).metadata(),
+    sharp(rightPage).metadata(),
+  ]);
+  const leftWidth = leftMetadata.width ?? 0;
+  const rightWidth = rightMetadata.width ?? 0;
+  const leftHeight = leftMetadata.height ?? 0;
+  const rightHeight = rightMetadata.height ?? 0;
+  const width = leftWidth + rightWidth;
+  const height = Math.max(leftHeight, rightHeight);
+  if (!leftWidth || !rightWidth || !leftHeight || !rightHeight) {
+    throw new Error("Could not read a page while composing a spread.");
+  }
+  return sharp({
+    create: {
+      width,
+      height,
+      channels: 3,
+      background: { r: 255, g: 255, b: 255 },
+    },
+  })
+    .composite([
+      { input: leftPage, left: 0, top: 0 },
+      { input: rightPage, left: leftWidth, top: 0 },
+    ])
+    .png()
+    .toBuffer();
+}
+
+async function rePairFacingPages(sourceDirectory, entries) {
+  if (entries.length < 3) throw new Error("Mr Gumpy's Outing needs a cover and photographed spreads.");
+  const physicalPages = [];
+  for (const entry of entries.slice(1)) {
+    const input = join(sourceDirectory, entry.filename);
+    physicalPages.push(await extractHalf(input, "left"));
+    physicalPages.push(await extractHalf(input, "right"));
+  }
+
+  const readingPages = [join(sourceDirectory, entries[0].filename), physicalPages[0]];
+  for (let index = 1; index < physicalPages.length - 1; index += 2) {
+    readingPages.push(await composeFacingPages(physicalPages[index], physicalPages[index + 1]));
+  }
+  readingPages.push(physicalPages.at(-1));
+  return readingPages;
+}
+
+for (const { directory, slug, include, rePairFacingPages: shouldRePairFacingPages } of selectedBooks) {
   const sourceDirectory = join(SOURCE_ROOT, directory);
   const entries = (await readdir(sourceDirectory))
     .map((filename) => ({ filename, page: numericPageNumber(filename) }))
@@ -93,9 +156,12 @@ for (const { directory, slug, include } of selectedBooks) {
   const pageDirectory = join(PAGE_ROOT, slug);
   await rm(pageDirectory, { recursive: true, force: true });
   await mkdir(pageDirectory, { recursive: true });
+  const readingPages = shouldRePairFacingPages
+    ? await rePairFacingPages(sourceDirectory, entries)
+    : entries.map((entry) => join(sourceDirectory, entry.filename));
   let totalBytes = 0;
-  for (let index = 0; index < entries.length; index += 1) {
-    const input = join(sourceDirectory, entries[index].filename);
+  for (let index = 0; index < readingPages.length; index += 1) {
+    const input = readingPages[index];
     const output = join(pageDirectory, `${String(index + 1).padStart(2, "0")}.webp`);
     totalBytes += await renderPage(input, output);
   }
@@ -103,6 +169,6 @@ for (const { directory, slug, include } of selectedBooks) {
   await renderCover(join(sourceDirectory, entries[0].filename), coverPath);
   const coverBytes = (await stat(coverPath)).size;
   process.stdout.write(
-    `${slug}: ${entries.length} pages, ${Math.round(totalBytes / 1024)} KiB pages, ${Math.round(coverBytes / 1024)} KiB cover\n`,
+    `${slug}: ${readingPages.length} pages, ${Math.round(totalBytes / 1024)} KiB pages, ${Math.round(coverBytes / 1024)} KiB cover\n`,
   );
 }

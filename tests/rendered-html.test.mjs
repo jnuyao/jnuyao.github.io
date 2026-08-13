@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { access, readFile, readdir } from "node:fs/promises";
 import test from "node:test";
+import sharp from "sharp";
 import ts from "typescript";
 
 const EXPECTED_PAGE_COUNTS = new Map([
@@ -15,7 +16,7 @@ const EXPECTED_PAGE_COUNTS = new Map([
   ["to-town", 9],
   ["walking-through-jungle", 14],
   ["lazy-duck", 12],
-  ["mr-gumpys-outing", 16],
+  ["mr-gumpys-outing", 17],
   ["a-day-in-the-kitchen-with-grandma", 9],
   ["life-in-a-shell", 16],
   ["the-growl", 9],
@@ -364,7 +365,7 @@ test("book data contains thirty-two complete stories with valid archived task me
   }
 });
 
-test("all 424 story images are referenced once and web-sized", async () => {
+test("all 425 story images are referenced once and web-sized", async () => {
   const books = await loadBookData();
   const referencedAssets = new Set();
   let pageTotal = 0;
@@ -405,8 +406,8 @@ test("all 424 story images are referenced once and web-sized", async () => {
     }
   }
 
-  assert.equal(pageTotal, 424);
-  assert.equal(wordlessTotal, 6);
+  assert.equal(pageTotal, 425);
+  assert.equal(wordlessTotal, 5);
 
   const pageFolders = (await readdir(new URL("../public/pages/", import.meta.url), {
     withFileTypes: true,
@@ -429,8 +430,38 @@ test("all 424 story images are referenced once and web-sized", async () => {
     diskAssets.push(...files.map((file) => `/pages/${slug}/${file}`));
   }
 
-  assert.equal(diskAssets.length, 424);
+  assert.equal(diskAssets.length, 425);
   assert.deepEqual([...referencedAssets].sort(), diskAssets.sort());
+});
+
+test("Mr Gumpy keeps page one single and pairs the printed 2-3, 4-5 sequence", async () => {
+  const books = await loadBookData();
+  const book = books.find((candidate) => candidate.slug === "mr-gumpys-outing");
+  assert.ok(book);
+  assert.equal(book.pages.length, 17);
+  assert.deepEqual(
+    book.pages.map((page) => page.layout),
+    ["single", "single", ...Array(14).fill("spread"), "single"],
+  );
+  assert.equal(book.pages[1].transcript, "This is Mr Gumpy.");
+  assert.equal(book.pages[2].transcript, "Mr Gumpy owned a boat and his house was by a river.");
+  assert.match(book.pages[3].transcript, /^One day Mr Gumpy went out in his boat/);
+  assert.equal(book.pages[13].transcript, "And into the water they fell.");
+  assert.match(book.pages[14].transcript, /^Then Mr Gumpy and the goat and the calf/);
+  assert.equal(book.pages[15].transcript, "");
+  assert.match(book.pages[16].transcript, /^“Goodbye,” said Mr Gumpy/);
+
+  for (const [index, page] of book.pages.entries()) {
+    const metadata = await sharp(
+      await readFile(new URL(`../public${page.src}`, import.meta.url)),
+    ).metadata();
+    const ratio = metadata.width / metadata.height;
+    if (index === 0 || index === 1 || index === 16) {
+      assert.ok(ratio < 1.3, `Mr Gumpy page ${index + 1} must remain a single portrait page`);
+    } else {
+      assert.ok(ratio > 1.6, `Mr Gumpy page ${index + 1} must be a two-page spread`);
+    }
+  }
 });
 
 test("all story images have audited single-page or physical left/right reading data", async () => {
@@ -482,9 +513,9 @@ test("all story images have audited single-page or physical left/right reading d
     }
   }
 
-  assert.equal(singlePages, 77);
-  assert.equal(spreadPages, 347);
-  assert.equal(spokenSides, 607);
+  assert.equal(singlePages, 79);
+  assert.equal(spreadPages, 346);
+  assert.equal(spokenSides, 605);
   assert.equal(reorderedSpreads, 3);
 });
 

@@ -11,7 +11,7 @@ export type StoryPageSides = {
 
 type PageSidePlan = null | number | readonly [left: string, right: string];
 
-// Audited against all 424 story images. null means a true single page;
+// Audited against all 425 story images. null means a true single page;
 // a number splits canonical text; a tuple preserves the three scans whose
 // physical left/right reading order differs from the stored whole-page text.
 const STORY_PAGE_SIDE_PLANS: Record<string, readonly PageSidePlan[]> = {
@@ -26,7 +26,7 @@ const STORY_PAGE_SIDE_PLANS: Record<string, readonly PageSidePlan[]> = {
   "mid-autumn-festival": [0,0,81,98,56,101,67,99],
   "first-day-hari-raya": [null,85,115,62,78,["My sister kneels down and says, “I'm sorry for the times I've been naughty.” She kisses Daddy's and Mummy's hands.","I kneel down and say, “I'm sorry too, for the times I've been naughty.” I kiss Mummy's and Daddy's hands."],91,88,143],
   "lazy-duck": [null,77,72,106,91,97,94,96,50,0,105,89],
-  "mr-gumpys-outing": [null,17,0,0,0,0,0,0,0,0,0,0,0,29,0,0],
+  "mr-gumpys-outing": [null,null,51,128,74,98,91,80,74,75,77,71,271,0,271,0,null],
   "a-day-in-the-kitchen-with-grandma": [null,64,103,125,145,60,135,75,96],
   "life-in-a-shell": [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
   "the-growl": [null,106,123,122,126,117,124,76,null],

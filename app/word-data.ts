@@ -595,7 +595,7 @@ export const WORD_SETS: Record<string, VocabularyWord[]> = {
       meaningZh: "河流",
       soundParts: ["riv", "er"],
       example: "His house was by a river.",
-      pageIndex: 1,
+      pageIndex: 2,
       icon: "🌊",
     },
     {
@@ -605,7 +605,7 @@ export const WORD_SETS: Record<string, VocabularyWord[]> = {
       meaningZh: "争吵",
       soundParts: ["squ", "ab", "ble"],
       example: "If you don't squabble.",
-      pageIndex: 2,
+      pageIndex: 3,
       icon: "🗣️",
     },
     {
@@ -615,7 +615,7 @@ export const WORD_SETS: Record<string, VocabularyWord[]> = {
       meaningZh: "咩咩叫",
       soundParts: ["bl", "eat", "ing"],
       example: "Don't keep bleating.",
-      pageIndex: 7,
+      pageIndex: 8,
       icon: "🐑",
     },
     {
@@ -625,7 +625,7 @@ export const WORD_SETS: Record<string, VocabularyWord[]> = {
       meaningZh: "踩踏",
       soundParts: ["tr", "am", "ple"],
       example: "If you don't trample about.",
-      pageIndex: 9,
+      pageIndex: 10,
       icon: "🐂",
     },
     {
@@ -635,7 +635,7 @@ export const WORD_SETS: Record<string, VocabularyWord[]> = {
       meaningZh: "倾斜了",
       soundParts: ["t", "ipp", "ed"],
       example: "The boat tipped.",
-      pageIndex: 11,
+      pageIndex: 12,
       icon: "🚣",
     },
   ],

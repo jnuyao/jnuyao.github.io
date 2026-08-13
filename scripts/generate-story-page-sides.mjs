@@ -41,7 +41,7 @@ const SPREAD_PAGE_INDICES = {
   "mid-autumn-festival": range(0, 7),
   "first-day-hari-raya": range(1, 8),
   "lazy-duck": range(1, 11),
-  "mr-gumpys-outing": range(1, 15),
+  "mr-gumpys-outing": range(2, 15),
   "a-day-in-the-kitchen-with-grandma": range(1, 8),
   "life-in-a-shell": [],
   "the-growl": range(1, 7),
@@ -124,11 +124,13 @@ const SIDE_OVERRIDES = {
 // are promoted to confirmed so the unresolved list remains actionable.
 const REVIEWED_ASSIGNMENTS = {
   "lazy-duck/11": "The narration is printed on the left; the right illustration has no canonical narration.",
-  "mr-gumpys-outing/3": "The rabbit dialogue is printed on the right; the left illustration is silent.",
-  "mr-gumpys-outing/4": "The cat dialogue is printed on the right; the left illustration is silent.",
-  "mr-gumpys-outing/6": "The pig dialogue is printed on the right; the left illustration is silent.",
-  "mr-gumpys-outing/10": "The goat dialogue is printed on the right; the left illustration is silent.",
-  "mr-gumpys-outing/11": "The cumulative boat sequence is printed on the right; the left illustration is silent.",
+  "mr-gumpys-outing/4": "The rabbit dialogue is printed on the left; the right illustration is silent.",
+  "mr-gumpys-outing/5": "The cat dialogue is printed on the left; the right illustration is silent.",
+  "mr-gumpys-outing/7": "The pig dialogue is printed on the left; the right illustration is silent.",
+  "mr-gumpys-outing/11": "The goat dialogue is printed on the left; the right illustration is silent.",
+  "mr-gumpys-outing/12": "The cumulative boat sequence is printed on the left; the right illustration is silent.",
+  "mr-gumpys-outing/13": "The fall-into-the-water sentence is printed on the right; the left illustration is silent.",
+  "mr-gumpys-outing/14": "The swim-home-and-tea narration is printed on the left; the right field illustration is silent.",
   "predators-and-prey/3": "The cheetah and gazelle speed text is on the left; Arctic Wolf versus Caribou begins on the right.",
   "predators-and-prey/5": "The child-facing Barn Owl versus Field Mouse narration is on the right; left-side labels and map furniture are excluded.",
   "predators-and-prey/7": "The child-facing Mongoose versus King Cobra narration is on the right; left-side labels and map furniture are excluded.",
@@ -476,8 +478,9 @@ async function main() {
   records.sort((left, right) =>
     bookOrder.get(left.slug) - bookOrder.get(right.slug) || left.pageIndex - right.pageIndex,
   );
-  if (records.length !== BOOKS.reduce((total, book) => total + book.pages.length, 0)) {
-    throw new Error(`Expected 424 page records, produced ${records.length}.`);
+  const expectedRecordCount = BOOKS.reduce((total, book) => total + book.pages.length, 0);
+  if (records.length !== expectedRecordCount) {
+    throw new Error(`Expected ${expectedRecordCount} page records, produced ${records.length}.`);
   }
 
   const candidatePages = records.map((record) => {

@@ -1,5 +1,5 @@
 export const DEFAULT_NARRATION_RATE = 0.68;
-export const PREPARED_AUDIO_CACHE_VERSION = "pro-aoede-p1-p2-sides-v2";
+export const PREPARED_AUDIO_CACHE_VERSION = "pro-aoede-p1-p2-sides-v3";
 export const STORY_GUIDE_AUDIO_CACHE_VERSION = "ride-bike-full-english-v2";
 export const DINOSAUR_PRONUNCIATION_AUDIO_CACHE_VERSION = "aoede-dino-names-v2";
 export const EVERYDAY_DISCOVERY_AUDIO_CACHE_VERSION = "aoede-everyday-discovery-v1";
