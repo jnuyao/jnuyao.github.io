@@ -41,6 +41,7 @@ const SPREAD_PAGE_INDICES = {
   "mid-autumn-festival": range(0, 7),
   "first-day-hari-raya": range(1, 8),
   "lazy-duck": range(1, 11),
+  "the-kings-cake": range(0, 11),
   "mr-gumpys-outing": range(2, 15),
   "a-day-in-the-kitchen-with-grandma": range(1, 8),
   "life-in-a-shell": [],

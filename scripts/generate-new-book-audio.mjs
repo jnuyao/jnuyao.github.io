@@ -35,6 +35,7 @@ const REQUEST_DELAY_MS = 6_500;
 const MAX_ATTEMPTS = 5;
 const NEW_BOOK_SLUGS = new Set([
   "lazy-duck",
+  "the-kings-cake",
   "mr-gumpys-outing",
   "a-day-in-the-kitchen-with-grandma",
   "life-in-a-shell",

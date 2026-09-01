@@ -16,6 +16,7 @@ const EXPECTED_PAGE_COUNTS = new Map([
   ["to-town", 9],
   ["walking-through-jungle", 14],
   ["lazy-duck", 12],
+  ["the-kings-cake", 12],
   ["mr-gumpys-outing", 17],
   ["a-day-in-the-kitchen-with-grandma", 9],
   ["life-in-a-shell", 16],
@@ -336,9 +337,9 @@ test("server-renders the child-first Story Garden bookshelf", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("book data contains thirty-two complete stories with valid archived task metadata", async () => {
+test("book data contains thirty-three complete stories with valid archived task metadata", async () => {
   const books = await loadBookData();
-  assert.equal(books.length, 32);
+  assert.equal(books.length, 33);
 
   const actualSlugs = books.map((book) => book.slug).sort();
   assert.deepEqual(actualSlugs, [...EXPECTED_PAGE_COUNTS.keys()].sort());
@@ -365,7 +366,7 @@ test("book data contains thirty-two complete stories with valid archived task me
   }
 });
 
-test("all 425 story images are referenced once and web-sized", async () => {
+test("all 437 story images are referenced once and web-sized", async () => {
   const books = await loadBookData();
   const referencedAssets = new Set();
   let pageTotal = 0;
@@ -406,7 +407,7 @@ test("all 425 story images are referenced once and web-sized", async () => {
     }
   }
 
-  assert.equal(pageTotal, 425);
+  assert.equal(pageTotal, 437);
   assert.equal(wordlessTotal, 5);
 
   const pageFolders = (await readdir(new URL("../public/pages/", import.meta.url), {
@@ -430,7 +431,7 @@ test("all 425 story images are referenced once and web-sized", async () => {
     diskAssets.push(...files.map((file) => `/pages/${slug}/${file}`));
   }
 
-  assert.equal(diskAssets.length, 425);
+  assert.equal(diskAssets.length, 437);
   assert.deepEqual([...referencedAssets].sort(), diskAssets.sort());
 });
 
@@ -462,6 +463,22 @@ test("Mr Gumpy keeps page one single and pairs the printed 2-3, 4-5 sequence", a
       assert.ok(ratio > 1.6, `Mr Gumpy page ${index + 1} must be a two-page spread`);
     }
   }
+});
+
+test("The King's Cake joins source pages one and two, then keeps every later spread", async () => {
+  const books = await loadBookData();
+  const book = books.find((candidate) => candidate.slug === "the-kings-cake");
+  assert.ok(book);
+  assert.equal(book.pages.length, 12);
+  assert.deepEqual(book.pages.map((page) => page.layout), Array(12).fill("spread"));
+  assert.equal(book.pages[0].transcript, "The King's Cake.");
+  assert.match(book.pages[1].transcript, /^The king had a cake for his birthday/);
+  assert.match(book.pages[11].transcript, /^“Now you can eat your cake,”/);
+
+  const first = await sharp(
+    await readFile(new URL("../public/pages/the-kings-cake/01.webp", import.meta.url)),
+  ).metadata();
+  assert.ok(first.width / first.height > 1.6, "the cover and title page must form one wide spread");
 });
 
 test("all story images have audited single-page or physical left/right reading data", async () => {
@@ -514,8 +531,8 @@ test("all story images have audited single-page or physical left/right reading d
   }
 
   assert.equal(singlePages, 79);
-  assert.equal(spreadPages, 346);
-  assert.equal(spokenSides, 605);
+  assert.equal(spreadPages, 358);
+  assert.equal(spokenSides, 617);
   assert.equal(reorderedSpreads, 3);
 });
 
@@ -631,8 +648,8 @@ test("all whole-page, left/right, and archived task narration has valid MP3 trac
     }
   }
 
-  assert.equal(audioTotal, 1153);
-  assert.equal(referencedAudio.size, 1153);
+  assert.equal(audioTotal, 1181);
+  assert.equal(referencedAudio.size, 1181);
 
   const audioFolders = (await readdir(new URL("../public/audio/", import.meta.url), {
     withFileTypes: true,
@@ -674,7 +691,7 @@ test("all whole-page, left/right, and archived task narration has valid MP3 trac
     diskAudio.push(...files.map((file) => `/audio/${slug}/${file}`));
   }
 
-  assert.equal(diskAudio.length, 1153);
+  assert.equal(diskAudio.length, 1181);
   assert.deepEqual([...referencedAudio].sort(), diskAudio.sort());
 
   for (const [slug] of EXPECTED_PAGE_COUNTS) {
@@ -1419,13 +1436,13 @@ test("Moonlight Market routing stays book-specific and keeps independent progres
   );
 });
 
-test("keeps the thirty-two-cover shelf and removes disposable starter output", async () => {
+test("keeps the thirty-three-cover shelf and removes disposable starter output", async () => {
   const [packageJson, covers] = await Promise.all([
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readdir(new URL("../public/books/", import.meta.url)),
   ]);
 
-  assert.equal(covers.filter((file) => file.endsWith(".jpg")).length, 32);
+  assert.equal(covers.filter((file) => file.endsWith(".jpg")).length, 33);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   await assert.rejects(access(new URL("../app/_sites-preview/", import.meta.url)));
   await access(new URL("../public/favicon.png", import.meta.url));

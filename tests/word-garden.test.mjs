@@ -107,14 +107,14 @@ async function loadCourseModules() {
   }
 }
 
-test("thirty-two books each expose five unique, story-grounded words", async () => {
+test("the archived thirty-two-book Word Garden remains complete and story-grounded", async () => {
   const { bookData, wordData } = await loadCourseModules();
-  assert.equal(bookData.BOOKS.length, 32);
+  assert.equal(bookData.BOOKS.length, 33);
   assert.equal(wordData.WORDS_PER_BOOK, 5);
   assert.deepEqual(Object.keys(wordData.WORD_SETS).sort(), [...BOOK_SLUGS].sort());
 
   let total = 0;
-  for (const book of bookData.BOOKS) {
+  for (const book of bookData.BOOKS.filter((candidate) => BOOK_SLUGS.includes(candidate.slug))) {
     const words = wordData.WORD_SETS[book.slug];
     assert.equal(words.length, 5, `${book.slug} word count`);
     assert.equal(new Set(words.map((word) => word.id)).size, 5, `${book.slug} word IDs`);

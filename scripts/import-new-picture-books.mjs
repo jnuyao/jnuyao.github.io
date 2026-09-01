@@ -22,6 +22,7 @@ const BOOKS = [
   { directory: "The Feast", slug: "the-feast", include: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] },
   { directory: "The Growl", slug: "the-growl" },
   { directory: "Lazy Duck", slug: "lazy-duck", include: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
+  { directory: "The King's Cake", slug: "the-kings-cake", joinFirstTwo: true },
   { directory: "The Gruffalo", slug: "the-gruffalo", include: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] },
   { directory: "Predators and Prey", slug: "predators-and-prey", include: [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] },
   { directory: "The Stars of Chek Jawa", slug: "the-stars-of-chek-jawa" },
@@ -127,6 +128,24 @@ async function composeFacingPages(leftPage, rightPage) {
     .toBuffer();
 }
 
+async function composePortraitPair(leftInput, rightInput) {
+  const pageWidth = 1500;
+  const pageHeight = 1800;
+  const [leftPage, rightPage] = await Promise.all(
+    [leftInput, rightInput].map((input) => sharp(input)
+      .rotate()
+      .resize(pageWidth, pageHeight, {
+        fit: "contain",
+        background: { r: 255, g: 255, b: 255 },
+        withoutEnlargement: false,
+      })
+      .flatten({ background: { r: 255, g: 255, b: 255 } })
+      .png()
+      .toBuffer()),
+  );
+  return composeFacingPages(leftPage, rightPage);
+}
+
 async function rePairFacingPages(sourceDirectory, entries) {
   if (entries.length < 3) throw new Error("Mr Gumpy's Outing needs a cover and photographed spreads.");
   const physicalPages = [];
@@ -144,7 +163,13 @@ async function rePairFacingPages(sourceDirectory, entries) {
   return readingPages;
 }
 
-for (const { directory, slug, include, rePairFacingPages: shouldRePairFacingPages } of selectedBooks) {
+for (const {
+  directory,
+  slug,
+  include,
+  rePairFacingPages: shouldRePairFacingPages,
+  joinFirstTwo,
+} of selectedBooks) {
   const sourceDirectory = join(SOURCE_ROOT, directory);
   const entries = (await readdir(sourceDirectory))
     .map((filename) => ({ filename, page: numericPageNumber(filename) }))
@@ -156,9 +181,22 @@ for (const { directory, slug, include, rePairFacingPages: shouldRePairFacingPage
   const pageDirectory = join(PAGE_ROOT, slug);
   await rm(pageDirectory, { recursive: true, force: true });
   await mkdir(pageDirectory, { recursive: true });
-  const readingPages = shouldRePairFacingPages
-    ? await rePairFacingPages(sourceDirectory, entries)
-    : entries.map((entry) => join(sourceDirectory, entry.filename));
+  let readingPages;
+  if (shouldRePairFacingPages) {
+    readingPages = await rePairFacingPages(sourceDirectory, entries);
+  } else if (joinFirstTwo) {
+    if (entries.length < 2) throw new Error(`${slug} needs at least two portrait pages.`);
+    const firstSpread = await composePortraitPair(
+      join(sourceDirectory, entries[0].filename),
+      join(sourceDirectory, entries[1].filename),
+    );
+    readingPages = [
+      firstSpread,
+      ...entries.slice(2).map((entry) => join(sourceDirectory, entry.filename)),
+    ];
+  } else {
+    readingPages = entries.map((entry) => join(sourceDirectory, entry.filename));
+  }
   let totalBytes = 0;
   for (let index = 0; index < readingPages.length; index += 1) {
     const input = readingPages[index];
