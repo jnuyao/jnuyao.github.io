@@ -109,7 +109,7 @@ async function loadCourseModules() {
 
 test("the archived thirty-two-book Word Garden remains complete and story-grounded", async () => {
   const { bookData, wordData } = await loadCourseModules();
-  assert.equal(bookData.BOOKS.length, 33);
+  assert.equal(bookData.BOOKS.length, 34);
   assert.equal(wordData.WORDS_PER_BOOK, 5);
   assert.deepEqual(Object.keys(wordData.WORD_SETS).sort(), [...BOOK_SLUGS].sort());
 

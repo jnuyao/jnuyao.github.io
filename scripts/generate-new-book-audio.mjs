@@ -36,6 +36,7 @@ const MAX_ATTEMPTS = 5;
 const NEW_BOOK_SLUGS = new Set([
   "lazy-duck",
   "the-kings-cake",
+  "chicken-rice",
   "mr-gumpys-outing",
   "a-day-in-the-kitchen-with-grandma",
   "life-in-a-shell",

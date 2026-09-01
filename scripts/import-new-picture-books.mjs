@@ -23,6 +23,7 @@ const BOOKS = [
   { directory: "The Growl", slug: "the-growl" },
   { directory: "Lazy Duck", slug: "lazy-duck", include: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
   { directory: "The King's Cake", slug: "the-kings-cake", joinFirstTwo: true },
+  { directory: "Chicken Rice", slug: "chicken-rice", joinFirstTwo: true },
   { directory: "The Gruffalo", slug: "the-gruffalo", include: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] },
   { directory: "Predators and Prey", slug: "predators-and-prey", include: [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] },
   { directory: "The Stars of Chek Jawa", slug: "the-stars-of-chek-jawa" },

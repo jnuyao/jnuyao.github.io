@@ -42,6 +42,7 @@ const SPREAD_PAGE_INDICES = {
   "first-day-hari-raya": range(1, 8),
   "lazy-duck": range(1, 11),
   "the-kings-cake": range(0, 11),
+  "chicken-rice": range(0, 8),
   "mr-gumpys-outing": range(2, 15),
   "a-day-in-the-kitchen-with-grandma": range(1, 8),
   "life-in-a-shell": [],
