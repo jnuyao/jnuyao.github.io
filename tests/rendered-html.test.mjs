@@ -47,6 +47,7 @@ const LSRW_STEPS = ["listen", "speak", "read", "write"];
 const MAX_STORY_PAGE_BYTES = 500 * 1024;
 const MIN_STORY_AUDIO_BYTES = 4 * 1024;
 const MAX_STORY_AUDIO_BYTES = 2 * 1024 * 1024;
+const SUPPLEMENTAL_AUDIO_FOLDERS = ["dinosaur-close-reading"];
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -146,6 +147,32 @@ async function loadStoryGuideData() {
   ).toString("base64")}#${Date.now()}`;
   const dataModule = await import(moduleUrl);
   return dataModule.STORY_GUIDES;
+}
+
+async function loadDinosaurCloseReadingData() {
+  const dataUrl = new URL("../app/dinosaur-close-reading-data.ts", import.meta.url);
+  const source = await readFile(dataUrl, "utf8");
+  const transpiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+    fileName: "dinosaur-close-reading-data.ts",
+    reportDiagnostics: true,
+  });
+  const errors = (transpiled.diagnostics ?? []).filter(
+    (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
+  );
+  assert.deepEqual(
+    errors,
+    [],
+    "app/dinosaur-close-reading-data.ts must transpile cleanly",
+  );
+  const moduleUrl = `data:text/javascript;base64,${Buffer.from(
+    transpiled.outputText,
+  ).toString("base64")}#${Date.now()}`;
+  const dataModule = await import(moduleUrl);
+  return dataModule.DINOSAUR_CLOSE_READING_PAGE;
 }
 
 async function loadArtStudioData() {
@@ -590,6 +617,76 @@ test("Dinosaur uses a tight, wide reader treatment for its small reference text"
   assert.match(styles, /\.reader--reference-book\s+\.narration-settings summary\s*\{[\s\S]{0,160}min-height:\s*46px/);
 });
 
+test("Dinosaur printed pages 6–7 have clickable close-reading narration in both paces", async () => {
+  const [closeReadingPage, pageSource, styles] = await Promise.all([
+    loadDinosaurCloseReadingData(),
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.equal(closeReadingPage.bookSlug, "dinosaur-david-lambert");
+  assert.equal(closeReadingPage.pageIndex, 5);
+  assert.equal(closeReadingPage.printedPages, "6–7");
+  assert.equal(closeReadingPage.blocks.length, 26);
+  assert.equal(new Set(closeReadingPage.blocks.map((block) => block.id)).size, 26);
+
+  for (const block of closeReadingPage.blocks) {
+    assert.ok(block.title.trim(), `${block.id} needs a visible title`);
+    assert.ok(block.text.trim(), `${block.id} needs narration text`);
+    assert.match(
+      block.audioSrc,
+      /^\/audio\/dinosaur-close-reading\/page-06\/[a-z0-9-]+\.mp3$/,
+    );
+    const { left, top, width, height } = block.rect;
+    for (const value of [left, top, width, height]) {
+      assert.ok(Number.isFinite(value) && value > 0, `${block.id} needs a valid hotspot`);
+    }
+    assert.ok(left + width <= 100, `${block.id} hotspot exceeds the right edge`);
+    assert.ok(top + height <= 100, `${block.id} hotspot exceeds the bottom edge`);
+
+    for (const audioSrc of [
+      block.audioSrc,
+      block.audioSrc.replace(/^\/audio\//, "/audio-standard/"),
+    ]) {
+      const asset = await readFile(new URL(`../public${audioSrc}`, import.meta.url));
+      assert.ok(
+        asset.byteLength >= MIN_STORY_AUDIO_BYTES
+          && asset.byteLength <= MAX_STORY_AUDIO_BYTES,
+        `${audioSrc} must be a web-sized narration track`,
+      );
+      assert.ok(
+        asset.subarray(0, 3).toString("ascii") === "ID3"
+          || (asset[0] === 0xff && (asset[1] & 0xe0) === 0xe0),
+        `${audioSrc} must begin with ID3 or an MPEG audio frame`,
+      );
+    }
+  }
+
+  assert.match(pageSource, /className="close-reading-layer"/);
+  assert.match(pageSource, /preparedOnly:\s*true/);
+  assert.match(pageSource, /精读这一页/);
+  assert.match(styles, /\.close-reading-hotspot\s*\{/);
+  assert.match(styles, /\.reader--reference-book\s+\.close-reading-toggle\s*\{/);
+});
+
+test("reader page images stay passive and desktop paging controls are arrow only", async () => {
+  const [pageSource, styles] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.doesNotMatch(pageSource, /setZoomed|page-zoom|Open a larger view/);
+  assert.doesNotMatch(styles, /\.story-page__zoom|\.page-zoom/);
+  assert.match(
+    pageSource,
+    /reader__side reader__side--previous[\s\S]{0,420}aria-label="Previous page"[\s\S]{0,140}<span aria-hidden="true">←<\/span>\s*<\/button>/,
+  );
+  assert.match(
+    pageSource,
+    /reader__side reader__side--next[\s\S]{0,420}aria-label="Next page"[\s\S]{0,140}<span aria-hidden="true">→<\/span>\s*<\/button>/,
+  );
+});
+
 test("all story images have audited single-page or physical left/right reading data", async () => {
   const books = await loadBookData();
   let singlePages = 0;
@@ -768,8 +865,8 @@ test("all whole-page, left/right, and archived task narration has valid MP3 trac
     .sort();
   assert.deepEqual(
     audioFolders,
-    [...EXPECTED_PAGE_COUNTS.keys()].sort(),
-    "public/audio must contain exactly one folder per available story",
+    [...EXPECTED_PAGE_COUNTS.keys(), ...SUPPLEMENTAL_AUDIO_FOLDERS].sort(),
+    "public/audio must contain only available stories and audited supplemental narration",
   );
 
   const diskAudio = [];

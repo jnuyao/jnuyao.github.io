@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 import { BOOKS } from "../app/book-data.ts";
+import { DINOSAUR_CLOSE_READING_PAGE } from "../app/dinosaur-close-reading-data.ts";
 import { buildStoryNarrationSegments, prepareSpeechText } from "../app/narration.ts";
 import { proPacingSettingsForJob } from "./aoede-pro-contract.mjs";
 
@@ -196,7 +197,7 @@ function wordCount(text) {
 function planJobs() {
   const selected = BOOKS.filter((book) => NEW_BOOK_SLUGS.has(book.slug));
   if (selected.length !== NEW_BOOK_SLUGS.size) throw new Error("One or more new books are missing from BOOKS.");
-  const jobs = selected.flatMap((book) => {
+  const bookJobs = selected.flatMap((book) => {
     const pages = book.pages.flatMap((page, index) => {
       if (!page.audioSrc || !page.transcript.trim()) return [];
       const file = `${String(index + 1).padStart(2, "0")}.mp3`;
@@ -227,7 +228,18 @@ function planJobs() {
       childPath: `audio/${book.slug}/${taskType}.mp3`,
     }));
     return [...pages, ...tasks];
-  }).map((job) => {
+  });
+  const closeReadingJobs = DINOSAUR_CLOSE_READING_PAGE.blocks.map((block) => ({
+    id: `dinosaur-close-reading/page-06/${block.id}`,
+    bookSlug: DINOSAUR_CLOSE_READING_PAGE.bookSlug,
+    bookTitle: "Dinosaur close reading · printed pages 6–7",
+    kind: "story",
+    taskType: null,
+    displayText: block.speechText ?? block.text,
+    standardPath: `audio-standard/dinosaur-close-reading/page-06/${block.id}.mp3`,
+    childPath: `audio/dinosaur-close-reading/page-06/${block.id}.mp3`,
+  }));
+  const jobs = [...bookJobs, ...closeReadingJobs].map((job) => {
     const purpose = job.kind === "story" ? "story" : "practice";
     const spokenText = buildStoryNarrationSegments(job.displayText, purpose)
       .map((segment) => segment.text)

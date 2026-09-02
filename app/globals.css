@@ -1098,15 +1098,14 @@ p {
 .reader__side {
   position: sticky;
   top: 42svh;
-  min-width: 68px;
-  min-height: 70px;
+  min-width: 58px;
+  min-height: 62px;
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 10px 5px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
   background: rgba(255, 255, 255, 0.78);
   box-shadow: 0 9px 24px rgba(23, 60, 50, 0.07);
   font-weight: 900;
@@ -1114,11 +1113,8 @@ p {
 }
 
 .reader__side span {
-  font-size: 25px;
-}
-
-.reader__side small {
-  font-size: 11px;
+  font-size: 34px;
+  line-height: 1;
 }
 
 .reader__side:disabled {
@@ -1154,7 +1150,6 @@ p {
   display: block;
   overflow: hidden;
   background: #f1eee7;
-  cursor: zoom-in;
 }
 
 .story-page__image-button img {
@@ -1164,6 +1159,100 @@ p {
   margin: 0 auto;
   object-fit: contain;
   user-select: none;
+}
+
+.story-page__image-stage {
+  position: relative;
+}
+
+.close-reading-layer {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  pointer-events: none;
+}
+
+.close-reading-hotspot {
+  position: absolute;
+  left: var(--block-left);
+  top: var(--block-top);
+  width: var(--block-width);
+  height: var(--block-height);
+  min-width: 25px;
+  min-height: 25px;
+  border: 2px solid rgba(204, 102, 43, 0.85);
+  border-radius: 6px;
+  padding: 0;
+  background: rgba(255, 214, 118, 0.09);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.62);
+  color: white;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.close-reading-hotspot > span {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 22px;
+  height: 22px;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #c9652f;
+  box-shadow: 0 2px 6px rgba(44, 38, 26, 0.25);
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.close-reading-hotspot:hover,
+.close-reading-hotspot:focus-visible {
+  border-color: #8d3f1f;
+  background: rgba(255, 205, 86, 0.24);
+  outline: 0;
+}
+
+.close-reading-hotspot.is-speaking {
+  border-color: #c84432;
+  background: rgba(255, 118, 92, 0.23);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.78), 0 0 0 6px rgba(200, 68, 50, 0.22);
+}
+
+.close-reading-hotspot.is-speaking > span {
+  background: #c84432;
+}
+
+.close-reading-hint {
+  margin-top: 5px;
+  border: 1px solid rgba(193, 101, 47, 0.22);
+  border-radius: 10px;
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff6df;
+  color: #713a22;
+}
+
+.close-reading-hint > span:first-child {
+  font-size: 16px;
+}
+
+.close-reading-hint strong,
+.close-reading-hint small {
+  display: block;
+}
+
+.close-reading-hint strong {
+  font-size: 11px;
+}
+
+.close-reading-hint small {
+  margin-top: 1px;
+  color: #926146;
+  font-size: 8px;
+  font-weight: 750;
 }
 
 .reader--reference-book .reader__stage {
@@ -1220,6 +1309,16 @@ p {
   box-shadow: 0 4px 0 #352d4d;
 }
 
+.reader--reference-book .close-reading-toggle {
+  background: #b65f31;
+  box-shadow: 0 4px 0 #7f3f20;
+}
+
+.reader--reference-book .close-reading-toggle.is-selected {
+  background: #d9783a;
+  box-shadow: 0 4px 0 #934a25;
+}
+
 .reader--reference-book .listen-button__icon {
   width: 31px;
   height: 31px;
@@ -1259,22 +1358,6 @@ p {
 
 .reader--reference-book .narration-settings summary small {
   font-size: 8px;
-}
-
-.story-page__zoom {
-  position: absolute;
-  z-index: 2;
-  right: 12px;
-  bottom: 12px;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 3px 12px rgba(20, 35, 25, 0.18);
-  font-size: 18px;
-  font-weight: 900;
 }
 
 .story-page__side-listeners {
@@ -1842,44 +1925,6 @@ p {
 
 .reader__footer {
   display: none;
-}
-
-.page-zoom {
-  position: fixed;
-  z-index: 100;
-  inset: 0;
-  padding: 70px 20px 20px;
-  overflow: hidden;
-  background: rgba(15, 30, 25, 0.96);
-}
-
-.page-zoom__close {
-  position: fixed;
-  z-index: 2;
-  top: max(14px, env(safe-area-inset-top));
-  right: 18px;
-  min-height: 46px;
-  border: 0;
-  border-radius: 999px;
-  padding: 9px 17px;
-  background: white;
-  color: var(--ink);
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.page-zoom__scroll {
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  overscroll-behavior: contain;
-}
-
-.page-zoom__scroll img {
-  width: min(1600px, 180vw);
-  max-width: none;
-  margin: 0 auto;
-  border-radius: 10px;
 }
 
 /* Missions */
@@ -5656,9 +5701,6 @@ p {
   .page-progress > div span { height: 100%; display: block; border-radius: inherit; background: var(--book-colour); transition: width 200ms ease; }
   .page-progress strong { margin-top: 4px; display: block; text-align: center; font-size: 11px; }
   .page-progress strong span { color: var(--muted); font-weight: 750; }
-  .page-zoom { padding-inline: 8px; }
-  .page-zoom__scroll img { width: max(100%, 175vw); }
-
   .quest { padding-bottom: 28px; }
   .quest__book strong { max-width: 55vw; font-size: 12px; }
   .quest__book img { width: 32px; height: 40px; }

@@ -23,6 +23,10 @@ import {
 import { clearArtPhotos } from "./art-photo-store";
 import { DinosaurArtLab } from "./dinosaur-art-lab";
 import {
+  dinosaurCloseReadingPageFor,
+  type DinosaurCloseReadingBlock,
+} from "./dinosaur-close-reading-data";
+import {
   DINOSAUR_ART_LESSON_IDS,
   dinosaurArtLessonById,
   isDinosaurArtBook,
@@ -1457,8 +1461,8 @@ function StoryReader({
   onDinosaurArt?: () => void;
   onMoonlightMarket?: (missionId: MidAutumnMissionId | null) => void;
 }) {
-  const [zoomed, setZoomed] = useState(false);
   const [storyMode, setStoryMode] = useState<"english" | "guide-zh">("english");
+  const [closeReadingEnabled, setCloseReadingEnabled] = useState(false);
   const [bedtimeAutoReading, setBedtimeAutoReading] = useState(false);
   const [bedtimeFinished, setBedtimeFinished] = useState(false);
   const [bedtimeError, setBedtimeError] = useState(false);
@@ -1472,6 +1476,7 @@ function StoryReader({
   const artStudio = artStudioForBook(book.slug);
   const artObservation = artStudio?.observations.find((item) => item.pageIndex === page) ?? null;
   const currentGuide = storyGuide?.pages[page] ?? null;
+  const closeReadingPage = dinosaurCloseReadingPageFor(book.slug, page);
   const guideMode = storyMode === "guide-zh" && Boolean(currentGuide);
   const isLast = page === book.pages.length - 1;
   const pageHasBeenRead = bookProgress.readPages.includes(page);
@@ -1563,6 +1568,10 @@ function StoryReader({
   const leftPageIsSpeaking = narrator.activeKey === sideVoiceKey("left");
   const rightPageIsSpeaking = narrator.activeKey === sideVoiceKey("right");
   const showSideReadAlong = storyMode === "english" && Boolean(currentSides);
+  const closeReadingVoiceKey = (blockId: string) => `close-reading-${book.slug}-${page}-${blockId}`;
+  const activeCloseReadingBlock = closeReadingPage?.blocks.find(
+    (block) => narrator.activeKey === closeReadingVoiceKey(block.id),
+  ) ?? null;
 
   const chooseStoryMode = (mode: "english" | "guide-zh") => {
     stopBedtimeAutoReading();
@@ -1698,20 +1707,38 @@ function StoryReader({
     });
   };
 
+  const toggleCloseReading = () => {
+    stopBedtimeAutoReading();
+    narrator.stop();
+    setCloseReadingEnabled((enabled) => !enabled);
+  };
+
+  const playCloseReadingBlock = (block: DinosaurCloseReadingBlock) => {
+    const key = closeReadingVoiceKey(block.id);
+    if (bedtimeAutoReading) stopBedtimeAutoReading();
+    if (narrator.activeKey === key) {
+      narrator.stop();
+      return;
+    }
+    narrator.speak(block.speechText ?? block.text, {
+      purpose: "story",
+      activeKey: key,
+      audioSrc: block.audioSrc,
+      preparedOnly: true,
+    });
+  };
+
   const movePage = useCallback((next: number) => {
     const targetPage = Math.max(0, Math.min(next, book.pages.length - 1));
     stopBedtimeAutoReading();
     stopNarration();
     if (targetPage === page) return;
+    setCloseReadingEnabled(false);
     onPageChange(targetPage);
   }, [book.pages.length, onPageChange, page, stopBedtimeAutoReading, stopNarration]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (zoomed && event.key === "Escape") {
-        setZoomed(false);
-        return;
-      }
       if (event.key === "ArrowLeft" && page > 0) movePage(page - 1);
       if (event.key === "ArrowRight" && page < book.pages.length - 1) movePage(page + 1);
       if (event.key === "Home") movePage(0);
@@ -1719,7 +1746,7 @@ function StoryReader({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [book.pages.length, movePage, page, zoomed]);
+  }, [book.pages.length, movePage, page]);
 
   const exitReader = () => {
     stopBedtimeAutoReading();
@@ -1763,22 +1790,61 @@ function StoryReader({
           disabled={page === 0}
           aria-label="Previous page"
         >
-          <span aria-hidden="true">←</span><small>Back</small>
+          <span aria-hidden="true">←</span>
         </button>
 
         <section className="story-page" aria-label={`Page ${page + 1} of ${book.pages.length}`}>
           <div className="story-page__layout">
             <div className="story-page__paper">
-              <button className="story-page__image-button" type="button" onClick={() => setZoomed(true)} aria-label="Open a larger view of this page">
-                <img
-                  key={current.src}
-                  src={current.src}
-                  alt={`Page ${page + 1} of ${book.title}`}
-                  draggable={false}
-                  decoding="async"
-                />
-                <span className="story-page__zoom" aria-hidden="true">↗</span>
-              </button>
+              <div className="story-page__image-stage">
+                <div className="story-page__image-button">
+                  <img
+                    key={current.src}
+                    src={current.src}
+                    alt={`Page ${page + 1} of ${book.title}`}
+                    draggable={false}
+                    decoding="async"
+                  />
+                </div>
+                {closeReadingEnabled && closeReadingPage && (
+                  <div className="close-reading-layer" role="group" aria-label={`Close reading audio blocks for printed pages ${closeReadingPage.printedPages}`}>
+                    {closeReadingPage.blocks.map((block, index) => {
+                      const active = activeCloseReadingBlock?.id === block.id;
+                      return (
+                        <button
+                          key={block.id}
+                          className={`close-reading-hotspot${active ? " is-speaking" : ""}`}
+                          type="button"
+                          style={{
+                            "--block-left": `${block.rect.left}%`,
+                            "--block-top": `${block.rect.top}%`,
+                            "--block-width": `${block.rect.width}%`,
+                            "--block-height": `${block.rect.height}%`,
+                          } as CSSProperties}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            playCloseReadingBlock(block);
+                          }}
+                          aria-label={`${active ? "Stop" : "Hear"} block ${index + 1}: ${block.title}`}
+                          aria-pressed={active}
+                          title={`${index + 1}. ${block.title}`}
+                        >
+                          <span aria-hidden="true">{active ? "■" : index + 1}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              {closeReadingEnabled && closeReadingPage && (
+                <div className="close-reading-hint" role="status">
+                  <span aria-hidden="true">🔎</span>
+                  <span>
+                    <strong>{activeCloseReadingBlock ? activeCloseReadingBlock.title : "精读模式已开启"}</strong>
+                    <small>{activeCloseReadingBlock ? "正在播放 · 再点一次可停止" : `点击书页上的编号框，逐块听英文 · 共 ${closeReadingPage.blocks.length} 块`}</small>
+                  </span>
+                </div>
+              )}
               {showSideReadAlong && currentSides && (
                 <div className="story-page__side-listeners" role="group" aria-label={`Choose a side to hear on page ${page + 1}`}>
                   {(["left", "right"] as const).map((side) => {
@@ -1848,6 +1914,21 @@ function StoryReader({
                     {guideMode && !pageIsSpeaking && <small>中文理解 · 完整 English · 跟读</small>}
                   </span>
                 </button>
+                {closeReadingPage && (
+                  <button
+                    className={`listen-button close-reading-toggle${closeReadingEnabled ? " is-selected" : ""}`}
+                    type="button"
+                    onClick={toggleCloseReading}
+                    disabled={!narrator.supported}
+                    aria-pressed={closeReadingEnabled}
+                  >
+                    <span className="listen-button__icon" aria-hidden="true">{closeReadingEnabled ? "×" : "🔎"}</span>
+                    <span>
+                      <strong>{closeReadingEnabled ? "退出精读" : "精读这一页"}</strong>
+                      <small>点击每块文字单独听</small>
+                    </span>
+                  </button>
+                )}
                 <button
                   className={`listen-button bedtime-button ${bedtimeAutoReading ? "is-speaking" : ""}`}
                   type="button"
@@ -1975,7 +2056,7 @@ function StoryReader({
           disabled={isLast}
           aria-label="Next page"
         >
-          <small>Next</small><span aria-hidden="true">→</span>
+          <span aria-hidden="true">→</span>
         </button>
       </div>
 
@@ -2001,15 +2082,6 @@ function StoryReader({
             ? "Story finished"
             : `Page ${page + 1} of ${book.pages.length}`}
       </p>
-
-      {zoomed && (
-        <div className="page-zoom" role="dialog" aria-modal="true" aria-label={`Large view of page ${page + 1}`}>
-          <button className="page-zoom__close" type="button" onClick={() => setZoomed(false)}>Close ✕</button>
-          <div className="page-zoom__scroll">
-            <img src={current.src} alt={`Large page ${page + 1} of ${book.title}`} />
-          </div>
-        </div>
-      )}
     </main>
   );
 }
