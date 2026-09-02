@@ -24,6 +24,8 @@ const BOOKS = [
   { directory: "Lazy Duck", slug: "lazy-duck", include: [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
   { directory: "The King's Cake", slug: "the-kings-cake", joinFirstTwo: true },
   { directory: "Chicken Rice", slug: "chicken-rice", joinFirstTwo: true },
+  { directory: "Marvel 3 Tales of Adventure/pages", slug: "marvel-3-tales-of-adventure", pairSequentially: true },
+  { directory: "Dinosaur David Lambert/pages", slug: "dinosaur-david-lambert", pairFromPage: 5, tightPair: true },
   { directory: "The Gruffalo", slug: "the-gruffalo", include: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] },
   { directory: "Predators and Prey", slug: "predators-and-prey", include: [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] },
   { directory: "The Stars of Chek Jawa", slug: "the-stars-of-chek-jawa" },
@@ -170,6 +172,9 @@ for (const {
   include,
   rePairFacingPages: shouldRePairFacingPages,
   joinFirstTwo,
+  pairSequentially,
+  pairFromPage,
+  tightPair,
 } of selectedBooks) {
   const sourceDirectory = join(SOURCE_ROOT, directory);
   const entries = (await readdir(sourceDirectory))
@@ -195,6 +200,30 @@ for (const {
       firstSpread,
       ...entries.slice(2).map((entry) => join(sourceDirectory, entry.filename)),
     ];
+  } else if (pairSequentially) {
+    readingPages = [];
+    for (let index = 0; index < entries.length; index += 2) {
+      const left = join(sourceDirectory, entries[index].filename);
+      const rightEntry = entries[index + 1];
+      readingPages.push(rightEntry
+        ? await composePortraitPair(left, join(sourceDirectory, rightEntry.filename))
+        : left);
+    }
+  } else if (pairFromPage) {
+    const firstPairIndex = entries.findIndex((entry) => entry.page === pairFromPage);
+    if (firstPairIndex < 0) throw new Error(`${slug} is missing source page ${pairFromPage}.`);
+    readingPages = entries
+      .slice(0, firstPairIndex)
+      .map((entry) => join(sourceDirectory, entry.filename));
+    for (let index = firstPairIndex; index < entries.length; index += 2) {
+      const left = join(sourceDirectory, entries[index].filename);
+      const rightEntry = entries[index + 1];
+      readingPages.push(rightEntry
+        ? await (tightPair
+          ? composeFacingPages(left, join(sourceDirectory, rightEntry.filename))
+          : composePortraitPair(left, join(sourceDirectory, rightEntry.filename)))
+        : left);
+    }
   } else {
     readingPages = entries.map((entry) => join(sourceDirectory, entry.filename));
   }

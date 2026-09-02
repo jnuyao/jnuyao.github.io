@@ -1166,6 +1166,101 @@ p {
   user-select: none;
 }
 
+.reader--reference-book .reader__stage {
+  width: min(1900px, 100%);
+  grid-template-columns: 58px minmax(0, 1fr) 58px;
+  gap: 8px;
+  padding-inline: 4px;
+}
+
+.reader--reference-book .story-page__layout {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 260px);
+  gap: 10px;
+}
+
+.reader--reference-book .story-page__paper {
+  border-radius: 12px;
+  padding: 3px;
+}
+
+.reader--reference-book .story-page__image-button {
+  border-radius: 7px;
+}
+
+.reader--reference-book .story-page__image-button img {
+  max-height: min(86svh, 1100px);
+}
+
+.reader--reference-book .story-page__side-listeners {
+  margin-top: 5px;
+  gap: 5px;
+}
+
+.reader--reference-book .reader__controls {
+  gap: 9px;
+}
+
+.reader--reference-book .reader__tools {
+  gap: 7px;
+}
+
+.reader--reference-book .listen-button {
+  min-height: 50px;
+  border-radius: 13px;
+  padding: 7px 11px;
+  gap: 9px;
+  box-shadow: 0 4px 0 var(--green-dark);
+}
+
+.reader--reference-book .listen-button.is-speaking {
+  box-shadow: 0 4px 0 #9e463c;
+}
+
+.reader--reference-book .bedtime-button {
+  box-shadow: 0 4px 0 #352d4d;
+}
+
+.reader--reference-book .listen-button__icon {
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+  font-size: 14px;
+}
+
+.reader--reference-book .listen-button strong {
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.reader--reference-book .listen-button small {
+  font-size: 8px;
+}
+
+.reader--reference-book .narration-settings {
+  border-radius: 13px;
+}
+
+.reader--reference-book .narration-settings summary {
+  min-height: 46px;
+  padding: 6px 10px;
+  gap: 8px;
+}
+
+.reader--reference-book .narration-settings summary > span:first-child {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  font-size: 14px;
+}
+
+.reader--reference-book .narration-settings summary strong {
+  font-size: 12px;
+}
+
+.reader--reference-book .narration-settings summary small {
+  font-size: 8px;
+}
+
 .story-page__zoom {
   position: absolute;
   z-index: 2;

@@ -37,6 +37,8 @@ const NEW_BOOK_SLUGS = new Set([
   "lazy-duck",
   "the-kings-cake",
   "chicken-rice",
+  "marvel-3-tales-of-adventure",
+  "dinosaur-david-lambert",
   "mr-gumpys-outing",
   "a-day-in-the-kitchen-with-grandma",
   "life-in-a-shell",

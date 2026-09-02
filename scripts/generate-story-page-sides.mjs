@@ -43,6 +43,8 @@ const SPREAD_PAGE_INDICES = {
   "lazy-duck": range(1, 11),
   "the-kings-cake": range(0, 11),
   "chicken-rice": range(0, 8),
+  "marvel-3-tales-of-adventure": range(0, 49),
+  "dinosaur-david-lambert": range(4, 38),
   "mr-gumpys-outing": range(2, 15),
   "a-day-in-the-kitchen-with-grandma": range(1, 8),
   "life-in-a-shell": [],

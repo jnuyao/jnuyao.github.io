@@ -18,6 +18,8 @@ const EXPECTED_PAGE_COUNTS = new Map([
   ["lazy-duck", 12],
   ["the-kings-cake", 12],
   ["chicken-rice", 9],
+  ["marvel-3-tales-of-adventure", 50],
+  ["dinosaur-david-lambert", 39],
   ["mr-gumpys-outing", 17],
   ["a-day-in-the-kitchen-with-grandma", 9],
   ["life-in-a-shell", 16],
@@ -338,9 +340,9 @@ test("server-renders the child-first Story Garden bookshelf", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("book data contains thirty-four complete stories with valid archived task metadata", async () => {
+test("book data contains thirty-six complete stories with valid archived task metadata", async () => {
   const books = await loadBookData();
-  assert.equal(books.length, 34);
+  assert.equal(books.length, 36);
 
   const actualSlugs = books.map((book) => book.slug).sort();
   assert.deepEqual(actualSlugs, [...EXPECTED_PAGE_COUNTS.keys()].sort());
@@ -367,7 +369,7 @@ test("book data contains thirty-four complete stories with valid archived task m
   }
 });
 
-test("all 446 story images are referenced once and web-sized", async () => {
+test("all 535 story images are referenced once and web-sized", async () => {
   const books = await loadBookData();
   const referencedAssets = new Set();
   let pageTotal = 0;
@@ -408,7 +410,7 @@ test("all 446 story images are referenced once and web-sized", async () => {
     }
   }
 
-  assert.equal(pageTotal, 446);
+  assert.equal(pageTotal, 535);
   assert.equal(wordlessTotal, 5);
 
   const pageFolders = (await readdir(new URL("../public/pages/", import.meta.url), {
@@ -432,7 +434,7 @@ test("all 446 story images are referenced once and web-sized", async () => {
     diskAssets.push(...files.map((file) => `/pages/${slug}/${file}`));
   }
 
-  assert.equal(diskAssets.length, 446);
+  assert.equal(diskAssets.length, 535);
   assert.deepEqual([...referencedAssets].sort(), diskAssets.sort());
 });
 
@@ -501,6 +503,93 @@ test("Chicken Rice joins source pages one and two, then keeps each later image i
   assert.ok(firstPage.width / firstPage.height > 1.6, "the cover and title page must form one spread");
 });
 
+test("Marvel 3 Tales keeps the full collection as fifty sequential two-page spreads", async () => {
+  const books = await loadBookData();
+  const book = books.find((candidate) => candidate.slug === "marvel-3-tales-of-adventure");
+  assert.ok(book);
+  assert.equal(book.title, "Marvel: 3 Tales of Adventure");
+  assert.equal(book.pages.length, 50);
+  assert.deepEqual(book.pages.map((page) => page.layout), Array(50).fill("spread"));
+  assert.equal(book.pages[0].transcript, "Marvel: 3 Tales of Adventure.");
+  assert.equal(book.pages[2].transcript, "This Is Spider-Man.");
+  assert.equal(book.pages[17].transcript, "This Is Doctor Strange.");
+  assert.equal(book.pages[33].transcript, "The New Team.");
+  assert.match(book.pages.at(-1).transcript, /Spider-Man, Doctor Strange, and the new Avengers/);
+
+  for (const pageNumber of [1, 3, 18, 34, 50]) {
+    const number = String(pageNumber).padStart(2, "0");
+    const metadata = await sharp(
+      await readFile(
+        new URL(`../public/pages/marvel-3-tales-of-adventure/${number}.webp`, import.meta.url),
+      ),
+    ).metadata();
+    assert.ok(
+      metadata.width / metadata.height > 1.6,
+      `Marvel reader page ${pageNumber} must remain a wide two-page spread`,
+    );
+  }
+});
+
+test("Dinosaur keeps the first four PDF pages single, then pairs printed pages four and five onward", async () => {
+  const books = await loadBookData();
+  const book = books.find((candidate) => candidate.slug === "dinosaur-david-lambert");
+  assert.ok(book);
+  assert.equal(book.title, "Dinosaur");
+  assert.equal(book.pages.length, 39);
+  assert.deepEqual(
+    book.pages.map((page) => page.layout),
+    ["single", "single", "single", "single", ...Array(35).fill("spread")],
+  );
+  assert.match(book.pages[4].transcript, /fossils, models, and scientific ideas/);
+  assert.match(book.pages[5].transcript, /upright land reptiles/);
+  assert.match(book.pages[30].transcript, /Birds are living dinosaurs/);
+  assert.match(book.pages[35].transcript, /pronunciation guide/);
+  assert.match(book.pages.at(-1).transcript, /Use the index/);
+
+  for (const pageNumber of [5, 6, 18, 31, 36, 39]) {
+    const number = String(pageNumber).padStart(2, "0");
+    const metadata = await sharp(
+      await readFile(
+        new URL(`../public/pages/dinosaur-david-lambert/${number}.webp`, import.meta.url),
+      ),
+    ).metadata();
+    const ratio = metadata.width / metadata.height;
+    assert.ok(
+      ratio > 1.5 && ratio < 1.6,
+      `Dinosaur reader page ${pageNumber} must keep the tight letter-page spread ratio`,
+    );
+  }
+  for (const pageNumber of [1, 2, 3, 4]) {
+    const number = String(pageNumber).padStart(2, "0");
+    const metadata = await sharp(
+      await readFile(
+        new URL(`../public/pages/dinosaur-david-lambert/${number}.webp`, import.meta.url),
+      ),
+    ).metadata();
+    assert.ok(
+      metadata.width / metadata.height < 1.3,
+      `Dinosaur reader page ${pageNumber} must remain a single portrait page`,
+    );
+  }
+});
+
+test("Dinosaur uses a tight, wide reader treatment for its small reference text", async () => {
+  const [pageSource, styles] = await Promise.all([
+    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(
+    pageSource,
+    /book\.slug\s*===\s*["']dinosaur-david-lambert["'][\s\S]{0,120}reader--reference-book/,
+  );
+  assert.match(styles, /\.reader--reference-book\s+\.reader__stage\s*\{/);
+  assert.match(styles, /\.reader--reference-book\s+\.story-page__paper\s*\{[\s\S]{0,120}padding:\s*3px/);
+  assert.match(styles, /\.reader--reference-book\s+\.story-page__image-button img\s*\{[\s\S]{0,120}86svh/);
+  assert.match(styles, /\.reader--reference-book\s+\.listen-button\s*\{[\s\S]{0,180}min-height:\s*50px/);
+  assert.match(styles, /\.reader--reference-book\s+\.listen-button__icon\s*\{[\s\S]{0,160}width:\s*31px/);
+  assert.match(styles, /\.reader--reference-book\s+\.narration-settings summary\s*\{[\s\S]{0,160}min-height:\s*46px/);
+});
+
 test("all story images have audited single-page or physical left/right reading data", async () => {
   const books = await loadBookData();
   let singlePages = 0;
@@ -550,9 +639,9 @@ test("all story images have audited single-page or physical left/right reading d
     }
   }
 
-  assert.equal(singlePages, 80);
-  assert.equal(spreadPages, 366);
-  assert.equal(spokenSides, 625);
+  assert.equal(singlePages, 84);
+  assert.equal(spreadPages, 451);
+  assert.equal(spokenSides, 780);
   assert.equal(reorderedSpreads, 3);
 });
 
@@ -668,8 +757,8 @@ test("all whole-page, left/right, and archived task narration has valid MP3 trac
     }
   }
 
-  assert.equal(audioTotal, 1202);
-  assert.equal(referencedAudio.size, 1202);
+  assert.equal(audioTotal, 1454);
+  assert.equal(referencedAudio.size, 1454);
 
   const audioFolders = (await readdir(new URL("../public/audio/", import.meta.url), {
     withFileTypes: true,
@@ -711,7 +800,7 @@ test("all whole-page, left/right, and archived task narration has valid MP3 trac
     diskAudio.push(...files.map((file) => `/audio/${slug}/${file}`));
   }
 
-  assert.equal(diskAudio.length, 1202);
+  assert.equal(diskAudio.length, 1454);
   assert.deepEqual([...referencedAudio].sort(), diskAudio.sort());
 
   for (const [slug] of EXPECTED_PAGE_COUNTS) {
@@ -1456,13 +1545,13 @@ test("Moonlight Market routing stays book-specific and keeps independent progres
   );
 });
 
-test("keeps the thirty-four-cover shelf and removes disposable starter output", async () => {
+test("keeps the thirty-six-cover shelf and removes disposable starter output", async () => {
   const [packageJson, covers] = await Promise.all([
     readFile(new URL("../package.json", import.meta.url), "utf8"),
     readdir(new URL("../public/books/", import.meta.url)),
   ]);
 
-  assert.equal(covers.filter((file) => file.endsWith(".jpg")).length, 34);
+  assert.equal(covers.filter((file) => file.endsWith(".jpg")).length, 36);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   await assert.rejects(access(new URL("../app/_sites-preview/", import.meta.url)));
   await access(new URL("../public/favicon.png", import.meta.url));

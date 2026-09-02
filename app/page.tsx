@@ -1739,7 +1739,10 @@ function StoryReader({
   };
 
   return (
-    <main className="reader" style={{ "--book-colour": book.colour } as CSSProperties}>
+    <main
+      className={`reader${book.slug === "dinosaur-david-lambert" ? " reader--reference-book" : ""}`}
+      style={{ "--book-colour": book.colour } as CSSProperties}
+    >
       <header className="reader__header">
         <button className="round-button" type="button" onClick={exitReader} aria-label="Back to my bookshelf">←</button>
         <div className="reader__title">
