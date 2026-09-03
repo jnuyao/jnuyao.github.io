@@ -21,6 +21,8 @@ export type DinosaurCloseReadingPage = {
   blocks: readonly DinosaurCloseReadingBlock[];
 };
 
+import { DINOSAUR_CLOSE_READING_REMAINING_PAGES } from "./dinosaur-close-reading-remaining-data.ts";
+
 const AUDIO_ROOT = "/audio/dinosaur-close-reading/page-06";
 
 function block(
@@ -1026,6 +1028,7 @@ export const DINOSAUR_CLOSE_READING_PAGES: readonly DinosaurCloseReadingPage[] =
   DINOSAUR_CLOSE_READING_PAGE_14,
   DINOSAUR_CLOSE_READING_PAGE_15,
   DINOSAUR_CLOSE_READING_PAGE_16,
+  ...DINOSAUR_CLOSE_READING_REMAINING_PAGES,
 ];
 
 export function dinosaurCloseReadingPageFor(

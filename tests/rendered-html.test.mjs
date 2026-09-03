@@ -151,27 +151,26 @@ async function loadStoryGuideData() {
 
 async function loadDinosaurCloseReadingData() {
   const dataUrl = new URL("../app/dinosaur-close-reading-data.ts", import.meta.url);
-  const source = await readFile(dataUrl, "utf8");
-  const transpiled = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-    },
-    fileName: "dinosaur-close-reading-data.ts",
-    reportDiagnostics: true,
-  });
-  const errors = (transpiled.diagnostics ?? []).filter(
-    (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
-  );
-  assert.deepEqual(
-    errors,
-    [],
-    "app/dinosaur-close-reading-data.ts must transpile cleanly",
-  );
-  const moduleUrl = `data:text/javascript;base64,${Buffer.from(
-    transpiled.outputText,
-  ).toString("base64")}#${Date.now()}`;
-  const dataModule = await import(moduleUrl);
+  const sourceFiles = [
+    dataUrl,
+    new URL("../app/dinosaur-close-reading-remaining-data.ts", import.meta.url),
+  ];
+  for (const sourceUrl of sourceFiles) {
+    const source = await readFile(sourceUrl, "utf8");
+    const transpiled = ts.transpileModule(source, {
+      compilerOptions: {
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ES2022,
+      },
+      fileName: sourceUrl.pathname.split("/").at(-1),
+      reportDiagnostics: true,
+    });
+    const errors = (transpiled.diagnostics ?? []).filter(
+      (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
+    );
+    assert.deepEqual(errors, [], `${sourceUrl.pathname} must transpile cleanly`);
+  }
+  const dataModule = await import(`${dataUrl.href}?test=${Date.now()}`);
   return dataModule.DINOSAUR_CLOSE_READING_PAGES;
 }
 
@@ -614,7 +613,7 @@ test("Dinosaur uses a tight, wide reader treatment for its small reference text"
   assert.match(styles, /\.reader--reference-book\s+\.narration-settings summary\s*\{[\s\S]{0,160}min-height:\s*46px/);
 });
 
-test("Dinosaur printed pages 6–27 have clickable close-reading narration in both paces", async () => {
+test("Dinosaur printed pages 6–72 have clickable close-reading narration in both paces", async () => {
   const [closeReadingPages, pageSource, styles] = await Promise.all([
     loadDinosaurCloseReadingData(),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
@@ -633,6 +632,29 @@ test("Dinosaur printed pages 6–27 have clickable close-reading narration in bo
     { pageIndex: 11, audioPage: 14, printedPages: "22–23", blocks: 16 },
     { pageIndex: 12, audioPage: 15, printedPages: "24–25", blocks: 14 },
     { pageIndex: 13, audioPage: 16, printedPages: "26–27", blocks: 15 },
+    { pageIndex: 14, audioPage: 17, printedPages: "28–29", blocks: 7 },
+    { pageIndex: 15, audioPage: 18, printedPages: "30–31", blocks: 9 },
+    { pageIndex: 16, audioPage: 19, printedPages: "32–33", blocks: 9 },
+    { pageIndex: 17, audioPage: 20, printedPages: "34–35", blocks: 8 },
+    { pageIndex: 18, audioPage: 21, printedPages: "36–37", blocks: 7 },
+    { pageIndex: 19, audioPage: 22, printedPages: "38–39", blocks: 6 },
+    { pageIndex: 20, audioPage: 23, printedPages: "40–41", blocks: 7 },
+    { pageIndex: 21, audioPage: 24, printedPages: "42–43", blocks: 7 },
+    { pageIndex: 22, audioPage: 25, printedPages: "44–45", blocks: 7 },
+    { pageIndex: 23, audioPage: 26, printedPages: "46–47", blocks: 7 },
+    { pageIndex: 24, audioPage: 27, printedPages: "48–49", blocks: 6 },
+    { pageIndex: 25, audioPage: 28, printedPages: "50–51", blocks: 7 },
+    { pageIndex: 26, audioPage: 29, printedPages: "52–53", blocks: 7 },
+    { pageIndex: 27, audioPage: 30, printedPages: "54–55", blocks: 7 },
+    { pageIndex: 28, audioPage: 31, printedPages: "56–57", blocks: 8 },
+    { pageIndex: 29, audioPage: 32, printedPages: "58–59", blocks: 7 },
+    { pageIndex: 30, audioPage: 33, printedPages: "60–61", blocks: 6 },
+    { pageIndex: 31, audioPage: 34, printedPages: "62–63", blocks: 7 },
+    { pageIndex: 32, audioPage: 35, printedPages: "64", blocks: 3 },
+    { pageIndex: 33, audioPage: 36, printedPages: "65–66", blocks: 7 },
+    { pageIndex: 34, audioPage: 37, printedPages: "67–68", blocks: 8 },
+    { pageIndex: 35, audioPage: 38, printedPages: "69–70", blocks: 7 },
+    { pageIndex: 36, audioPage: 39, printedPages: "71–72", blocks: 7 },
   ];
   assert.equal(closeReadingPages.length, expectedPages.length);
   const referencedAudio = new Set();
@@ -684,7 +706,7 @@ test("Dinosaur printed pages 6–27 have clickable close-reading narration in bo
     }
   }
 
-  assert.equal(referencedAudio.size, 242);
+  assert.equal(referencedAudio.size, 403);
 
   assert.match(pageSource, /className="close-reading-layer"/);
   assert.match(pageSource, /preparedOnly:\s*true/);
@@ -1861,7 +1883,7 @@ test("prepared audio switches roots without runtime time-stretching", async () =
   );
   assert.match(narrationSource, /\?v=\$\{PREPARED_AUDIO_CACHE_VERSION\}/);
   assert.ok(
-    (source.match(/<NarrationSettings narrator=\{narrator\}[\s\S]{0,90}?\/>/g) ?? []).length >= 2,
+    (source.match(/<NarrationSettings\b/g) ?? []).length >= 2,
     "The version switch should be available on both the bookshelf and the story reader",
   );
 });

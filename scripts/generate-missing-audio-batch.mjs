@@ -24,7 +24,7 @@ const VOICE = storyAudio.VOICE;
 const API_ROOT = "https://generativelanguage.googleapis.com/v1beta";
 const CREATE_URL = `${API_ROOT}/models/${MODEL}:batchGenerateContent`;
 const REQUEST_TIMEOUT_MS = 180_000;
-const MAX_BATCH_SIZE = 10;
+const MAX_BATCH_SIZE = 20;
 const TERMINAL_STATES = new Set([
   "JOB_STATE_SUCCEEDED",
   "JOB_STATE_FAILED",
