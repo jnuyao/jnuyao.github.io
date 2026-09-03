@@ -172,7 +172,7 @@ async function loadDinosaurCloseReadingData() {
     transpiled.outputText,
   ).toString("base64")}#${Date.now()}`;
   const dataModule = await import(moduleUrl);
-  return dataModule.DINOSAUR_CLOSE_READING_PAGE;
+  return dataModule.DINOSAUR_CLOSE_READING_PAGES;
 }
 
 async function loadArtStudioData() {
@@ -617,50 +617,72 @@ test("Dinosaur uses a tight, wide reader treatment for its small reference text"
   assert.match(styles, /\.reader--reference-book\s+\.narration-settings summary\s*\{[\s\S]{0,160}min-height:\s*46px/);
 });
 
-test("Dinosaur printed pages 6–7 have clickable close-reading narration in both paces", async () => {
-  const [closeReadingPage, pageSource, styles] = await Promise.all([
+test("Dinosaur reader pages 6–11 have clickable close-reading narration in both paces", async () => {
+  const [closeReadingPages, pageSource, styles] = await Promise.all([
     loadDinosaurCloseReadingData(),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.equal(closeReadingPage.bookSlug, "dinosaur-david-lambert");
-  assert.equal(closeReadingPage.pageIndex, 5);
-  assert.equal(closeReadingPage.printedPages, "6–7");
-  assert.equal(closeReadingPage.blocks.length, 26);
-  assert.equal(new Set(closeReadingPage.blocks.map((block) => block.id)).size, 26);
+  const expectedPages = [
+    { pageIndex: 5, printedPages: "6–7", blocks: 26 },
+    { pageIndex: 6, printedPages: "8–9", blocks: 34 },
+    { pageIndex: 7, printedPages: "10–11", blocks: 29 },
+    { pageIndex: 8, printedPages: "12–13", blocks: 25 },
+    { pageIndex: 9, printedPages: "14–15", blocks: 25 },
+    { pageIndex: 10, printedPages: "16–17", blocks: 22 },
+  ];
+  assert.equal(closeReadingPages.length, expectedPages.length);
+  const referencedAudio = new Set();
 
-  for (const block of closeReadingPage.blocks) {
-    assert.ok(block.title.trim(), `${block.id} needs a visible title`);
-    assert.ok(block.text.trim(), `${block.id} needs narration text`);
-    assert.match(
-      block.audioSrc,
-      /^\/audio\/dinosaur-close-reading\/page-06\/[a-z0-9-]+\.mp3$/,
+  for (const [pageOffset, closeReadingPage] of closeReadingPages.entries()) {
+    const expected = expectedPages[pageOffset];
+    assert.equal(closeReadingPage.bookSlug, "dinosaur-david-lambert");
+    assert.equal(closeReadingPage.pageIndex, expected.pageIndex);
+    assert.equal(closeReadingPage.printedPages, expected.printedPages);
+    assert.equal(closeReadingPage.blocks.length, expected.blocks);
+    assert.equal(
+      new Set(closeReadingPage.blocks.map((block) => block.id)).size,
+      expected.blocks,
     );
-    const { left, top, width, height } = block.rect;
-    for (const value of [left, top, width, height]) {
-      assert.ok(Number.isFinite(value) && value > 0, `${block.id} needs a valid hotspot`);
-    }
-    assert.ok(left + width <= 100, `${block.id} hotspot exceeds the right edge`);
-    assert.ok(top + height <= 100, `${block.id} hotspot exceeds the bottom edge`);
+    const pageFolder = `page-${String(closeReadingPage.pageIndex + 1).padStart(2, "0")}`;
 
-    for (const audioSrc of [
-      block.audioSrc,
-      block.audioSrc.replace(/^\/audio\//, "/audio-standard/"),
-    ]) {
-      const asset = await readFile(new URL(`../public${audioSrc}`, import.meta.url));
-      assert.ok(
-        asset.byteLength >= MIN_STORY_AUDIO_BYTES
-          && asset.byteLength <= MAX_STORY_AUDIO_BYTES,
-        `${audioSrc} must be a web-sized narration track`,
+    for (const block of closeReadingPage.blocks) {
+      assert.ok(block.title.trim(), `${pageFolder}/${block.id} needs a visible title`);
+      assert.ok(block.text.trim(), `${pageFolder}/${block.id} needs narration text`);
+      assert.equal(
+        block.audioSrc,
+        `/audio/dinosaur-close-reading/${pageFolder}/${block.id}.mp3`,
       );
-      assert.ok(
-        asset.subarray(0, 3).toString("ascii") === "ID3"
-          || (asset[0] === 0xff && (asset[1] & 0xe0) === 0xe0),
-        `${audioSrc} must begin with ID3 or an MPEG audio frame`,
-      );
+      assert.ok(!referencedAudio.has(block.audioSrc), `${block.audioSrc} must be unique`);
+      referencedAudio.add(block.audioSrc);
+      const { left, top, width, height } = block.rect;
+      for (const value of [left, top, width, height]) {
+        assert.ok(Number.isFinite(value) && value > 0, `${block.id} needs a valid hotspot`);
+      }
+      assert.ok(left + width <= 100, `${block.id} hotspot exceeds the right edge`);
+      assert.ok(top + height <= 100, `${block.id} hotspot exceeds the bottom edge`);
+
+      for (const audioSrc of [
+        block.audioSrc,
+        block.audioSrc.replace(/^\/audio\//, "/audio-standard/"),
+      ]) {
+        const asset = await readFile(new URL(`../public${audioSrc}`, import.meta.url));
+        assert.ok(
+          asset.byteLength >= MIN_STORY_AUDIO_BYTES
+            && asset.byteLength <= MAX_STORY_AUDIO_BYTES,
+          `${audioSrc} must be a web-sized narration track`,
+        );
+        assert.ok(
+          asset.subarray(0, 3).toString("ascii") === "ID3"
+            || (asset[0] === 0xff && (asset[1] & 0xe0) === 0xe0),
+          `${audioSrc} must begin with ID3 or an MPEG audio frame`,
+        );
+      }
     }
   }
+
+  assert.equal(referencedAudio.size, 161);
 
   assert.match(pageSource, /className="close-reading-layer"/);
   assert.match(pageSource, /preparedOnly:\s*true/);

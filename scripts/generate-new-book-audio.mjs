@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 import { BOOKS } from "../app/book-data.ts";
-import { DINOSAUR_CLOSE_READING_PAGE } from "../app/dinosaur-close-reading-data.ts";
+import { DINOSAUR_CLOSE_READING_PAGES } from "../app/dinosaur-close-reading-data.ts";
 import { buildStoryNarrationSegments, prepareSpeechText } from "../app/narration.ts";
 import { proPacingSettingsForJob } from "./aoede-pro-contract.mjs";
 
@@ -229,16 +229,21 @@ function planJobs() {
     }));
     return [...pages, ...tasks];
   });
-  const closeReadingJobs = DINOSAUR_CLOSE_READING_PAGE.blocks.map((block) => ({
-    id: `dinosaur-close-reading/page-06/${block.id}`,
-    bookSlug: DINOSAUR_CLOSE_READING_PAGE.bookSlug,
-    bookTitle: "Dinosaur close reading · printed pages 6–7",
-    kind: "story",
-    taskType: null,
-    displayText: block.speechText ?? block.text,
-    standardPath: `audio-standard/dinosaur-close-reading/page-06/${block.id}.mp3`,
-    childPath: `audio/dinosaur-close-reading/page-06/${block.id}.mp3`,
-  }));
+  const closeReadingJobs = DINOSAUR_CLOSE_READING_PAGES.flatMap((closeReadingPage) => (
+    closeReadingPage.blocks.map((block) => {
+      const pageFolder = `page-${String(closeReadingPage.pageIndex + 1).padStart(2, "0")}`;
+      return {
+        id: `dinosaur-close-reading/${pageFolder}/${block.id}`,
+        bookSlug: closeReadingPage.bookSlug,
+        bookTitle: `Dinosaur close reading · printed pages ${closeReadingPage.printedPages}`,
+        kind: "story",
+        taskType: null,
+        displayText: block.speechText ?? block.text,
+        standardPath: `audio-standard/dinosaur-close-reading/${pageFolder}/${block.id}.mp3`,
+        childPath: `audio/dinosaur-close-reading/${pageFolder}/${block.id}.mp3`,
+      };
+    })
+  ));
   const jobs = [...bookJobs, ...closeReadingJobs].map((job) => {
     const purpose = job.kind === "story" ? "story" : "practice";
     const spokenText = buildStoryNarrationSegments(job.displayText, purpose)
