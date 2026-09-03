@@ -19,7 +19,7 @@ const EXPECTED_PAGE_COUNTS = new Map([
   ["the-kings-cake", 12],
   ["chicken-rice", 9],
   ["marvel-3-tales-of-adventure", 50],
-  ["dinosaur-david-lambert", 39],
+  ["dinosaur-david-lambert", 37],
   ["mr-gumpys-outing", 17],
   ["a-day-in-the-kitchen-with-grandma", 9],
   ["life-in-a-shell", 16],
@@ -396,7 +396,7 @@ test("book data contains thirty-six complete stories with valid archived task me
   }
 });
 
-test("all 535 story images are referenced once and web-sized", async () => {
+test("all 533 story images are referenced once and web-sized", async () => {
   const books = await loadBookData();
   const referencedAssets = new Set();
   let pageTotal = 0;
@@ -427,9 +427,12 @@ test("all 535 story images are referenced once and web-sized", async () => {
       const asset = await readFile(
         new URL(`../public${page.src}`, import.meta.url),
       );
+      const maxPageBytes = book.slug === "dinosaur-david-lambert"
+        ? 3 * 1024 * 1024
+        : MAX_STORY_PAGE_BYTES;
       assert.ok(
-        asset.byteLength <= MAX_STORY_PAGE_BYTES,
-        `${page.src} is ${asset.byteLength} bytes; story pages must be at most ${MAX_STORY_PAGE_BYTES} bytes`,
+        asset.byteLength <= maxPageBytes,
+        `${page.src} is ${asset.byteLength} bytes; story pages must be at most ${maxPageBytes} bytes`,
       );
       assert.equal(asset.subarray(0, 4).toString("ascii"), "RIFF", `${page.src} RIFF header`);
       assert.equal(asset.subarray(8, 12).toString("ascii"), "WEBP", `${page.src} WebP header`);
@@ -437,7 +440,7 @@ test("all 535 story images are referenced once and web-sized", async () => {
     }
   }
 
-  assert.equal(pageTotal, 535);
+  assert.equal(pageTotal, 533);
   assert.equal(wordlessTotal, 5);
 
   const pageFolders = (await readdir(new URL("../public/pages/", import.meta.url), {
@@ -461,7 +464,7 @@ test("all 535 story images are referenced once and web-sized", async () => {
     diskAssets.push(...files.map((file) => `/pages/${slug}/${file}`));
   }
 
-  assert.equal(diskAssets.length, 535);
+  assert.equal(diskAssets.length, 533);
   assert.deepEqual([...referencedAssets].sort(), diskAssets.sort());
 });
 
@@ -557,23 +560,25 @@ test("Marvel 3 Tales keeps the full collection as fifty sequential two-page spre
   }
 });
 
-test("Dinosaur keeps the first four PDF pages single, then pairs printed pages four and five onward", async () => {
+test("Dinosaur pairs every PDF page from the cover onward and keeps high-resolution reference text", async () => {
   const books = await loadBookData();
   const book = books.find((candidate) => candidate.slug === "dinosaur-david-lambert");
   assert.ok(book);
   assert.equal(book.title, "Dinosaur");
-  assert.equal(book.pages.length, 39);
+  assert.equal(book.pages.length, 37);
   assert.deepEqual(
     book.pages.map((page) => page.layout),
-    ["single", "single", "single", "single", ...Array(35).fill("spread")],
+    Array(37).fill("spread"),
   );
-  assert.match(book.pages[4].transcript, /fossils, models, and scientific ideas/);
-  assert.match(book.pages[5].transcript, /upright land reptiles/);
-  assert.match(book.pages[30].transcript, /Birds are living dinosaurs/);
-  assert.match(book.pages[35].transcript, /pronunciation guide/);
+  assert.match(book.pages[0].transcript, /Welcome to Dinosaur/);
+  assert.match(book.pages[1].transcript, /written by David Lambert/);
+  assert.match(book.pages[2].transcript, /fossils, models, and scientific ideas/);
+  assert.match(book.pages[3].transcript, /upright land reptiles/);
+  assert.match(book.pages[28].transcript, /Birds are living dinosaurs/);
+  assert.match(book.pages[33].transcript, /pronunciation guide/);
   assert.match(book.pages.at(-1).transcript, /Use the index/);
 
-  for (const pageNumber of [5, 6, 18, 31, 36, 39]) {
+  for (const pageNumber of [1, 2, 3, 4, 16, 29, 34, 37]) {
     const number = String(pageNumber).padStart(2, "0");
     const metadata = await sharp(
       await readFile(
@@ -585,17 +590,9 @@ test("Dinosaur keeps the first four PDF pages single, then pairs printed pages f
       ratio > 1.5 && ratio < 1.6,
       `Dinosaur reader page ${pageNumber} must keep the tight letter-page spread ratio`,
     );
-  }
-  for (const pageNumber of [1, 2, 3, 4]) {
-    const number = String(pageNumber).padStart(2, "0");
-    const metadata = await sharp(
-      await readFile(
-        new URL(`../public/pages/dinosaur-david-lambert/${number}.webp`, import.meta.url),
-      ),
-    ).metadata();
     assert.ok(
-      metadata.width / metadata.height < 1.3,
-      `Dinosaur reader page ${pageNumber} must remain a single portrait page`,
+      metadata.width >= 3500,
+      `Dinosaur reader page ${pageNumber} must preserve small reference text at high resolution`,
     );
   }
 });
@@ -617,7 +614,7 @@ test("Dinosaur uses a tight, wide reader treatment for its small reference text"
   assert.match(styles, /\.reader--reference-book\s+\.narration-settings summary\s*\{[\s\S]{0,160}min-height:\s*46px/);
 });
 
-test("Dinosaur reader pages 6–11 have clickable close-reading narration in both paces", async () => {
+test("Dinosaur printed pages 6–17 have clickable close-reading narration in both paces", async () => {
   const [closeReadingPages, pageSource, styles] = await Promise.all([
     loadDinosaurCloseReadingData(),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
@@ -625,12 +622,12 @@ test("Dinosaur reader pages 6–11 have clickable close-reading narration in bot
   ]);
 
   const expectedPages = [
-    { pageIndex: 5, printedPages: "6–7", blocks: 26 },
-    { pageIndex: 6, printedPages: "8–9", blocks: 34 },
-    { pageIndex: 7, printedPages: "10–11", blocks: 29 },
-    { pageIndex: 8, printedPages: "12–13", blocks: 25 },
-    { pageIndex: 9, printedPages: "14–15", blocks: 25 },
-    { pageIndex: 10, printedPages: "16–17", blocks: 22 },
+    { pageIndex: 3, audioPage: 6, printedPages: "6–7", blocks: 26 },
+    { pageIndex: 4, audioPage: 7, printedPages: "8–9", blocks: 34 },
+    { pageIndex: 5, audioPage: 8, printedPages: "10–11", blocks: 29 },
+    { pageIndex: 6, audioPage: 9, printedPages: "12–13", blocks: 25 },
+    { pageIndex: 7, audioPage: 10, printedPages: "14–15", blocks: 25 },
+    { pageIndex: 8, audioPage: 11, printedPages: "16–17", blocks: 22 },
   ];
   assert.equal(closeReadingPages.length, expectedPages.length);
   const referencedAudio = new Set();
@@ -645,7 +642,7 @@ test("Dinosaur reader pages 6–11 have clickable close-reading narration in bot
       new Set(closeReadingPage.blocks.map((block) => block.id)).size,
       expected.blocks,
     );
-    const pageFolder = `page-${String(closeReadingPage.pageIndex + 1).padStart(2, "0")}`;
+    const pageFolder = `page-${String(expected.audioPage).padStart(2, "0")}`;
 
     for (const block of closeReadingPage.blocks) {
       assert.ok(block.title.trim(), `${pageFolder}/${block.id} needs a visible title`);
@@ -758,9 +755,9 @@ test("all story images have audited single-page or physical left/right reading d
     }
   }
 
-  assert.equal(singlePages, 84);
-  assert.equal(spreadPages, 451);
-  assert.equal(spokenSides, 780);
+  assert.equal(singlePages, 80);
+  assert.equal(spreadPages, 453);
+  assert.equal(spokenSides, 784);
   assert.equal(reorderedSpreads, 3);
 });
 
@@ -876,8 +873,8 @@ test("all whole-page, left/right, and archived task narration has valid MP3 trac
     }
   }
 
-  assert.equal(audioTotal, 1454);
-  assert.equal(referencedAudio.size, 1454);
+  assert.equal(audioTotal, 1456);
+  assert.equal(referencedAudio.size, 1456);
 
   const audioFolders = (await readdir(new URL("../public/audio/", import.meta.url), {
     withFileTypes: true,
@@ -919,7 +916,7 @@ test("all whole-page, left/right, and archived task narration has valid MP3 trac
     diskAudio.push(...files.map((file) => `/audio/${slug}/${file}`));
   }
 
-  assert.equal(diskAudio.length, 1454);
+  assert.equal(diskAudio.length, 1456);
   assert.deepEqual([...referencedAudio].sort(), diskAudio.sort());
 
   for (const [slug] of EXPECTED_PAGE_COUNTS) {

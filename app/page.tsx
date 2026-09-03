@@ -1841,7 +1841,7 @@ function StoryReader({
                   <span aria-hidden="true">🔎</span>
                   <span>
                     <strong>{activeCloseReadingBlock ? activeCloseReadingBlock.title : "精读模式已开启"}</strong>
-                    <small>{activeCloseReadingBlock ? "正在播放 · 再点一次可停止" : `点击书页上的编号框，逐块听英文 · 共 ${closeReadingPage.blocks.length} 块`}</small>
+                    <small>{activeCloseReadingBlock ? "正在播放 · 再点一次可停止" : `点击书页上的淡色细框，逐块听英文 · 共 ${closeReadingPage.blocks.length} 块`}</small>
                   </span>
                 </div>
               )}

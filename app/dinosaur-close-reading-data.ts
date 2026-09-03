@@ -60,7 +60,7 @@ function makePageBlock(readerPage: number) {
 
 export const DINOSAUR_CLOSE_READING_PAGE: DinosaurCloseReadingPage = {
   bookSlug: "dinosaur-david-lambert",
-  pageIndex: 5,
+  pageIndex: 3,
   printedPages: "6–7",
   blocks: [
     block(
@@ -227,7 +227,7 @@ const page7Block = makePageBlock(7);
 
 const DINOSAUR_CLOSE_READING_PAGE_7: DinosaurCloseReadingPage = {
   bookSlug: "dinosaur-david-lambert",
-  pageIndex: 6,
+  pageIndex: 4,
   printedPages: "8–9",
   blocks: [
     page7Block(
@@ -311,7 +311,7 @@ const page8Block = makePageBlock(8);
 
 const DINOSAUR_CLOSE_READING_PAGE_8: DinosaurCloseReadingPage = {
   bookSlug: "dinosaur-david-lambert",
-  pageIndex: 7,
+  pageIndex: 5,
   printedPages: "10–11",
   blocks: [
     page8Block(
@@ -410,7 +410,7 @@ const page9Block = makePageBlock(9);
 
 const DINOSAUR_CLOSE_READING_PAGE_9: DinosaurCloseReadingPage = {
   bookSlug: "dinosaur-david-lambert",
-  pageIndex: 8,
+  pageIndex: 6,
   printedPages: "12–13",
   blocks: [
     page9Block(
@@ -515,7 +515,7 @@ const page10Block = makePageBlock(10);
 
 const DINOSAUR_CLOSE_READING_PAGE_10: DinosaurCloseReadingPage = {
   bookSlug: "dinosaur-david-lambert",
-  pageIndex: 9,
+  pageIndex: 7,
   printedPages: "14–15",
   blocks: [
     page10Block(
@@ -620,7 +620,7 @@ const page11Block = makePageBlock(11);
 
 const DINOSAUR_CLOSE_READING_PAGE_11: DinosaurCloseReadingPage = {
   bookSlug: "dinosaur-david-lambert",
-  pageIndex: 10,
+  pageIndex: 8,
   printedPages: "16–17",
   blocks: [
     page11Block(

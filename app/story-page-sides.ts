@@ -11,7 +11,7 @@ export type StoryPageSides = {
 
 type PageSidePlan = null | number | readonly [left: string, right: string];
 
-// Audited against all 535 story images. null means a true single page;
+// Audited against all 533 story images. null means a true single page;
 // a number splits canonical text; a tuple preserves the three scans whose
 // physical left/right reading order differs from the stored whole-page text.
 const STORY_PAGE_SIDE_PLANS: Record<string, readonly PageSidePlan[]> = {
@@ -29,7 +29,7 @@ const STORY_PAGE_SIDE_PLANS: Record<string, readonly PageSidePlan[]> = {
   "the-kings-cake": [0,121,131,83,136,82,135,64,80,136,41,96],
   "chicken-rice": [0,185,74,236,241,244,101,141,null],
   "marvel-3-tales-of-adventure": [29,29,19,21,34,60,80,43,65,21,27,0,28,57,38,0,16,23,24,61,54,0,88,85,96,38,109,77,69,49,41,0,53,13,42,43,47,16,31,25,20,36,27,0,0,0,46,0,39,0],
-  "dinosaur-david-lambert": [null,null,null,null,96,116,101,116,98,97,99,105,112,109,109,94,115,99,105,114,99,110,114,99,91,102,110,95,105,96,104,90,97,99,112,117,120,119,105],
+  "dinosaur-david-lambert": [29,104,96,116,101,116,98,97,99,105,112,109,109,94,115,99,105,114,99,110,114,99,91,102,110,95,105,96,104,90,97,99,112,117,120,119,105],
   "mr-gumpys-outing": [null,null,51,128,74,98,91,80,74,75,77,71,271,0,271,0,null],
   "a-day-in-the-kitchen-with-grandma": [null,64,103,125,145,60,135,75,96],
   "life-in-a-shell": [null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],

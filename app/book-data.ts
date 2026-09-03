@@ -730,10 +730,8 @@ export const BOOKS: Book[] = [
     term: 4,
     unit: 16,
     pages: makePages("dinosaur-david-lambert", [
-      "Dinosaur. An Eyewitness book.",
-      "Welcome to Dinosaur, an Eyewitness book about the amazing animals of the past.",
-      "These are clues from the dinosaur world: a fossil jaw, armored skin, a coprolite, and an ancient flower.",
-      "Dinosaur, written by David Lambert.",
+      "Dinosaur. An Eyewitness book. Welcome to Dinosaur, an Eyewitness book about the amazing animals of the past.",
+      "These are clues from the dinosaur world: a fossil jaw, armored skin, a coprolite, and an ancient flower. Dinosaur, written by David Lambert.",
       "This book brings together fossils, models, and scientific ideas to help us understand dinosaurs. Our journey explores dinosaur times, bodies, food, fossils, feathers, eggs, and family groups.",
       "Dinosaurs were upright land reptiles. Some were huge, some were tiny, and one surviving dinosaur group became birds. Marine reptiles such as plesiosaurs were not dinosaurs. A true dinosaur stood with its legs underneath its body.",
       "Scientists divide dinosaurs into two main groups by their hip bones: saurischians and ornithischians. Sauropods had long necks, theropods were mostly meat-eaters, and ankylosaurs carried strong body armor.",

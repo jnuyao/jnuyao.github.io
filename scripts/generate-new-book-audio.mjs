@@ -231,16 +231,18 @@ function planJobs() {
   });
   const closeReadingJobs = DINOSAUR_CLOSE_READING_PAGES.flatMap((closeReadingPage) => (
     closeReadingPage.blocks.map((block) => {
-      const pageFolder = `page-${String(closeReadingPage.pageIndex + 1).padStart(2, "0")}`;
+      const childPath = block.audioSrc.replace(/^\//, "");
+      const standardPath = childPath.replace(/^audio\//, "audio-standard/");
+      const id = childPath.replace(/^audio\//, "").replace(/\.mp3$/, "");
       return {
-        id: `dinosaur-close-reading/${pageFolder}/${block.id}`,
+        id,
         bookSlug: closeReadingPage.bookSlug,
         bookTitle: `Dinosaur close reading · printed pages ${closeReadingPage.printedPages}`,
         kind: "story",
         taskType: null,
         displayText: block.speechText ?? block.text,
-        standardPath: `audio-standard/dinosaur-close-reading/${pageFolder}/${block.id}.mp3`,
-        childPath: `audio/dinosaur-close-reading/${pageFolder}/${block.id}.mp3`,
+        standardPath,
+        childPath,
       };
     })
   ));
