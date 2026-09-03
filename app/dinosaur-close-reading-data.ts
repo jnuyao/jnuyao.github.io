@@ -693,6 +693,327 @@ const DINOSAUR_CLOSE_READING_PAGE_11: DinosaurCloseReadingPage = {
   ],
 };
 
+const page12Block = makePageBlock(12);
+
+const DINOSAUR_CLOSE_READING_PAGE_12: DinosaurCloseReadingPage = {
+  bookSlug: "dinosaur-david-lambert",
+  pageIndex: 9,
+  printedPages: "18–19",
+  blocks: [
+    page12Block(
+      "how-do-we-know",
+      "How do we know?",
+      "How do we know? We know what long-dead dinosaurs were like because paleontologists have dug up their remains. Most belonged to corpses buried under mud, sand, or volcanic ash that slowly hardened into rock. Minerals filled pores in the bones and hardened them, or replaced them altogether, turning bone to stone in a process called permineralization. Usually only fossilized bones remain, but sometimes the shapes of skin, tendons, and muscles survive too.",
+      { left: 8.0, top: 5.0, width: 29.2, height: 28.0 },
+    ),
+    page12Block(
+      "digging-up-the-past",
+      "Digging Up the Past",
+      "Digging Up the Past. Paleontologist Luis Chiappe excavates a Protoceratops skull at Ukhaa Tolgod in Mongolia's Gobi Desert. Determined dinosaur hunters sometimes travel halfway around the world to reach the best bone beds. There they may camp and work in harsh conditions, putting up with scorching heat or bitter cold.",
+      { left: 38.0, top: 20.0, width: 9.6, height: 13.5 },
+    ),
+    page12Block("dinosaur-at-riverbank", "Dinosaur at a riverbank", "A dinosaur at a riverbank.", { left: 24.4, top: 34.7, width: 8.2, height: 5.0 }),
+    page12Block("recently-dead-dinosaurs", "Recently dead dinosaurs", "Bones of recently deceased dinosaurs.", { left: 35.8, top: 35.8, width: 7.3, height: 6.0 }),
+    page12Block("layers-building", "Layers building up", "Layers of sediment building up on top.", { left: 44.2, top: 42.8, width: 4.3, height: 6.5 }),
+    page12Block("layered-rocks", "Layered rocks", "A stack of layered rocks.", { left: 9.6, top: 67.0, width: 6.1, height: 5.0 }),
+    page12Block("dry-riverbed", "Dry riverbed", "A dry riverbed.", { left: 17.1, top: 72.0, width: 6.2, height: 4.0 }),
+    page12Block(
+      "rock-layers",
+      "Rock Layers",
+      "Rock Layers. Fossils occur in sedimentary rocks, formed when sand, mud, and gravel build up in layers and are compressed over millions of years. In undisturbed layers, the oldest rocks lie at the bottom and the youngest at the top. Index fossils help scientists compare ages, while radioactive elements allow rocks to be dated accurately.",
+      { left: 8.0, top: 76.5, width: 15.0, height: 18.3 },
+    ),
+    page12Block("dinosaur-fossil-in-rock", "Dinosaur fossil in rock", "A dinosaur fossil preserved in rock.", { left: 28.3, top: 77.0, width: 6.0, height: 4.8 }),
+    page12Block(
+      "story-of-a-fossil",
+      "The Story of a Fossil",
+      "The Story of a Fossil. Dinosaurs drowned in a river. Their flesh rotted away, leaving bones in wet mud. More sediment buried the bones and slowly turned into rock. Minerals changed the bones into fossils. Over millions of years, wind and rain wore away the rock until dinosaur hunters discovered the fossils at the surface.",
+      { left: 24.8, top: 82.8, width: 15.8, height: 12.2 },
+    ),
+    page12Block(
+      "prehistoric-treasure",
+      "Prehistoric Treasure",
+      "Prehistoric Treasure. Almost all the bones in this Dilophosaurus skeleton are intact and connected much as they were in life. Complete dinosaur skeletons are extremely rare because scavenging animals and weather usually break up and scatter the bones.",
+      { left: 51.9, top: 21.1, width: 17.2, height: 12.0 },
+    ),
+    page12Block("fossilized-skin", "Fossilized skin", "A fossilized skin impression covers the fossil bones.", { left: 89.0, top: 5.8, width: 8.0, height: 4.5 }),
+    page12Block("twisted-body", "A twisted body", "The body is twisted because tendons shrank in dry heat.", { left: 70.7, top: 23.0, width: 8.0, height: 5.0 }),
+    page12Block(
+      "dinosaur-mummy",
+      "Dinosaur Mummy",
+      "Dinosaur Mummy. This Edmontosaurus fossil has traces of pebbly skin. River mud covered the dinosaur before its body decayed. The mud filled a mold of the skin and later turned to rock, preserving its shape. Such a find is called a mummy and teaches us about dinosaur soft tissues.",
+      { left: 86.3, top: 20.0, width: 11.5, height: 14.2 },
+    ),
+    page12Block(
+      "molds-and-casts",
+      "Molds and Casts",
+      "Molds and Casts. Sometimes a dead organism rots away completely and leaves an impression called a mold. Minerals may fill the impression with a stony lump in the shape of the organism. This new fossil is called a cast.",
+      { left: 52.9, top: 35.5, width: 14.2, height: 12.5 },
+    ),
+    page12Block("ammonite-mold", "Ammonite mold", "An ammonite mold: the impression left by the organism.", { left: 72.7, top: 35.2, width: 6.6, height: 9.0 }),
+    page12Block("ammonite-cast", "Ammonite cast", "An ammonite cast: a stony copy in the organism's shape.", { left: 63.0, top: 50.5, width: 7.3, height: 11.0 }),
+    page12Block(
+      "trace-fossils",
+      "Trace Fossils",
+      "Trace Fossils. A footprint shows where a dinosaur once walked through mud. Fossil eggs, nests, and dung also reveal how dinosaurs behaved. These traces help us learn how dinosaurs moved, bred, and ate—facts that bones alone cannot easily show.",
+      { left: 78.2, top: 63.0, width: 19.2, height: 10.7 },
+    ),
+    page12Block("fossil-excavation", "Excavating a fossil", "A paleontologist excavating a dinosaur fossil in an eroded desert landscape.", { left: 68.8, top: 62.8, width: 8.2, height: 9.0 }),
+    page12Block(
+      "carbonized-plant-tissue",
+      "Carbonized Plant Tissue",
+      "Carbonized Plant Tissue. A shiny black and brown film made of carbon is all that remains of this fern frond. Plant fossils help scientists picture the vegetation in a particular place and time.",
+      { left: 77.2, top: 85.3, width: 14.3, height: 10.5 },
+    ),
+  ],
+};
+
+const page13Block = makePageBlock(13);
+
+const DINOSAUR_CLOSE_READING_PAGE_13: DinosaurCloseReadingPage = {
+  bookSlug: "dinosaur-david-lambert",
+  pageIndex: 10,
+  printedPages: "20–21",
+  blocks: [
+    page13Block(
+      "first-fossil-finds",
+      "The First Fossil Finds",
+      "The First Fossil Finds. People had unearthed giant fossil bones long before they knew about dinosaurs. Scientific discovery began in England in the early 1820s. Gideon Mantell collected bones and teeth from a Sussex quarry and named a giant prehistoric reptile Iguanodon. Richard Owen later grouped it with two other creatures and invented the name Dinosauria, meaning terrible lizards, in 1842.",
+      { left: 14.2, top: 4.8, width: 33.5, height: 24.0 },
+    ),
+    page13Block("megalosaurus-thigh", "Megalosaurus thigh bone", "A fossilized Megalosaurus thigh bone.", { left: 3.2, top: 3.8, width: 9.0, height: 15.6 }),
+    page13Block(
+      "an-early-find",
+      "An Early Find",
+      "An Early Find. In 1677, English museum curator Robert Plot published the first picture of a dinosaur fossil. He mistakenly described this Megalosaurus fossil as the thigh bone of a giant man.",
+      { left: 2.8, top: 20.0, width: 10.5, height: 9.2 },
+    ),
+    page13Block(
+      "guess-again",
+      "Guess Again!",
+      "Guess Again! Gideon Mantell drew this sketch to show what he believed Iguanodon looked like. With only a few broken bones, he imagined an outsized iguana perched on a branch. He mistook the thumb spike for a nose horn and drew the tail thin and whiplike instead of heavy and stiff.",
+      { left: 19.8, top: 40.0, width: 11.8, height: 18.0 },
+    ),
+    page13Block(
+      "a-toothy-clue",
+      "A Toothy Clue",
+      "A Toothy Clue. Gideon Mantell noticed that large fossil teeth resembled the teeth of an iguana, so he chose the name Iguanodon, meaning iguana toothed. A famous story credits his wife Mary with finding the first tooth, but local quarrymen probably found it.",
+      { left: 2.8, top: 51.5, width: 15.8, height: 11.0 },
+    ),
+    page13Block("serrated-tooth", "Sharp, serrated tooth", "A sharp, serrated Iguanodon tooth.", { left: 24.4, top: 62.5, width: 6.0, height: 6.0 }),
+    page13Block("dentary", "Dentary", "The dentary is a bone in the lower jaw.", { left: 10.0, top: 65.8, width: 7.0, height: 5.0 }),
+    page13Block(
+      "first-of-many",
+      "The First of Many",
+      "The First of Many. In 1824, British geologist William Buckland published his description of a Megalosaurus fossil jaw. It became the first dinosaur to receive a scientific name. Although Mantell named Iguanodon by 1822, its name was not printed until 1825, making it second on the growing list.",
+      { left: 2.8, top: 70.7, width: 10.5, height: 20.8 },
+    ),
+    page13Block("megalosaurus-jaw", "Megalosaurus jaw", "A fossilized Megalosaurus jaw.", { left: 3.0, top: 91.4, width: 10.5, height: 4.0 }),
+    page13Block(
+      "whats-in-a-name",
+      "What's in a Name?",
+      "What's in a Name? Anatomist Richard Owen suggested the word dinosaur when only three kinds were known. He saw that they formed a special group: unlike ordinary reptiles, they stood on erect limbs and had fused backbones above the hips. Owen also founded London's Natural History Museum.",
+      { left: 65.1, top: 5.0, width: 11.8, height: 18.0 },
+    ),
+    page13Block(
+      "lifesize-sculptures",
+      "Lifesize Sculptures",
+      "Lifesize Sculptures. The earliest life-size dinosaur models looked like scaly rhinoceroses. Benjamin Waterhouse Hawkins built concrete models of Iguanodon, Megalosaurus, and Hylaeosaurus for Sydenham Park in 1853. Richard Owen and other scientists even ate a banquet inside a hollow Iguanodon model.",
+      { left: 80.2, top: 5.3, width: 17.4, height: 12.3 },
+    ),
+    page13Block("concrete-models", "Concrete Iguanodon models", "Concrete models of Iguanodon in Sydenham Park.", { left: 84.3, top: 18.8, width: 12.0, height: 5.0 }),
+    page13Block("long-front-tooth", "Long front tooth", "A long front tooth from Tyrannosaurus.", { left: 60.5, top: 48.5, width: 5.2, height: 5.5 }),
+    page13Block(
+      "wild-wild-west",
+      "Wild Wild West",
+      "Wild Wild West. Anchisaurus bones were unearthed in Connecticut as early as 1818. In the 1870s, the spotlight shifted to the American West. Famous dinosaur hunter Barnum Brown found many fossils and discovered the first Tyrannosaurus skeleton in Montana in 1902.",
+      { left: 68.1, top: 47.0, width: 13.0, height: 20.0 },
+    ),
+    page13Block(
+      "fact-or-fiction",
+      "Fact or Fiction?",
+      "Fact or Fiction? Ancient stories about a hooked-beaked, talon-footed griffin may have been inspired by Protoceratops fossils found in central Asia. The story could have travelled through Persia to Greece and helped create the legend of the griffin.",
+      { left: 70.8, top: 73.8, width: 13.5, height: 19.0 },
+    ),
+    page13Block("griffin-statue", "Persian griffin", "A Persian statue of a griffin.", { left: 83.8, top: 73.5, width: 14.0, height: 22.0 }),
+  ],
+};
+
+const page14Block = makePageBlock(14);
+
+const DINOSAUR_CLOSE_READING_PAGE_14: DinosaurCloseReadingPage = {
+  bookSlug: "dinosaur-david-lambert",
+  pageIndex: 11,
+  printedPages: "22–23",
+  blocks: [
+    page14Block(
+      "little-and-large",
+      "Little and Large",
+      "Little and Large. Most dinosaurs were no bigger than an elephant, but some sauropods were the longest and heaviest land animals ever. Brachiosaurus stood as high as a four-story building. Diplodocus stretched as long as three buses. Argentinosaurus may have weighed as much as ten bull elephants. At the other extreme, Compsognathus was little bigger than a chicken, and Microraptor was smaller still.",
+      { left: 15.0, top: 4.8, width: 33.0, height: 36.5 },
+    ),
+    page14Block(
+      "the-high-life",
+      "The High Life",
+      "The High Life. A mounted Barosaurus skeleton in the American Museum of Natural History shows its awesome size. If sauropods reared up, this mother could have held her head fifty feet above the ground while protecting her young from an Allosaurus.",
+      { left: 2.8, top: 30.0, width: 11.8, height: 14.0 },
+    ),
+    page14Block(
+      "extreme-sizes",
+      "Extreme Sizes",
+      "Extreme Sizes. These dinosaurs are compared with a six-foot human. Mei long measured twenty-seven inches. Carcharodontosaurus reached forty-four feet. Argentinosaurus was one hundred to one hundred ten feet long. Iguanodon reached thirty-six feet, and Triceratops twenty-nine and a half feet.",
+      { left: 2.8, top: 62.0, width: 11.0, height: 16.0 },
+    ),
+    page14Block("powerful-hind-limb", "Powerful hind limb", "A powerful hind limb.", { left: 15.8, top: 82.0, width: 8.5, height: 5.0 }),
+    page14Block("massive-jaw", "Massive jaw", "Sharklike teeth in a massive jaw.", { left: 35.5, top: 81.0, width: 8.0, height: 6.0 }),
+    page14Block("size-lineup", "Dinosaur size lineup", "Human. Mei long. Carcharodontosaurus. Argentinosaurus. Iguanodon. Triceratops.", { left: 2.8, top: 90.0, width: 94.0, height: 6.0 }),
+    page14Block(
+      "movie-monsters",
+      "Movie Monsters",
+      "Movie Monsters. The huge size of dinosaurs has inspired films in which gigantic creatures such as Godzilla rampage through cities. No real dinosaur ever grew as large as these movie monsters, but visual effects make them look convincing.",
+      { left: 67.3, top: 5.2, width: 14.7, height: 11.2 },
+    ),
+    page14Block("small-head", "Small head", "A small head relative to body size.", { left: 90.7, top: 5.8, width: 7.0, height: 6.0 }),
+    page14Block("long-neck", "Long neck", "A long neck.", { left: 63.5, top: 47.0, width: 7.0, height: 4.0 }),
+    page14Block("clawed-finger", "Clawed finger", "A clawed finger.", { left: 84.6, top: 26.0, width: 8.0, height: 4.0 }),
+    page14Block("feathered-legs", "Feathered legs", "Feathered legs served as extra wings.", { left: 75.0, top: 31.5, width: 8.3, height: 5.0 }),
+    page14Block(
+      "dinosaur-biplane",
+      "Dinosaur Biplane",
+      "Dinosaur Biplane. Microraptor gui was one of the smallest nonbird dinosaurs. It was bigger than a pigeon but weighed only two and a quarter pounds. This little theropod was about thirty inches long and could glide at least one hundred thirty feet from tree to tree.",
+      { left: 88.2, top: 31.5, width: 9.7, height: 14.5 },
+    ),
+    page14Block("birdlike-foot", "Birdlike foot", "A birdlike foot.", { left: 75.0, top: 53.0, width: 5.5, height: 5.0 }),
+    page14Block("compsognathus", "Compsognathus", "Compsognathus, meaning elegant jaw, was no bigger than a chicken.", { left: 80.2, top: 49.5, width: 9.0, height: 7.0 }),
+    page14Block("chicken", "Chicken", "A chicken shown for size comparison.", { left: 89.5, top: 48.5, width: 7.0, height: 11.0 }),
+    page14Block(
+      "chicken-sized",
+      "Chicken-sized",
+      "Chicken-sized. Compsognathus lived on tropical islands that now form southern Germany and France. This agile hunter ate lizards. Scientists even found the remains of a long-tailed lizard called Bavarisaurus inside the rib cage of a fossil Compsognathus.",
+      { left: 78.6, top: 60.0, width: 18.7, height: 9.0 },
+    ),
+  ],
+};
+
+const page15Block = makePageBlock(15);
+
+const DINOSAUR_CLOSE_READING_PAGE_15: DinosaurCloseReadingPage = {
+  bookSlug: "dinosaur-david-lambert",
+  pageIndex: 12,
+  printedPages: "24–25",
+  blocks: [
+    page15Block(
+      "dinosaur-evolution",
+      "Dinosaur Evolution",
+      "Dinosaur Evolution. Dinosaurs and humans have skeletons based on the same plan because both evolved from the same prehistoric backboned animal. Evolution is the process by which a species gradually changes. Helpful traits allow animals to adapt and survive. Over many generations, new species form. Fish with fins gave rise to four-legged animals, then separate groups became mammal ancestors and reptiles, and from sprawling reptiles came dinosaurs.",
+      { left: 16.0, top: 4.8, width: 32.0, height: 30.5 },
+    ),
+    page15Block(
+      "fishy-forerunner",
+      "Fishy Forerunner",
+      "Fishy Forerunner. Panderichthys was a fish that lived about 380 million years ago. An animal like this was an ancestor of all tetrapods. Its fleshy fins contained limb-like bones, and its skull, ribs, and tooth enamel were more like those of tetrapods than fish.",
+      { left: 2.8, top: 19.8, width: 12.4, height: 15.0 },
+    ),
+    page15Block(
+      "first-creatures-with-legs",
+      "The First Creatures with Legs",
+      "The First Creatures with Legs. Acanthostega lived in shallow water around 360 million years ago. It had gills and a tail fin like a fish, but also had hip bones, limb bones, toes, and fingers. Its spine was stiffened, and its head could move separately from its shoulders.",
+      { left: 22.7, top: 36.5, width: 20.8, height: 10.8 },
+    ),
+    page15Block("paddlelike-tail", "Paddlelike tail fin", "A paddlelike tail fin.", { left: 3.2, top: 37.0, width: 7.0, height: 8.0 }),
+    page15Block("eight-digits", "Eight digits", "Acanthostega had eight digits.", { left: 10.0, top: 45.0, width: 7.2, height: 5.0 }),
+    page15Block(
+      "ancestors-of-reptiles",
+      "Ancestors of Reptiles",
+      "Ancestors of Reptiles. Early tetrapods laid eggs in water. Later, some produced eggs protected by a membrane called an amnion. These amniotes became the ancestors of reptiles and mammals. Westlothiana lived 330 million years ago and may have been an early amniote.",
+      { left: 10.0, top: 53.0, width: 16.5, height: 14.0 },
+    ),
+    page15Block("five-digits", "Five digits", "Westlothiana had five digits.", { left: 3.5, top: 57.0, width: 6.0, height: 6.0 }),
+    page15Block("lizardlike-tail", "Lizardlike tail", "A long, lizardlike tail.", { left: 9.7, top: 67.0, width: 8.0, height: 5.0 }),
+    page15Block(
+      "sprawling-walker",
+      "A Sprawling Walker",
+      "A Sprawling Walker. Crocodile-like Chasmatosaurus belonged to the archosaurs, a group that also included crocodiles and dinosaurs. Its limbs stuck out sideways, so it walked in the sprawling way that lizards do. It lived about 250 million years ago.",
+      { left: 2.8, top: 86.0, width: 16.0, height: 10.0 },
+    ),
+    page15Block(
+      "rearing-to-run",
+      "Rearing to Run",
+      "Rearing to Run. Cat-sized Euparkeria lived about 245 million years ago. Its hind limbs were longer than its forelimbs and tucked beneath its body. It probably reared up to run on its hind limbs, balancing with its long tail.",
+      { left: 26.2, top: 86.0, width: 16.8, height: 10.0 },
+    ),
+    page15Block(
+      "skeletons-compared",
+      "Skeletons Compared",
+      "Skeletons Compared. A Tyrannosaurus and a human skeleton can be matched almost bone for bone because they inherited the same basic plan from a distant fishy ancestor. Tyrannosaurus has a longer skull and many vertebrae forming a tail. Humans have only one tail bone, the coccyx.",
+      { left: 83.5, top: 5.0, width: 13.8, height: 17.5 },
+    ),
+    page15Block("tyrannosaurus-skeleton", "Tyrannosaurus skeleton", "Skull, backbone, pelvis, ribs, hands, shin bones, and toe bones in a Tyrannosaurus skeleton.", { left: 52.3, top: 4.5, width: 24.0, height: 24.0 }),
+    page15Block("human-skeleton", "Human skeleton", "The same basic bones in a human skeleton.", { left: 75.0, top: 7.5, width: 8.0, height: 22.0 }),
+    page15Block(
+      "dinosaur-dawn",
+      "Dinosaur Dawn",
+      "Dinosaur Dawn. Eoraptor, meaning dawn thief, lived 228 million years ago. This small two-legged hunter had erect legs and grasping hands. But its neck and thumbs were shorter than those of later theropods and sauropodomorphs.",
+      { left: 51.8, top: 31.2, width: 14.0, height: 12.5 },
+    ),
+  ],
+};
+
+const page16Block = makePageBlock(16);
+
+const DINOSAUR_CLOSE_READING_PAGE_16: DinosaurCloseReadingPage = {
+  bookSlug: "dinosaur-david-lambert",
+  pageIndex: 13,
+  printedPages: "26–27",
+  blocks: [
+    page16Block(
+      "heads-and-brains",
+      "Heads and Brains",
+      "Heads and Brains. A dinosaur's head was built around separate skull bones that supported the jaws and protected the brain. Openings served the eyes, ears, nostrils, and jaw muscles, while extra holes reduced weight. Dinosaur skulls ranged from light and slender to heavy and armored. Their brains were usually smaller and simpler than mammal brains, although some theropods had large, birdlike brains and keen senses.",
+      { left: 2.8, top: 4.8, width: 33.5, height: 28.5 },
+    ),
+    page16Block("naris", "Naris", "The naris is the opening for the nostril.", { left: 19.8, top: 34.0, width: 9.7, height: 5.0 }),
+    page16Block("orbit", "Orbit", "The orbit is the opening for the eye.", { left: 24.0, top: 43.0, width: 7.0, height: 5.0 }),
+    page16Block(
+      "armored-head",
+      "Armored Head",
+      "Armored Head. Ankylosaurus had a thick, heavy skull that protected its low, broad head from bites. Unlike many dinosaurs, it had no large windows in its skull—only four small openings for the eyes and nostrils. A relative even had bony eyelids that closed like shutters.",
+      { left: 2.8, top: 51.0, width: 13.0, height: 15.0 },
+    ),
+    page16Block("ankylosaurus-skull", "Ankylosaurus skull", "A thick, solid Ankylosaurus skull.", { left: 17.0, top: 51.0, width: 14.8, height: 17.0 }),
+    page16Block("second-naris", "Nostril opening", "Another view of the naris, the opening for the nostril.", { left: 8.0, top: 65.0, width: 10.0, height: 5.0 }),
+    page16Block("slender-bone-rods", "Slender rods of bone", "Slender rods of bone and a large skull window reduced weight.", { left: 27.0, top: 73.0, width: 9.0, height: 8.0 }),
+    page16Block(
+      "skull-with-struts",
+      "A Skull with Struts",
+      "A Skull with Struts. Camarasaurus had a delicately built skull with slender bony rods, except around the working jaws. A light skull mattered more than protection because this sauropod could hold its head high to avoid predators and reach branches.",
+      { left: 35.0, top: 77.0, width: 13.8, height: 17.5 },
+    ),
+    page16Block("antorbital-fenestra", "Antorbital fenestra", "The antorbital fenestra is a window in front of the eye opening.", { left: 51.5, top: 5.0, width: 8.2, height: 7.0 }),
+    page16Block("tiny-cerebrum", "Tiny cerebrum", "Tyrannosaurus had a tiny cerebrum compared with a human.", { left: 56.8, top: 4.8, width: 8.0, height: 5.0 }),
+    page16Block("brain-cast", "Brain cast", "A cast of the hollow space once occupied by the Tyrannosaurus brain.", { left: 76.5, top: 8.0, width: 7.0, height: 5.0 }),
+    page16Block(
+      "comparing-brains",
+      "Comparing Brains",
+      "Comparing Brains. Tyrannosaurus had an enormous skull, but much of it held toothy jaws. Its brain was relatively small. Scientists studied a cast of the brain cavity and saw a tiny cerebrum. A human's much larger cerebrum makes speech and complex thinking possible, while Tyrannosaurus managed well with a brain mainly supervising muscles and senses.",
+      { left: 85.0, top: 5.0, width: 12.5, height: 22.0 },
+    ),
+    page16Block("human-brain", "Human brain", "The cerebrum forms about eighty-five percent of the human brain. The cerebellum controls movement and the senses.", { left: 84.5, top: 28.0, width: 13.0, height: 18.0 }),
+    page16Block(
+      "quick-witted",
+      "Quick-witted?",
+      "Quick-witted? Troodon had a heavier brain relative to its body than almost any other dinosaur. Its brain may have been as sophisticated as a modern cassowary's. This hunter could probably track and ambush prey well.",
+      { left: 51.5, top: 80.5, width: 15.5, height: 14.5 },
+    ),
+    page16Block(
+      "hunting-in-packs",
+      "Hunting in Packs",
+      "Hunting in Packs. Deinonychus and Tenontosaurus fossils have been found near each other. Some paleontologists think clever theropods hunted in packs like wolves. Others think the animals died separately and a river later deposited their bodies together.",
+      { left: 76.0, top: 82.5, width: 21.8, height: 13.0 },
+    ),
+  ],
+};
+
 export const DINOSAUR_CLOSE_READING_PAGES: readonly DinosaurCloseReadingPage[] = [
   DINOSAUR_CLOSE_READING_PAGE,
   DINOSAUR_CLOSE_READING_PAGE_7,
@@ -700,6 +1021,11 @@ export const DINOSAUR_CLOSE_READING_PAGES: readonly DinosaurCloseReadingPage[] =
   DINOSAUR_CLOSE_READING_PAGE_9,
   DINOSAUR_CLOSE_READING_PAGE_10,
   DINOSAUR_CLOSE_READING_PAGE_11,
+  DINOSAUR_CLOSE_READING_PAGE_12,
+  DINOSAUR_CLOSE_READING_PAGE_13,
+  DINOSAUR_CLOSE_READING_PAGE_14,
+  DINOSAUR_CLOSE_READING_PAGE_15,
+  DINOSAUR_CLOSE_READING_PAGE_16,
 ];
 
 export function dinosaurCloseReadingPageFor(

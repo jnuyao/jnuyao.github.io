@@ -1463,12 +1463,15 @@ function StoryReader({
 }) {
   const [storyMode, setStoryMode] = useState<"english" | "guide-zh">("english");
   const [closeReadingEnabled, setCloseReadingEnabled] = useState(false);
+  const [closeReadingAuto, setCloseReadingAuto] = useState(false);
   const [bedtimeAutoReading, setBedtimeAutoReading] = useState(false);
   const [bedtimeFinished, setBedtimeFinished] = useState(false);
   const [bedtimeError, setBedtimeError] = useState(false);
   const startX = useRef<number | null>(null);
   const bedtimeRunRef = useRef(0);
   const bedtimeTimerRef = useRef<number | null>(null);
+  const closeReadingRunRef = useRef(0);
+  const closeReadingTimerRef = useRef<number | null>(null);
   const current = book.pages[page];
   const currentSides = current.sides;
   const currentIsSpread = current.layout === "spread";
@@ -1523,6 +1526,20 @@ function StoryReader({
     }
   }, []);
 
+  const clearCloseReadingTimer = useCallback(() => {
+    if (closeReadingTimerRef.current !== null) {
+      window.clearTimeout(closeReadingTimerRef.current);
+      closeReadingTimerRef.current = null;
+    }
+  }, []);
+
+  const stopCloseReadingAuto = useCallback(() => {
+    closeReadingRunRef.current += 1;
+    clearCloseReadingTimer();
+    setCloseReadingAuto(false);
+    stopNarration();
+  }, [clearCloseReadingTimer, stopNarration]);
+
   const stopBedtimeAutoReading = useCallback(() => {
     bedtimeRunRef.current += 1;
     clearBedtimeTimer();
@@ -1558,9 +1575,11 @@ function StoryReader({
 
   useEffect(() => () => {
     bedtimeRunRef.current += 1;
+    closeReadingRunRef.current += 1;
     clearBedtimeTimer();
+    clearCloseReadingTimer();
     stopNarration();
-  }, [clearBedtimeTimer, stopNarration]);
+  }, [clearBedtimeTimer, clearCloseReadingTimer, stopNarration]);
 
   const pageVoiceKey = `${guideMode ? "guide-zh" : "english"}-${book.slug}-${page}`;
   const pageIsSpeaking = narrator.activeKey === pageVoiceKey;
@@ -1574,6 +1593,7 @@ function StoryReader({
   ) ?? null;
 
   const chooseStoryMode = (mode: "english" | "guide-zh") => {
+    if (closeReadingAuto) stopCloseReadingAuto();
     stopBedtimeAutoReading();
     setStoryMode(mode);
   };
@@ -1664,6 +1684,7 @@ function StoryReader({
 
   const startBedtimeStory = () => {
     clearBedtimeTimer();
+    if (closeReadingAuto) stopCloseReadingAuto();
     stopNarration();
     const bedtimeRun = ++bedtimeRunRef.current;
     const startPage = bedtimeFinished ? 0 : page;
@@ -1680,6 +1701,7 @@ function StoryReader({
   };
 
   const playCurrentPage = () => {
+    if (closeReadingAuto) stopCloseReadingAuto();
     if (bedtimeAutoReading) {
       stopBedtimeAutoReading();
       return;
@@ -1694,6 +1716,7 @@ function StoryReader({
   const playPageSide = (side: "left" | "right") => {
     const pageSide = currentSides?.[side];
     const key = sideVoiceKey(side);
+    if (closeReadingAuto) stopCloseReadingAuto();
     if (bedtimeAutoReading) stopBedtimeAutoReading();
     if (narrator.activeKey === key) {
       narrator.stop();
@@ -1708,6 +1731,7 @@ function StoryReader({
   };
 
   const toggleCloseReading = () => {
+    if (closeReadingAuto) stopCloseReadingAuto();
     stopBedtimeAutoReading();
     narrator.stop();
     setCloseReadingEnabled((enabled) => !enabled);
@@ -1715,6 +1739,7 @@ function StoryReader({
 
   const playCloseReadingBlock = (block: DinosaurCloseReadingBlock) => {
     const key = closeReadingVoiceKey(block.id);
+    if (closeReadingAuto) stopCloseReadingAuto();
     if (bedtimeAutoReading) stopBedtimeAutoReading();
     if (narrator.activeKey === key) {
       narrator.stop();
@@ -1728,14 +1753,62 @@ function StoryReader({
     });
   };
 
+  function failCloseReadingSequence(closeReadingRun: number) {
+    if (closeReadingRun !== closeReadingRunRef.current) return;
+    closeReadingRunRef.current += 1;
+    clearCloseReadingTimer();
+    setCloseReadingAuto(false);
+  }
+
+  function playCloseReadingSequence(blockIndex: number, closeReadingRun: number) {
+    if (closeReadingRun !== closeReadingRunRef.current || !closeReadingPage) return;
+    const block = closeReadingPage.blocks[blockIndex];
+    if (!block) {
+      closeReadingRunRef.current += 1;
+      clearCloseReadingTimer();
+      setCloseReadingAuto(false);
+      return;
+    }
+    narrator.speak(block.speechText ?? block.text, {
+      purpose: "story",
+      activeKey: closeReadingVoiceKey(block.id),
+      audioSrc: block.audioSrc,
+      preparedOnly: true,
+      onComplete: () => {
+        if (closeReadingRun !== closeReadingRunRef.current) return;
+        closeReadingTimerRef.current = window.setTimeout(
+          () => playCloseReadingSequence(blockIndex + 1, closeReadingRun),
+          360,
+        );
+      },
+      onError: () => failCloseReadingSequence(closeReadingRun),
+    });
+  }
+
+  const toggleCloseReadingAuto = () => {
+    if (closeReadingAuto) {
+      stopCloseReadingAuto();
+      return;
+    }
+    if (!closeReadingPage) return;
+    stopBedtimeAutoReading();
+    narrator.stop();
+    clearCloseReadingTimer();
+    const closeReadingRun = ++closeReadingRunRef.current;
+    setCloseReadingEnabled(true);
+    setCloseReadingAuto(true);
+    playCloseReadingSequence(0, closeReadingRun);
+  };
+
   const movePage = useCallback((next: number) => {
     const targetPage = Math.max(0, Math.min(next, book.pages.length - 1));
     stopBedtimeAutoReading();
+    if (closeReadingAuto) stopCloseReadingAuto();
     stopNarration();
     if (targetPage === page) return;
     setCloseReadingEnabled(false);
     onPageChange(targetPage);
-  }, [book.pages.length, onPageChange, page, stopBedtimeAutoReading, stopNarration]);
+  }, [book.pages.length, closeReadingAuto, onPageChange, page, stopBedtimeAutoReading, stopCloseReadingAuto, stopNarration]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1841,7 +1914,11 @@ function StoryReader({
                   <span aria-hidden="true">🔎</span>
                   <span>
                     <strong>{activeCloseReadingBlock ? activeCloseReadingBlock.title : "精读模式已开启"}</strong>
-                    <small>{activeCloseReadingBlock ? "正在播放 · 再点一次可停止" : `点击书页上的淡色细框，逐块听英文 · 共 ${closeReadingPage.blocks.length} 块`}</small>
+                    <small>{activeCloseReadingBlock
+                      ? closeReadingAuto
+                        ? `自动精读中 · 第 ${closeReadingPage.blocks.findIndex((block) => block.id === activeCloseReadingBlock.id) + 1} / ${closeReadingPage.blocks.length} 块`
+                        : "正在播放 · 再点一次可停止"
+                      : `点击细框单独听，或使用自动精读 · 共 ${closeReadingPage.blocks.length} 块`}</small>
                   </span>
                 </div>
               )}
@@ -1915,19 +1992,35 @@ function StoryReader({
                   </span>
                 </button>
                 {closeReadingPage && (
-                  <button
-                    className={`listen-button close-reading-toggle${closeReadingEnabled ? " is-selected" : ""}`}
-                    type="button"
-                    onClick={toggleCloseReading}
-                    disabled={!narrator.supported}
-                    aria-pressed={closeReadingEnabled}
-                  >
-                    <span className="listen-button__icon" aria-hidden="true">{closeReadingEnabled ? "×" : "🔎"}</span>
-                    <span>
-                      <strong>{closeReadingEnabled ? "退出精读" : "精读这一页"}</strong>
-                      <small>点击每块文字单独听</small>
-                    </span>
-                  </button>
+                  <>
+                    <button
+                      className={`listen-button close-reading-toggle${closeReadingEnabled ? " is-selected" : ""}`}
+                      type="button"
+                      onClick={toggleCloseReading}
+                      disabled={!narrator.supported}
+                      aria-pressed={closeReadingEnabled}
+                    >
+                      <span className="listen-button__icon" aria-hidden="true">{closeReadingEnabled ? "×" : "🔎"}</span>
+                      <span>
+                        <strong>{closeReadingEnabled ? "退出精读" : "精读这一页"}</strong>
+                        <small>点击每块文字单独听</small>
+                      </span>
+                    </button>
+                    <button
+                      className={`listen-button close-reading-auto${closeReadingAuto ? " is-speaking" : ""}`}
+                      type="button"
+                      onClick={toggleCloseReadingAuto}
+                      disabled={!narrator.supported}
+                      aria-pressed={closeReadingAuto}
+                      aria-label={closeReadingAuto ? "Stop automatic close reading" : "Play all close-reading blocks in order"}
+                    >
+                      <span className="listen-button__icon" aria-hidden="true">{closeReadingAuto ? "■" : "▶"}</span>
+                      <span>
+                        <strong>{closeReadingAuto ? "停止自动精读" : "自动精读"}</strong>
+                        <small>按顺序朗读 {closeReadingPage.blocks.length} 块</small>
+                      </span>
+                    </button>
+                  </>
                 )}
                 <button
                   className={`listen-button bedtime-button ${bedtimeAutoReading ? "is-speaking" : ""}`}
@@ -1975,7 +2068,14 @@ function StoryReader({
                   </details>
                 </section>
               ) : (
-                <NarrationSettings narrator={narrator} brief onPaceChange={stopBedtimeAutoReading} />
+                <NarrationSettings
+                  narrator={narrator}
+                  brief
+                  onPaceChange={() => {
+                    if (closeReadingAuto) stopCloseReadingAuto();
+                    stopBedtimeAutoReading();
+                  }}
+                />
               )}
               {onArtStudio && (
                 <section className={`art-reader-invite ${artObservation ? "is-observation" : ""}`}>

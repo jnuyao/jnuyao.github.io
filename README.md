@@ -40,6 +40,7 @@ Then open [http://localhost:3001/](http://localhost:3001/) (or the port shown by
 - `npm run audio:check` — validate the receipt-backed original ten-book Aoede release without changing public files.
 - `npm run audio:new-books` — securely resume the eight-book Aoede extension set.
 - `npm run audio:new-books:batch` — resume only missing story and task clips through the quota-independent Batch API.
+- Add `-- --id-prefix <job-prefix>` to a Batch command to limit generation to one safely named group, such as a new set of close-reading clips.
 - `npm run words:audio` — securely resume missing word-audio generation and validation.
 - `npm run words:audio:batch` — resume only missing word clips through the quota-independent Batch API.
 - `npm run words:verify` — independently blind-transcribe the standard word clips.

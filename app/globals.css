@@ -1307,6 +1307,16 @@ p {
   box-shadow: 0 4px 0 #934a25;
 }
 
+.reader--reference-book .close-reading-auto {
+  background: #317969;
+  box-shadow: 0 4px 0 #1d5146;
+}
+
+.reader--reference-book .close-reading-auto.is-speaking {
+  background: #a74f47;
+  box-shadow: 0 4px 0 #71342f;
+}
+
 .reader--reference-book .listen-button__icon {
   width: 31px;
   height: 31px;

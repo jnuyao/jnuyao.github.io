@@ -614,7 +614,7 @@ test("Dinosaur uses a tight, wide reader treatment for its small reference text"
   assert.match(styles, /\.reader--reference-book\s+\.narration-settings summary\s*\{[\s\S]{0,160}min-height:\s*46px/);
 });
 
-test("Dinosaur printed pages 6–17 have clickable close-reading narration in both paces", async () => {
+test("Dinosaur printed pages 6–27 have clickable close-reading narration in both paces", async () => {
   const [closeReadingPages, pageSource, styles] = await Promise.all([
     loadDinosaurCloseReadingData(),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
@@ -628,6 +628,11 @@ test("Dinosaur printed pages 6–17 have clickable close-reading narration in bo
     { pageIndex: 6, audioPage: 9, printedPages: "12–13", blocks: 25 },
     { pageIndex: 7, audioPage: 10, printedPages: "14–15", blocks: 25 },
     { pageIndex: 8, audioPage: 11, printedPages: "16–17", blocks: 22 },
+    { pageIndex: 9, audioPage: 12, printedPages: "18–19", blocks: 20 },
+    { pageIndex: 10, audioPage: 13, printedPages: "20–21", blocks: 16 },
+    { pageIndex: 11, audioPage: 14, printedPages: "22–23", blocks: 16 },
+    { pageIndex: 12, audioPage: 15, printedPages: "24–25", blocks: 14 },
+    { pageIndex: 13, audioPage: 16, printedPages: "26–27", blocks: 15 },
   ];
   assert.equal(closeReadingPages.length, expectedPages.length);
   const referencedAudio = new Set();
@@ -679,11 +684,14 @@ test("Dinosaur printed pages 6–17 have clickable close-reading narration in bo
     }
   }
 
-  assert.equal(referencedAudio.size, 161);
+  assert.equal(referencedAudio.size, 242);
 
   assert.match(pageSource, /className="close-reading-layer"/);
   assert.match(pageSource, /preparedOnly:\s*true/);
   assert.match(pageSource, /精读这一页/);
+  assert.match(pageSource, /自动精读/);
+  assert.match(pageSource, /playCloseReadingSequence/);
+  assert.match(pageSource, /onComplete:\s*\(\) => \{/);
   assert.match(styles, /\.close-reading-hotspot\s*\{/);
   assert.match(styles, /\.reader--reference-book\s+\.close-reading-toggle\s*\{/);
 });

@@ -50,6 +50,7 @@ function usage() {
     "",
     "Usage:",
     "  node scripts/generate-missing-audio-batch.mjs --scope story",
+    "  node scripts/generate-missing-audio-batch.mjs --scope story --id-prefix dinosaur-close-reading/page-12/",
     "  node scripts/generate-missing-audio-batch.mjs --scope word",
     "  node scripts/generate-missing-audio-batch.mjs --scope story --dry-run",
     "",
@@ -72,6 +73,7 @@ function parseArguments(argv) {
     pollIntervalMs: 15_000,
     maxBatches: Number.POSITIVE_INFINITY,
     dryRun: false,
+    idPrefix: null,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -79,6 +81,10 @@ function parseArguments(argv) {
     else if (argument === "--batch-size") options.batchSize = positiveInteger(argv[++index], argument);
     else if (argument === "--poll-interval") options.pollIntervalMs = positiveInteger(argv[++index], argument) * 1_000;
     else if (argument === "--max-batches") options.maxBatches = positiveInteger(argv[++index], argument);
+    else if (argument === "--id-prefix") {
+      options.idPrefix = argv[++index];
+      if (!options.idPrefix || /[\r\n\0]/.test(options.idPrefix)) throw new Error("--id-prefix must be a non-empty job ID prefix.");
+    }
     else if (argument === "--dry-run") options.dryRun = true;
     else if (argument === "--help" || argument === "-h") {
       process.stdout.write(`${usage()}\n`);
@@ -311,8 +317,9 @@ async function loadState(scope, options = {}) {
   return scope === "story" ? loadStoryState(options) : loadWordState(options);
 }
 
-function remainingEntries(state) {
+function remainingEntries(state, idPrefix = null) {
   return state.jobs
+    .filter((job) => !idPrefix || job.id.startsWith(idPrefix))
     .filter((job) => !state.records.has(job.id))
     .map((job) => {
       if (state.scope === "word" && job.sourceModel !== MODEL) {
@@ -830,7 +837,7 @@ async function applyBatch(payload, state, journal, path, entryByKey) {
 }
 
 async function runOneBatch(options, state, key) {
-  const remaining = remainingEntries(state);
+  const remaining = remainingEntries(state, options.idPrefix);
   if (!remaining.length) return { done: true, completed: 0 };
   const { active, all } = await activeOrBlockingJournal(state);
   let journal;
@@ -845,7 +852,7 @@ async function runOneBatch(options, state, key) {
     await createJournal(path, journal);
   }
 
-  const currentByKey = new Map(remainingEntries(state).map((entry) => [entry.key, entry]));
+  const currentByKey = new Map(remainingEntries(state, options.idPrefix).map((entry) => [entry.key, entry]));
   const selected = journal.jobs.map((planned) => {
     const entry = currentByKey.get(planned.key);
     if (!entry || entry.job.requestSha256 !== planned.requestSha256) {
@@ -894,10 +901,13 @@ async function runOneBatch(options, state, key) {
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   const state = await loadState(options.scope, { applyCopies: !options.dryRun });
-  const missing = remainingEntries(state);
-  const complete = state.jobs.length - missing.length;
+  const scopedJobs = options.idPrefix
+    ? state.jobs.filter((job) => job.id.startsWith(options.idPrefix))
+    : state.jobs;
+  const missing = remainingEntries(state, options.idPrefix);
+  const complete = scopedJobs.length - missing.length;
   process.stdout.write(
-    `${options.scope}: ${complete}/${state.jobs.length} records reusable; ${missing.length} Batch request(s) remain.\n`,
+    `${options.scope}${options.idPrefix ? ` (${options.idPrefix}*)` : ""}: ${complete}/${scopedJobs.length} records reusable; ${missing.length} Batch request(s) remain.\n`,
   );
   if (options.dryRun || !missing.length) return;
 
@@ -914,7 +924,7 @@ async function main() {
     );
   }
   await state.save(state);
-  const remaining = remainingEntries(state).length;
+  const remaining = remainingEntries(state, options.idPrefix).length;
   process.stdout.write(
     `${options.scope} Batch run finished: ${generated} generated, ${remaining} request(s) remain.\n`,
   );
