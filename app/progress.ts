@@ -1,4 +1,4 @@
-import { BOOKS } from "./book-data";
+import { BOOKS, LIBRARY_BOOKS } from "./book-data";
 import {
   ART_MISSION_IDS,
   ART_STEPS,
@@ -83,7 +83,7 @@ export function normaliseProgress(value: unknown): ProgressStore {
     return safe;
   }
 
-  for (const book of BOOKS) {
+  for (const book of [...BOOKS, ...LIBRARY_BOOKS]) {
     const raw = (candidate.books as Record<string, unknown>)[book.slug];
     if (!raw || typeof raw !== "object") continue;
     const item = raw as Record<string, unknown>;

@@ -11,7 +11,8 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { BOOKS, type Book } from "./book-data";
+import { BOOKS as PICTURE_BOOKS, LIBRARY_BOOKS, type Book } from "./book-data";
+import { readingLayout } from "./reading-layout";
 import { ArtStudio } from "./art-studio";
 import {
   ART_MISSION_IDS,
@@ -104,6 +105,8 @@ import {
   type NarrationPace,
   type NarrationPurpose,
 } from "./narration";
+
+const BOOKS = [...PICTURE_BOOKS, ...LIBRARY_BOOKS];
 
 type View =
   | { kind: "shelf" }
@@ -1025,9 +1028,10 @@ export default function StoryGarden() {
         ...current,
         lastPage: page,
         lastOpened: Date.now(),
-        readPages: current.readPages.includes(page)
-          ? current.readPages
-          : [...current.readPages, page].sort((a, b) => a - b),
+        readPages: [...new Set([
+          ...current.readPages,
+          ...readingLayout(book.pages.length, page, book.facingPages).pages,
+        ])].sort((a, b) => a - b),
       }));
       navigate({ kind: "reader", bookSlug: book.slug, page }, true);
     };
@@ -1215,6 +1219,7 @@ function Shelf({
   ).length;
   const exploredDinosaurNames = dinosaurPronunciationProgress.exploredIds.length;
   const exploredEverydayWords = everydayDiscoveryProgress.exploredIds.length;
+  const generalBooks = LIBRARY_BOOKS.filter((book) => book.level === null);
   const latestBook = useMemo(() => {
     return [...BOOKS]
       .filter((book) => progress.books[book.slug]?.lastOpened)
@@ -1233,10 +1238,10 @@ function Shelf({
     <main className="shelf-page">
       <header className="shelf-header">
         <Brand />
-        <div className="garden-counter" aria-label={`${completedBooks} of ${BOOKS.length} stories read`}>
+        <div className="garden-counter" aria-label={`${completedBooks} of ${BOOKS.length} books read`}>
           <span aria-hidden="true">📚</span>
           <strong>{completedBooks}</strong>
-          <span className="garden-counter__of">/ {BOOKS.length} stories read</span>
+          <span className="garden-counter__of">/ {BOOKS.length} books read</span>
         </div>
       </header>
 
@@ -1247,7 +1252,7 @@ function Shelf({
             <h1 id="bookshelf-title">Choose a book</h1>
           </div>
           <div className="bookshelf-first__intro">
-            <p>{BOOKS.length} stories ready to read and hear</p>
+            <p>{BOOKS.length} books ready to read</p>
             {latestBook && (
               <button className="text-button" type="button" onClick={() => onOpenBook(latestBook)}>
                 Continue {latestBook.title} →
@@ -1262,7 +1267,7 @@ function Shelf({
             <section className="level-shelf" key={level} aria-labelledby={`level-${level}-title`}>
               <div className="level-shelf__heading">
                 <h2 id={`level-${level}-title`}>Primary {level}</h2>
-                <span>{levelBooks.length} picture books</span>
+                <span>{levelBooks.length} {levelBooks.some((book) => book.readingOnly) ? "books" : "picture books"}</span>
               </div>
               <div className="book-grid">
                 {levelBooks.map((book) => (
@@ -1277,6 +1282,24 @@ function Shelf({
             </section>
           );
         })}
+        {generalBooks.length > 0 && (
+          <section className="level-shelf" aria-labelledby="general-books-title">
+            <div className="level-shelf__heading">
+              <h2 id="general-books-title">Books · 自由阅读</h2>
+              <span>{generalBooks.length} book</span>
+            </div>
+            <div className="book-grid">
+              {generalBooks.map((book) => (
+                <BookCard
+                  key={book.slug}
+                  book={book}
+                  progress={progress.books[book.slug] ?? emptyBookProgress()}
+                  onOpen={() => onOpenBook(book)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </section>
 
       <div className="shelf-more-heading">
@@ -1418,15 +1441,15 @@ function BookCard({
     <article className={`book-card ${complete ? "book-card--complete" : ""}`} style={{ "--book-colour": book.colour } as CSSProperties}>
       <button className="book-card__cover" type="button" onClick={onOpen} aria-label={`${label}: ${book.title}`}>
         <img src={book.cover} alt={`Cover of ${book.title}`} loading="lazy" />
-        <span className="book-card__unit">P{book.level} · Unit {book.unit}</span>
+        <span className="book-card__unit">{book.level ? `P${book.level}${book.unit === null ? "" : ` · Unit ${book.unit}`}` : "Memoir"}</span>
         {complete && <span className="book-card__bloom" aria-label="Story finished">✓</span>}
       </button>
       <div className="book-card__body">
-        <div className="book-card__term">Term {book.term} <span>•</span> {book.focus[0]}</div>
+        <div className="book-card__term">{book.author ?? `Term ${book.term}`} <span>•</span> {book.focus[0]}</div>
         <h3>{book.title}</h3>
         <div className="book-card__story-progress" aria-label={`${readPages} of ${book.pages.length} pages read`}>
           <div aria-hidden="true"><span style={{ width: `${(readPages / book.pages.length) * 100}%` }} /></div>
-          <span><strong>{readPages} / {book.pages.length} pages</strong><small>{complete ? "Story finished" : "Read and listen"}</small></span>
+          <span><strong>{readPages} / {book.pages.length} pages</strong><small>{complete ? (book.readingOnly ? "Book finished" : "Story finished") : book.readingOnly ? "Read at your pace" : "Read and listen"}</small></span>
         </div>
         <div className="book-card__actions">
           <button className="book-card__button" type="button" onClick={onOpen}>
@@ -1473,6 +1496,7 @@ function StoryReader({
   const closeReadingRunRef = useRef(0);
   const closeReadingTimerRef = useRef<number | null>(null);
   const current = book.pages[page];
+  const layout = readingLayout(book.pages.length, page, book.facingPages);
   const currentSides = current.sides;
   const currentIsSpread = current.layout === "spread";
   const storyGuide = storyGuideForBook(book.slug);
@@ -1481,8 +1505,8 @@ function StoryReader({
   const currentGuide = storyGuide?.pages[page] ?? null;
   const closeReadingPage = dinosaurCloseReadingPageFor(book.slug, page);
   const guideMode = storyMode === "guide-zh" && Boolean(currentGuide);
-  const isLast = page === book.pages.length - 1;
-  const pageHasBeenRead = bookProgress.readPages.includes(page);
+  const isLast = layout.next === null;
+  const pageHasBeenRead = layout.pages.every((index) => bookProgress.readPages.includes(index));
   const moonlightInvite = onMoonlightMarket
     ? page === 1 || page === 2
       ? {
@@ -1554,9 +1578,10 @@ function StoryReader({
   }, [onPageChange, page, pageHasBeenRead]);
 
   useEffect(() => {
-    const next = book.pages[page + 1];
-    const nextGuide = storyGuide?.pages[page + 1];
-    if (next) {
+    if (layout.next === null) return;
+    for (const index of readingLayout(book.pages.length, layout.next, book.facingPages).pages) {
+      const next = book.pages[index];
+      const nextGuide = storyGuide?.pages[index];
       const image = new Image();
       image.src = next.src;
       const nextAudioSrc = storyMode === "guide-zh" ? nextGuide?.audioSrc : next.audioSrc;
@@ -1565,7 +1590,7 @@ function StoryReader({
         audio.preload = bedtimeAutoReading ? "auto" : "metadata";
       }
     }
-  }, [audioSourceFor, bedtimeAutoReading, book.pages, page, storyGuide?.pages, storyMode]);
+  }, [audioSourceFor, bedtimeAutoReading, book.pages, book.facingPages, layout.next, storyGuide?.pages, storyMode]);
 
   useEffect(() => {
     const stopForBrowserNavigation = () => stopBedtimeAutoReading();
@@ -1663,6 +1688,7 @@ function StoryReader({
         purpose: "story",
         activeKey: targetVoiceKey,
         audioSrc: target.audioSrc,
+        preparedOnly: Boolean(book.readingOnly),
         onComplete: bedtimeRun === undefined
           ? undefined
           : () => continueBedtimeStory(targetPage, bedtimeRun),
@@ -1812,14 +1838,15 @@ function StoryReader({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "ArrowLeft" && page > 0) movePage(page - 1);
-      if (event.key === "ArrowRight" && page < book.pages.length - 1) movePage(page + 1);
+      if (event.target instanceof HTMLElement && (event.target.matches("input, textarea, select, [contenteditable]") || event.target.isContentEditable)) return;
+      if (event.key === "ArrowLeft" && layout.previous !== null) movePage(layout.previous);
+      if (event.key === "ArrowRight" && layout.next !== null) movePage(layout.next);
       if (event.key === "Home") movePage(0);
       if (event.key === "End") movePage(book.pages.length - 1);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [book.pages.length, movePage, page]);
+  }, [book.pages.length, layout.previous, layout.next, movePage]);
 
   const exitReader = () => {
     stopBedtimeAutoReading();
@@ -1834,13 +1861,13 @@ function StoryReader({
     const distance = event.clientX - startX.current;
     startX.current = null;
     if (Math.abs(distance) < 65) return;
-    if (distance > 0 && page > 0) movePage(page - 1);
-    if (distance < 0 && page < book.pages.length - 1) movePage(page + 1);
+    if (distance > 0 && layout.previous !== null) movePage(layout.previous);
+    if (distance < 0 && layout.next !== null) movePage(layout.next);
   };
 
   return (
     <main
-      className={`reader${book.slug === "dinosaur-david-lambert" ? " reader--reference-book" : ""}`}
+      className={`reader${book.slug === "dinosaur-david-lambert" ? " reader--reference-book" : ""}${book.readingOnly ? " reader--reading-only" : ""}${book.facingPages ? " reader--facing-pages" : ""}`}
       style={{ "--book-colour": book.colour } as CSSProperties}
     >
       <header className="reader__header">
@@ -1851,7 +1878,7 @@ function StoryReader({
         </div>
         <div className="reader__mission-dots" aria-label="Story progress">
           <span aria-hidden="true">📖</span>
-          <strong>{page + 1} / {book.pages.length}</strong>
+          <strong>{layout.label} / {book.pages.length}</strong>
         </div>
       </header>
 
@@ -1859,18 +1886,42 @@ function StoryReader({
         <button
           className="reader__side reader__side--previous"
           type="button"
-          onClick={() => movePage(page - 1)}
-          disabled={page === 0}
+          onClick={() => layout.previous !== null && movePage(layout.previous)}
+          disabled={layout.previous === null}
           aria-label="Previous page"
         >
           <span aria-hidden="true">←</span>
         </button>
 
-        <section className="story-page" aria-label={`Page ${page + 1} of ${book.pages.length}`}>
+        <section className="story-page" aria-label={`Page ${layout.label} of ${book.pages.length}`}>
           <div className="story-page__layout">
             <div className="story-page__paper">
               <div className="story-page__image-stage">
-                <div className="story-page__image-button">
+                {book.facingPages ? (
+                  <div className={`reading-spread${layout.pages.length === 1 ? " reading-spread--single" : ""}`}>
+                    {layout.pages.map((index) => {
+                      const readingPage = book.pages[index];
+                      const speaking = narrator.activeKey === `english-${book.slug}-${index}`;
+                      return (
+                        <div className="reading-spread__page" key={readingPage.src}>
+                          <img src={readingPage.src} alt={`Page ${index + 1} of ${book.title}`} draggable={false} decoding="async" />
+                          {readingPage.audioSrc && (
+                            <button
+                              className={`reading-spread__listen${speaking ? " is-speaking" : ""}`}
+                              type="button"
+                              onClick={() => speaking ? narrator.stop() : playPage(index)}
+                              disabled={!narrator.supported}
+                              aria-pressed={speaking}
+                              aria-label={`${speaking ? "Stop" : "Listen to"} page ${index + 1} at normal speed`}
+                            >
+                              <span aria-hidden="true">{speaking ? "■" : "▶"}</span>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : <div className="story-page__image-button">
                   <img
                     key={current.src}
                     src={current.src}
@@ -1878,7 +1929,7 @@ function StoryReader({
                     draggable={false}
                     decoding="async"
                   />
-                </div>
+                </div>}
                 {closeReadingEnabled && closeReadingPage && (
                   <div className="close-reading-layer" role="group" aria-label={`Close reading audio blocks for printed pages ${closeReadingPage.printedPages}`}>
                     {closeReadingPage.blocks.map((block, index) => {
@@ -1955,7 +2006,7 @@ function StoryReader({
               )}
             </div>
 
-            <aside className="reader__controls" aria-label="Page listening controls">
+            {!book.readingOnly && <aside className="reader__controls" aria-label="Page listening controls">
               {storyGuide && (
                 <div className="story-mode-toggle" role="group" aria-label="Choose story mode">
                   <button
@@ -2108,7 +2159,7 @@ function StoryReader({
                   </button>
                 </section>
               )}
-            </aside>
+            </aside>}
           </div>
 
           {isLast && (
@@ -2152,7 +2203,7 @@ function StoryReader({
         <button
           className="reader__side reader__side--next"
           type="button"
-          onClick={() => movePage(page + 1)}
+          onClick={() => layout.next !== null && movePage(layout.next)}
           disabled={isLast}
           aria-label="Next page"
         >
@@ -2161,7 +2212,7 @@ function StoryReader({
       </div>
 
       <footer className="reader__footer">
-        <button type="button" onClick={() => movePage(page - 1)} disabled={page === 0} aria-label="Previous page">←</button>
+        <button type="button" onClick={() => layout.previous !== null && movePage(layout.previous)} disabled={layout.previous === null} aria-label="Previous page">←</button>
         {bedtimeAutoReading ? (
           <button className="bedtime-footer-status" type="button" onClick={stopBedtimeAutoReading} aria-label="Stop bedtime story">
             <span aria-hidden="true">■</span>
@@ -2169,18 +2220,18 @@ function StoryReader({
           </button>
         ) : (
           <div className="page-progress">
-            <div><span style={{ width: `${((page + 1) / book.pages.length) * 100}%` }} /></div>
-            <strong>Page {page + 1} <span>of {book.pages.length}</span></strong>
+            <div><span style={{ width: `${((layout.pages.at(-1)! + 1) / book.pages.length) * 100}%` }} /></div>
+            <strong>Page {layout.label} <span>of {book.pages.length}</span></strong>
           </div>
         )}
-        <button type="button" onClick={() => movePage(page + 1)} disabled={isLast} aria-label="Next page">→</button>
+        <button type="button" onClick={() => layout.next !== null && movePage(layout.next)} disabled={isLast} aria-label="Next page">→</button>
       </footer>
       <p className="sr-only" aria-live="polite">
         {bedtimeAutoReading
           ? `Auto-reading page ${page + 1} of ${book.pages.length}`
           : bedtimeFinished
             ? "Story finished"
-            : `Page ${page + 1} of ${book.pages.length}`}
+            : `Page ${layout.label} of ${book.pages.length}`}
       </p>
     </main>
   );
