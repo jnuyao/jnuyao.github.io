@@ -1828,6 +1828,49 @@ export const BOOKS: Book[] = [
       },
     },
   },
+  {
+    slug: "the-broken-bangle",
+    title: "The Broken Bangle",
+    cover: "/books/the-broken-bangle.jpg",
+    colour: "#C9832E",
+    focus: ["describing words", "honesty", "Deepavali words"],
+    level: 1,
+    term: 4,
+    unit: null,
+    pages: makePages("the-broken-bangle", [
+      "The Broken Bangle.",
+      "Amma was busy outside making a kolam for Deepavali. Priya opened Amma's bag and found a bangle.",
+      "It was a jingly-jangly, golden-dangly, brand-new bangle. It looked so beautiful that Priya tried it on. But it slipped off her arm and fell to the floor. The bangle broke in two!",
+      "Amma was coming. Priya hid the broken jingly-jangly, golden-dangly, brand-new bangle in a box on the table.",
+      "Amma asked Priya, “Have you seen a bangle? It is jingly-jangly, golden and dangly.” Priya said, “No, Amma.”",
+      "Amma looked on the table. She looked under the table. She looked under the sofa. But she just could not find the brand-new bangle.",
+      "Amma said, “I'm sorry, Priya. I've lost the jingly-jangly, golden-dangly, brand-new bangle. It was a present for you!” The next day was Deepavali. Priya wore new clothes. She ate murukku and sweets. But she was not happy.",
+      "Priya took the broken bangle out of the box and said, “I'm sorry, Amma. I broke the bangle and hid it in this box.” Amma smiled and hugged her. “Thank you for telling me the truth. You shine brighter than the bangle.”",
+      "Priya had the best Deepavali ever. Glossary. Kolam is a floor drawing made of rice flour. Pottu is a red or black dot placed on the foreheads of Hindu women and young girls. Deepavali, also known as the festival of lights, is a festival celebrated by Hindus every year. Murukku is a crunchy snack made of flour and spices. Oil lamps are usually made from clay, with a cotton wick dipped in oil.",
+    ]),
+    tasks: {
+      listen: {
+        prompt: "Listen. What happened to the bangle?",
+        audioText: "Priya tried on the bangle. It slipped off her arm and broke in two.",
+        choices: ["It broke in two", "It was in Amma's bag", "It was under the sofa"],
+        correctAnswer: "It broke in two",
+      },
+      speak: {
+        modelLine: "I'm sorry, Amma. I broke the bangle.",
+        tip: "Say sorry slowly and kindly. Then try the bouncy words jingly-jangly and golden-dangly.",
+      },
+      read: {
+        passage: "Amma smiled and hugged her. “Thank you for telling me the truth.”",
+        question: "Why did Amma thank Priya?",
+        choices: ["Priya told the truth", "Priya found a new bangle", "Priya made a kolam"],
+        correctAnswer: "Priya told the truth",
+      },
+      write: {
+        modelSentence: "Priya told Amma the truth.",
+        targetWords: ["Priya", "told", "Amma", "the", "truth"],
+      },
+    },
+  },
 ];
 
 

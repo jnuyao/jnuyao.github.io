@@ -61,6 +61,7 @@ const NEW_BOOK_SLUGS = new Set([
   "sammy-the-seal",
   "danny-dinosaur-mind-manners",
   "danny-dinosaur-ride-a-bike",
+  "the-broken-bangle",
 ]);
 const sensitiveValues = new Set();
 
