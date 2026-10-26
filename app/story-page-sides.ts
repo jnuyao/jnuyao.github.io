@@ -11,7 +11,7 @@ export type StoryPageSides = {
 
 type PageSidePlan = null | number | readonly [left: string, right: string];
 
-// Audited against all 533 story images. null means a true single page;
+// Audited against all 542 story images. null means a true single page;
 // a number splits canonical text; a tuple preserves the three scans whose
 // physical left/right reading order differs from the stored whole-page text.
 const STORY_PAGE_SIDE_PLANS: Record<string, readonly PageSidePlan[]> = {
@@ -51,6 +51,7 @@ const STORY_PAGE_SIDE_PLANS: Record<string, readonly PageSidePlan[]> = {
   "sammy-the-seal": [null,0,47,25,30,69,88,110,90,68,35,49,77,99,72,59,37,100,44,28,29,53,76,53,62,24,33,34,103,207,84,null],
   "danny-dinosaur-mind-manners": [null,null,90,72,103,156,0,63,0,122,75,136,0,204,106,71,null],
   "danny-dinosaur-ride-a-bike": [null,null,117,73,96,82,85,62,92,75,98,87,83,119,117,114,null],
+  "the-broken-bangle": [null,95,57,107,84,81,119,116,35],
 };
 
 const pageNumber = (pageIndex: number) => String(pageIndex + 1).padStart(2, "0");

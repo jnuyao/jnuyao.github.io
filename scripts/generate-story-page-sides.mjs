@@ -66,6 +66,7 @@ const SPREAD_PAGE_INDICES = {
   "sammy-the-seal": range(1, 30),
   "danny-dinosaur-mind-manners": range(2, 15),
   "danny-dinosaur-ride-a-bike": range(2, 15),
+  "the-broken-bangle": range(1, 8),
 };
 
 // The copyright page on the left repeats the title, so OCR alone cannot tell
